@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1788298397635,
+      "tag": "0000_colorful_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1788300212423,
+      "tag": "0001_previous_captain_marvel",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1788305254443,
+      "tag": "0002_busy_rogue",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1788306118700,
+      "tag": "0003_young_forgotten_one",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1788308179482,
+      "tag": "0004_fluffy_bromley",
+      "breakpoints": true
+    }
+  ]
+}

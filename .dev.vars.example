@@ -1,0 +1,5 @@
+# Copie estas variáveis para .dev.vars no ambiente local.
+# Nunca envie a chave real para o repositório.
+RESEND_API_KEY=re_sua_chave_aqui
+RESEND_FROM_EMAIL="Pauta <acesso@seudominio.com.br>"
+APP_URL=https://seu-endereco-publico.com.br
