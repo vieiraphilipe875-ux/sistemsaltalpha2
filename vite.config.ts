@@ -15,15 +15,7 @@ const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_date: "2024-09-23",
   compatibility_flags: ["nodejs_compat"],
-  d1_databases: d1
-    ? [
-        {
-          binding: d1,
-          database_name: "site-creator-d1",
-          database_id: SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
-        },
-      ]
-    : [],
+  d1_databases: [],
   r2_buckets: r2
     ? [
         {
