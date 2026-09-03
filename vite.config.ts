@@ -16,14 +16,7 @@ const localBindingConfig = {
   compatibility_date: "2024-09-23",
   compatibility_flags: ["nodejs_compat"],
   d1_databases: [],
-  r2_buckets: r2
-    ? [
-        {
-          binding: r2,
-          bucket_name: "site-creator-r2",
-        },
-      ]
-    : [],
+  r2_buckets: [],
 };
 
 export default defineConfig(async () => {
