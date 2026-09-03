@@ -3,6 +3,6 @@ compatibility_date = "2024-09-23"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "site-creator-d1"
-database_id = "00000000-0000-4000-8000-000000000000"
+database_name = "sistemsaltalpha2"
+database_id = "4cd9dd4e-7c63-494c-9cbc-38074bb8efc1"
 migrations_dir = "drizzle"
