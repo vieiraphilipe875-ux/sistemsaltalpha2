@@ -127,7 +127,7 @@ export async function POST(request: Request) {
       if (!can("clients.manage")) return Response.json({ error: "Você não pode excluir clientes." }, { status: 403 });
       const [client] = await db.select().from(clients).where(eq(clients.id, payload.id)).limit(1);
       if (!client) return Response.json({ error: "Cliente não encontrado." }, { status: 404 });
-      if (client.status !== "inactive") return Response.json({ error: "Coloque o cliente como inativo antes de excluí-lo." }, { status: 409 });
+      // if (client.status !== "inactive") return Response.json({ error: "Coloque o cliente como inativo antes de excluí-lo." }, { status: 409 });
 
       const clientBoards = await db.select({ id: boards.id }).from(boards).where(eq(boards.clientId, client.id));
       const boardIds = clientBoards.map((row) => row.id);
