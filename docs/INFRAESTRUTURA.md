@@ -76,6 +76,14 @@ Todos os valores cadastrados estão restritos a Preview da branch `postito/relea
 
 O primeiro Preview foi publicado pelo GitHub a partir de `0ba70486d9a525662d820c3706bef13ee41e5138`. Após configurar as cinco variáveis, a [republicação](https://vercel.com/vieiraphilipe875-7609s-projects/postito/61u2cQ5yprQDkAZZGF32CLfd1qSN) também terminou em READY. O [PR](https://github.com/vieiraphilipe875-ux/sistemsaltalpha2/pull/1) acompanha a validação da checagem de saúde adicionada em seguida.
 
+## Conexão de execução verificada
+
+O teste hospedado revelou dois problemas que não apareciam no build: `ERR_REQUIRE_ESM` ao carregar as Functions e `SELF_SIGNED_CERT_IN_CHAIN` na conexão PostgreSQL. Foram corrigidos o formato global de módulos e a confiança na CA pública oficial do Supabase, mantendo a validação TLS.
+
+No commit `9147481ec791fd4cdf9c58a7ad78f5317bb87bb8`, a [implantação de teste](https://vercel.com/vieiraphilipe875-7609s-projects/postito/4P6HjKq2Juc5KFmBRPUDpgyD5RzL) terminou com sucesso. Em 21/09/2026 às 03:18:00 UTC, o log Vercel confirmou `GET /api/health` com HTTP 200. Uma consulta independente a `pg_stat_activity` confirmou uma conexão de `postito_runtime`. Esse resultado verifica carregamento da Function, autenticação do banco, TLS e permissão de leitura da tabela privada, sem ler registros de contas. A resposta JSON não pôde ser exibida pelo navegador usado na inspeção; a comprovação veio dos registros do servidor e do banco.
+
+Persistem pendentes escrita por fluxos autenticados, entrega real de e-mail, upload real e homologação completa online. A suíte local de API e navegador é evidência separada. A verificação desta ativação está em `evidence/activation-20260921.json`.
+
 ## Pendências para publicar
 
 1. Informar o domínio remetente, cadastrá-lo e verificar o DNS no Resend; a consulta atual não retornou domínios cadastrados.
