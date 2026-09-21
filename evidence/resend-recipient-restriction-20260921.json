@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-21",
+  "environment": "preview",
+  "branch": "postito/release-0.2.0",
+  "diagnosis": {
+    "application_route": "/api/auth/signup",
+    "application_status": 502,
+    "provider_route": "POST /emails",
+    "provider_status": 403,
+    "provider_error_name": "validation_error",
+    "provider_log_time_utc": "2026-09-21T06:48:16.459585Z",
+    "cause": "The signup recipient differed from the Resend account address allowed by the default test sender.",
+    "request_content_or_auth_codes_inspected": false
+  },
+  "change": "Explain the test-recipient restriction without exposing the account email; log only provider, reason and available status.",
+  "sdk_behavior_tested": "The error response can omit statusCode; recognition uses its official name and message prefix.",
+  "validation": {
+    "unit_tests_passed": 10,
+    "api_scenarios_passed": 15,
+    "api_evidence": "evidence/results-mail-integration-20260921.json",
+    "targeted_lint_errors": 0,
+    "typecheck": "passed",
+    "production_build": "passed",
+    "historical_api_browser_scenarios_preserved": 23,
+    "standalone_browser_suite_rerun": false,
+    "live_correct_recipient_delivery": "pending secure signup"
+  },
+  "production_promoted": false,
+  "custom_sending_domain_available": false
+}

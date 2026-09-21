@@ -94,6 +94,10 @@ A [publicação com essas duas variáveis](https://vercel.com/vieiraphilipe875-7
 
 A próxima etapa é a revisão do cadastro pelo usuário na tela já aberta. Não desativar a confirmação de e-mail nem inserir contas ativas diretamente no banco para evitar essa etapa. A senha e o código devem ser informados pelo usuário no formulário seguro.
 
+Na tentativa seguinte, o cadastro chegou ao envio e a Function retornou 502. O log do Resend de 21/09 às 06:48:16 UTC confirmou `POST /emails` com 403 e `validation_error`: o destinatário informado no cadastro era diferente do endereço associado à conta Resend. Isso confirma a causa da recusa e que a conexão com o provedor respondeu; não comprova entrega. A conferência dos logs extraiu apenas os endereços e a resposta de erro, sem exibir corpo do e-mail, código ou credenciais.
+
+O tratamento em `lib/mail.ts` passou a explicar a restrição do remetente de teste, sem revelar o endereço privado da conta na tela pública. O diagnóstico do servidor registra apenas provedor, categoria e status disponível. O SDK pode devolver o erro sem `statusCode`; a identificação usa a categoria e a mensagem oficial, com teste específico para esse formato. As demais falhas mantêm a mensagem genérica. A restrição do provedor continua respeitada: o próximo cadastro de teste deve usar o endereço permitido, indicado ao usuário na conversa.
+
 ## Pendências para publicar
 
 1. Concluir o cadastro no Preview publicado e validar o remetente de teste com o destinatário indicado pelo usuário.

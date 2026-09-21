@@ -18,5 +18,16 @@ export async function sendMail(to:string,subject:string,content:string,idempoten
     return;
   }
   const result=await new Resend(process.env.RESEND_API_KEY).emails.send({from:process.env.RESEND_FROM_EMAIL!,to,subject,html},idempotencyKey?{idempotencyKey}:undefined);
-  if (result.error) throw new AppError("Não foi possível enviar o e-mail. Tente novamente.",502);
+  if (result.error) {
+    const testRecipientRestricted = result.error.name === "validation_error"
+      && result.error.message.startsWith("You can only send testing emails to your own email address");
+    console.error("Postito: envio de e-mail recusado", {
+      provider: "resend",
+      reason: testRecipientRestricted ? "test_recipient_restricted" : "provider_error",
+      status: result.error.statusCode ?? null,
+    });
+    throw new AppError(testRecipientRestricted
+      ? "Esta versão de teste só envia e-mails para o endereço autorizado pelo responsável. Para usar outro endereço, o envio precisa ser liberado."
+      : "Não foi possível enviar o e-mail. Tente novamente.", 502);
+  }
 }

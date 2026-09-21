@@ -48,6 +48,7 @@ Em 21/09/2026, os acessos aos painéis Vercel e Supabase foram concluídos. O pr
 | Convite | Conta em outra agência podia ser recusada ou ter dados alterados | Conta global e novas associações independentes |
 | Permissões | Lista vazia podia herdar poderes padrão | Vazio significa nenhum acesso |
 | Cadastro | Faltavam confirmação e recuperação completas | Fluxos de código e token com consumo único |
+| E-mail de teste | Recusa do Resend por destinatário não autorizado aparecia apenas como falha genérica | Mensagem específica sobre a restrição, diagnóstico sem conteúdo privado e teste do formato real do erro do SDK |
 | Interface | Componentes/ícones ausentes e propriedades incompatíveis | Correção de referências e compilação verificada |
 | Vercel | Functions falhavam antes de executar por `ERR_REQUIRE_ESM`, apesar do build READY | Remoção do formato global forçado, utilitários TypeScript compatíveis e nova verificação das APIs hospedadas |
 | Banco hospedado | Validação TLS falhava por falta da CA do provedor | Inclusão da CA pública oficial, restrita aos hosts Supabase, com verificação de certificado e hostname preservada |
@@ -76,6 +77,8 @@ A regressão inclui 23 cenários completos de API e navegador, com múltiplas co
 Na ativação de 21/09, após adicionar a checagem de saúde do banco, foram repetidos 15 cenários de API (incluindo a nova checagem), seis testes unitários e o build de produção. Todos passaram. O novo teste unitário também verifica retorno 503 sem exposição de erro interno quando falta a conexão em produção. Essa rodada está em `evidence/results-integration-20260921.json`; a evidência anterior de navegador foi preservada. O resultado remoto mais recente fica no PR de acompanhamento.
 
 A correção TLS acrescenta um sétimo teste unitário: valida a identidade e a validade da CA pública oficial, a verificação obrigatória do certificado e o escopo dos hosts aceitos.
+
+A correção da mensagem de e-mail de teste acrescenta três testes, totalizando dez: reconhecimento da recusa real do Resend mesmo sem `statusCode`, manutenção da resposta genérica para outros erros e preservação de destinatário, remetente e idempotência no envio aceito. Os dez testes unitários e os quinze cenários locais de API passaram. A nova evidência de integração está em `evidence/results-mail-integration-20260921.json`. A evidência histórica dos 23 cenários foi preservada; a suíte autônoma de navegador não foi repetida nesta rodada. A verificação hospedada usa o navegador autorizado e continua dependente da confirmação da conta pelo usuário.
 
 Também foram executados TypeScript, lint e build de produção. O lint não reportou erros; restam avisos de manutenção, sobretudo imports não usados e recomendações de otimização de imagens. O build emite um aviso de rastreamento do adaptador local de arquivos; a lista de arquivos rastreados foi inspecionada e não incluía o diretório de dados locais. A publicação deve conferir o tamanho final das Functions.
 
