@@ -90,11 +90,13 @@ O usuário informou que ainda não possui domínio. O sistema pode continuar no 
 
 O remetente `onboarding@resend.dev` permite testes para o endereço associado à conta Resend; não libera cadastro por e-mail para toda a equipe. O usuário indicou um destinatário próprio para a validação, mas a correspondência com a conta Resend e a entrega real ainda precisam ser confirmadas pelo fluxo. Não se deve presumir sucesso apenas porque as variáveis foram salvas. [Restrição oficial do Resend](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain), [endereços gerados pela Vercel](https://vercel.com/docs/deployments/generated-urls).
 
-A próxima publicação deve carregar essas duas variáveis e permitir o teste pelo cadastro normal, sem desativar a confirmação de e-mail ou inserir contas ativas diretamente no banco. A senha e o código devem ser informados pelo usuário no formulário seguro. A compra de domínio não foi realizada.
+A [publicação com essas duas variáveis](https://vercel.com/vieiraphilipe875-7609s-projects/postito/DXK2BtTp7eA2nz3o7FF5pKzwjgza), do commit `ce7016f5355e67861de03a4afbd22efde041f78b`, concluiu com sucesso. O cadastro normal foi aberto e recebeu os dados pelo formulário seguro, mas a aplicação retornou “Revise os campos informados.”. A consulta ao Resend não retornou e-mails enviados. Isso não comprova entrega nem confirmação de conta e não permite determinar qual campo foi recusado. Nenhum valor de senha ou código foi lido. A compra de domínio não foi realizada.
+
+A próxima etapa é a revisão do cadastro pelo usuário na tela já aberta. Não desativar a confirmação de e-mail nem inserir contas ativas diretamente no banco para evitar essa etapa. A senha e o código devem ser informados pelo usuário no formulário seguro.
 
 ## Pendências para publicar
 
-1. Republicar o Preview e validar o remetente de teste com o destinatário indicado pelo usuário.
+1. Concluir o cadastro no Preview publicado e validar o remetente de teste com o destinatário indicado pelo usuário.
 2. Para liberar envio aos demais usuários, cadastrar e verificar um domínio próprio no Resend e substituir o remetente de teste.
 3. Homologar cadastro, confirmação, recuperação, convites, múltiplas agências e arquivos privados com contas controladas.
 4. Configurar produção, URL definitiva e credenciais próprias, e promover a versão homologada.

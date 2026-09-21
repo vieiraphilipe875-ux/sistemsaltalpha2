@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-21",
+  "environment": "preview",
+  "branch": "postito/release-0.2.0",
+  "code_commit": "ce7016f5355e67861de03a4afbd22efde041f78b",
+  "deployment": "https://vercel.com/vieiraphilipe875-7609s-projects/postito/DXK2BtTp7eA2nz3o7FF5pKzwjgza",
+  "deployment_status": "success",
+  "resend_connector_access": true,
+  "verified_custom_domains": 0,
+  "previous_api_keys_preserved": 2,
+  "new_key_permission": "sending_access",
+  "resend_api_key_saved_as_secret": true,
+  "resend_from_email": "Postito <onboarding@resend.dev>",
+  "environment_variable_scope": "Preview branch postito/release-0.2.0 only",
+  "signup_browser_result": "Revise os campos informados.",
+  "recent_resend_emails_found": 0,
+  "real_delivery_verified": false,
+  "account_confirmation_verified": false,
+  "password_reset_verified": false,
+  "credential_values_inspected": false,
+  "production_promoted": false,
+  "next_step": "User reviews signup fields in the existing browser; then verify real delivery, account confirmation and recovery.",
+  "limits": [
+    "A successful deployment does not establish email delivery.",
+    "The failed signup does not identify which input was rejected.",
+    "The default Resend sender is restricted to the account recipient for real delivery tests.",
+    "Other users require a verified sending domain."
+  ]
+}
