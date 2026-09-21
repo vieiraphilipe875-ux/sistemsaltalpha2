@@ -28,14 +28,39 @@
     "public": false,
     "file_size_limit": 52428800
   },
-  "application_deployed": false,
+  "application_deployed": true,
   "live_email_tested": false,
   "live_object_upload_tested": false,
   "security_advisors": {
     "errors": 0,
     "warnings": 0,
-    "info_count": 26,
+    "info_count": 1,
     "info_type": "rls_enabled_no_policy",
-    "reason": "Private server-only schemas with deliberately no client access policies."
-  }
+    "reason": "Only private Drizzle migration history has no runtime/client policy."
+  },
+  "runtime_access": {
+    "role": "postito_runtime",
+    "table_policies": 25,
+    "crud_grants_verified": 25,
+    "superuser": false,
+    "create_role": false,
+    "create_database": false,
+    "create_schema_objects": false,
+    "bypass_rls": false,
+    "auth_data_read": false,
+    "storage_data_read": false,
+    "member_of_other_roles": false,
+    "server_authorizes_tenants": true,
+    "set_role_test": "unavailable: connector context cannot impersonate runtime role"
+  },
+  "production_promoted": false,
+  "preview_environment_variables": [
+    "APP_URL",
+    "DATABASE_URL",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_STORAGE_BUCKET"
+  ],
+  "live_database_connection_tested": false,
+  "configuration_updated_at": "2026-09-21"
 }

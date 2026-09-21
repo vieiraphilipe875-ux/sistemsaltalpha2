@@ -6,9 +6,9 @@ Atualizado em 21 de setembro de 2026 · versão 0.2.0
 
 O sistema original foi transformado em uma aplicação Next.js com PostgreSQL, autenticação, agências independentes e a identidade Postito. Foram preservados os fluxos de clientes, pastas, pautas por fatias, revisão visual, CRM e financeiro, com correções de acesso, dados e interface.
 
-A versão foi executada e testada localmente. Ela não está publicada na Vercel. Após a confirmação do usuário, o projeto Supabase Postito foi criado em São Paulo, com as três migrações aplicadas, 25 tabelas protegidas e um bucket privado. Os testes de vínculos e limites financeiros passaram no banco remoto. O envio real de e-mails e a conexão da aplicação aos serviços ainda dependem da configuração do ambiente e de homologação adicional. O pacote não contém credenciais, contas de demonstração pré-instaladas nem o banco real do usuário.
+A versão foi executada e testada localmente e publicada como Preview na Vercel. O código está na branch `postito/release-0.2.0`, com [PR de acompanhamento](https://github.com/vieiraphilipe875-ux/sistemsaltalpha2/pull/1). Após a confirmação do usuário, o projeto Supabase Postito foi criado em São Paulo, com as três migrações aplicadas, 25 tabelas protegidas e um bucket privado. Os testes de vínculos e limites financeiros passaram no banco remoto. A homologação completa com e-mails e arquivos reais ainda está pendente. O código não contém credenciais, contas de demonstração pré-instaladas nem o banco real do usuário.
 
-Em 21/09/2026, o login na Vercel foi concluído e o projeto existente foi renomeado para `postito`. As configurações Next.js e Node.js 24 foram conferidas. O código desta entrega ainda não foi enviado e não há variáveis de ambiente cadastradas. A etapa atual depende do acesso ao painel Supabase para obter as credenciais de servidor: o método GitHub escolhido retornou que a conta não aceita login por senha.
+Em 21/09/2026, os acessos aos painéis Vercel e Supabase foram concluídos. O projeto Vercel foi renomeado para `postito`; Next.js e Node.js 24 foram conferidos. Foram configurados `APP_URL`, `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` e `SUPABASE_STORAGE_BUCKET`, restritos à branch de Preview. A conexão usa um papel de banco exclusivo e limitado. O Resend está conectado, mas ainda precisa de domínio remetente e chave de envio. A versão não foi promovida a produção.
 
 ## Etapas executadas
 
@@ -71,16 +71,18 @@ Em 21/09/2026, o login na Vercel foi concluído e o projeto existente foi renome
 
 A regressão inclui 23 cenários completos de API e navegador, com múltiplas contas/agências e dados isolados. A suíte unitária cobre hash novo/legado, permissões vazias, dinheiro, recorrência em meses curtos e datas brasileiras. `evidence/results.json` registra o resultado final dos cenários; as capturas mostram o sistema em uso com dados fictícios.
 
+Na ativação de 21/09, após adicionar a checagem de saúde do banco, foram repetidos 15 cenários de API (incluindo a nova checagem), seis testes unitários e o build de produção. Todos passaram. O novo teste unitário também verifica retorno 503 sem exposição de erro interno quando falta a conexão em produção. Essa rodada está em `evidence/results-integration-20260921.json`; a evidência anterior de navegador foi preservada. O resultado remoto mais recente fica no PR de acompanhamento.
+
 Também foram executados TypeScript, lint e build de produção. O lint não reportou erros; restam avisos de manutenção, sobretudo imports não usados e recomendações de otimização de imagens. O build emite um aviso de rastreamento do adaptador local de arquivos; a lista de arquivos rastreados foi inspecionada e não incluía o diretório de dados locais. A publicação deve conferir o tamanho final das Functions.
 
 Isso é uma auditoria com escopo e evidências, não uma garantia de inexistência de qualquer bug possível. Não foram realizados teste de carga, auditoria independente de segurança, homologação Safari/Firefox ou homologação completa da aplicação em produção. A execução no navegador usou Chromium e dimensões de desktop e celular. As verificações SQL no Supabase estão registradas em `docs/INFRAESTRUTURA.md`.
 
 ## O que falta para operação real
 
-1. Configurar a conexão PostgreSQL e a credencial privada de Storage no ambiente de publicação; os recursos já foram provisionados.
-2. Cadastrar e verificar o domínio remetente no Resend.
-3. Enviar o código e configurar a publicação no projeto Vercel `postito`, cujo acesso pelo painel já está confirmado, e definir a URL da aplicação.
-4. Homologar e-mails reais, upload direto grande, persistência e isolamento nesse ambiente.
+1. Cadastrar e verificar o domínio remetente no Resend e configurar a chave de envio e o endereço remetente.
+2. Homologar cadastro, confirmação, recuperação, convites, upload direto grande, persistência e isolamento com os serviços reais.
+3. Configurar o ambiente de produção, sua URL definitiva e credenciais próprias antes da promoção.
+4. Promover somente a versão homologada.
 5. Revisar o plano de migração dos administradores/gerentes legados antes de importar dados reais.
 
 O link de pasta Google Drive foi mantido. Cópia automática de objetos para o Google Drive depende de uma integração própria e não está ativa. Arquivos finais possuem versões; edição simultânea da pauta ainda pode prevalecer pela última gravação. Limpeza de objetos órfãos e paginação para bases grandes estão no roteiro posterior.

@@ -4,11 +4,11 @@
 
 O projeto Supabase **Postito** foi criado em 20/09/2026, em São Paulo (`sa-east-1`), após confirmação do custo inicial informado de US$ 0/mês. As três migrações foram aplicadas, com 25 tabelas privadas e histórico Drizzle sincronizado. O bucket privado `postito-private` também foi criado, com limite de 50 MB. Os vínculos, limites financeiros e bloqueios de acesso público foram verificados no banco remoto. Consulte `docs/INFRAESTRUTURA.md`.
 
-A aplicação ainda não está publicada. Em 21/09/2026, o acesso pelo painel Vercel foi confirmado e o projeto existente foi renomeado para `postito`; Next.js e Node.js 24 foram conferidos. Nenhuma variável foi cadastrada e o projeto ainda aponta para o repositório com o código original. O Resend está conectado, mas não tem domínio cadastrado. A conexão PostgreSQL de servidor e a credencial privada do Storage precisam ser configuradas no ambiente de publicação. O login no painel Supabase pelo GitHub foi interrompido porque a conta não aceita login por senha. Não há credenciais no pacote.
+A aplicação está publicada em [Preview](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app), com o código na branch `postito/release-0.2.0`. Os painéis Vercel e Supabase estão acessíveis. As cinco variáveis de URL, banco e Storage foram salvas somente para essa branch. O Resend está conectado, mas não tem domínio cadastrado, remetente ou chave de envio configurados na aplicação. Não há credenciais no código e a versão não foi promovida a produção.
 
 ## Ordem de ativação
 
-A criação do projeto, as migrações e o bucket das etapas 1 a 3 já foram executados para o projeto registrado em `docs/INFRAESTRUTURA.md`; falta configurar as credenciais de conexão. Não criar um segundo projeto. O histórico de migrações foi preenchido com os hashes e datas exatos dos arquivos atuais; `npm run db:migrate` deve aplicar somente migrações posteriores.
+A criação do projeto, as migrações, o bucket e as credenciais de Preview já foram configurados para o projeto registrado em `docs/INFRAESTRUTURA.md`. Não criar um segundo projeto para repetir essa ativação. O histórico de migrações contém os hashes e datas exatos dos arquivos atuais; `npm run db:migrate` deve aplicar somente migrações posteriores. Execute migrações com uma conexão administrativa autorizada: `postito_runtime` não possui permissão de DDL.
 
 1. Selecionar a organização Supabase, consultar o custo/plano e confirmar o projeto. Para a operação no Brasil, escolher uma região próxima à hospedagem.
 2. Criar o projeto e obter uma conexão PostgreSQL de servidor. Usar pooler transacional com `prepare:false`, já configurado no código. Aplicar as migrações com uma conexão autorizada a criar schema/tabelas.
@@ -25,7 +25,7 @@ A criação do projeto, as migrações e o bucket das etapas 1 a 3 já foram exe
 | Variável | Conteúdo |
 | --- | --- |
 | `APP_URL` | Origem HTTPS exata da aplicação publicada |
-| `DATABASE_URL` | Conexão PostgreSQL de servidor; senha codificada na URL quando necessário |
+| `DATABASE_URL` | Conexão PostgreSQL de `postito_runtime`; pooler transacional e `sslmode=verify-full` |
 | `SUPABASE_URL` | URL do projeto Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Credencial privada de servidor para Storage |
 | `SUPABASE_STORAGE_BUCKET` | `postito-private` |
@@ -43,12 +43,13 @@ npm run db:migrate
 npm run build
 ```
 
-O build não aplica migrações automaticamente. Isso evita alteração de dados de produção durante uma simples compilação. As migrações são executadas na etapa de implantação controlada, antes da promoção do código compatível.
+O build não aplica migrações automaticamente. Isso evita alteração de dados de produção durante uma simples compilação. As migrações são executadas na etapa de implantação controlada, antes da promoção do código compatível. Nesse comando, forneça `DATABASE_URL` administrativo apenas ao processo de migração; mantenha a conexão limitada nas Functions. Não use a senha administrativa como solução para erro de permissão de uma tabela nova: aplique os grants e a política apropriados.
 
 O arquivo `vercel.json` configura o framework, build, região `gru1` e duração máxima de 60 segundos nas rotas de API. Respeite os limites efetivos da conta Vercel. Arquivos grandes usam upload direto; aumentar a duração da Function não aumenta seu limite de corpo.
 
 ## Homologação mínima em serviços reais
 
+- `GET /api/health` retorna HTTP 200 e apenas `{ "database": "ok" }`, sem cache. Em falha de conexão, retorna 503 sem detalhes internos. A resposta confirma banco e leitura, não entrega de e-mails nem Storage.
 - Código chega ao e-mail controlado e não autentica duas vezes.
 - Esqueceu a senha envia link válido para o domínio correto; senha anterior e sessão anterior são recusadas depois da troca.
 - Pessoa convidada para duas agências vê apenas os clientes permitidos em cada uma.

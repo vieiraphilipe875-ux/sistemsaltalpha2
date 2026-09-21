@@ -4,7 +4,9 @@
 
 Next.js 16 e React 19 na aplicação; Drizzle para acesso a PostgreSQL; PGlite somente para desenvolvimento e testes; `postgres` para a conexão de produção. Supabase é o destino proposto para PostgreSQL e arquivos privados. Resend envia confirmação, recuperação e convites. A autenticação desta versão é própria, implementada no servidor; ela **não usa Supabase Auth**.
 
-O banco fica no schema `postito`, fora da API pública de dados. A migração ativa RLS nas tabelas e revoga acesso público, `anon` e `authenticated`. A aplicação usa a conexão do proprietário das tabelas, exclusivamente no servidor, e aplica suas regras de autorização em cada operação. Não exponha esse schema na configuração da Data API. Uma futura conexão com papel limitado precisará de políticas adequadas; não basta trocar a credencial e desativar RLS.
+O banco fica no schema `postito`, fora da API pública de dados. A migração ativa RLS nas tabelas e revoga acesso público, `anon` e `authenticated`. Na Vercel, a conexão usa `postito_runtime`, um papel exclusivo do backend com leitura e escrita nas tabelas da aplicação. Ele não é proprietário, não pode criar tabelas/papéis e não possui `BYPASSRLS` nem acesso aos dados de `auth`/`storage`.
+
+As políticas `postito_backend_access` se aplicam apenas a esse papel de servidor. Elas permitem as operações do backend; o isolamento entre pessoas e agências continua sendo autorizado pela aplicação em cada operação. Não são políticas de isolamento por usuário do Supabase Auth. Não conceder esse papel a `anon`, `authenticated` ou `authenticator`, nem expor o schema na Data API. O provisionamento está em `scripts/provision-runtime-role.sql`; tabelas futuras precisam de grants e políticas explícitos. A conexão de migração deve usar uma credencial administrativa separada da conexão de execução.
 
 ## Conta, agência e cliente
 

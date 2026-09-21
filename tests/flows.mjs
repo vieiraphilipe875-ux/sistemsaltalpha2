@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import {readdir,readFile} from 'node:fs/promises';
 export async function runFlows({base,mailDir,check}){
+ await check('Saúde do banco sem exposição de dados ou cache',async()=>{
+  const response=await fetch(base+'/api/health');
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get('cache-control'),'no-store');
+  assert.deepEqual(await response.json(),{database:'ok'});
+ });
  const password='QA-Postito-2026!';
  class Actor{
   constructor(email,name){this.email=email;this.name=name;this.cookie='';}
