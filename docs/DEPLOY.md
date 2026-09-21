@@ -34,6 +34,8 @@ A criação do projeto, as migrações, o bucket e as credenciais de Preview já
 
 Não adicionar prefixo `NEXT_PUBLIC_` a credenciais privadas. Não usar `MAIL_TRANSPORT=local` em produção. Usar bancos e credenciais distintos em Preview e Production.
 
+A conexão Supabase verifica certificado e hostname. `db/tls.ts` contém a CA pública indicada pelo painel Supabase, com validade até 26/04/2031, e mantém `rejectUnauthorized: true`. Essa CA é aplicada somente aos hosts Supabase reconhecidos. Não resolver `SELF_SIGNED_CERT_IN_CHAIN` desativando a verificação TLS. O certificado público pode ser atualizado quando o provedor anunciar uma rotação. [SSL no Supabase](https://supabase.com/docs/guides/platform/ssl-enforcement).
+
 ## Comandos
 
 ```bash

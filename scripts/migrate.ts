@@ -3,10 +3,11 @@ import { migrate as migrateRemote } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { getDb, closeLocalDb } from "../db";
+import { postgresTlsOptions } from "../db/tls";
 
 async function main() {
 if (process.env.DATABASE_URL) {
-  const client = postgres(process.env.DATABASE_URL, {max:1,prepare:false});
+  const client = postgres(process.env.DATABASE_URL, {max:1,prepare:false,...postgresTlsOptions(process.env.DATABASE_URL)});
   await migrateRemote(drizzle(client), {migrationsFolder:"drizzle"});
   await client.end();
 } else {
