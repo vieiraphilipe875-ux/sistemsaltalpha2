@@ -1,27 +1,67 @@
-import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, bigint, boolean, jsonb, primaryKey, real, pgSchema, text, uniqueIndex } from "drizzle-orm/pg-core";
+
+export const postitoSchema = pgSchema("postito");
+const sqliteTable = postitoSchema.table;
 
 export const members = sqliteTable("members", {
   id: text("id").primaryKey(),
   email: text("email").notNull(),
   passwordHash: text("password_hash"),
-  setupToken: text("setup_token"),
   name: text("name").notNull(),
-  role: text("role", { enum: ["manager", "admin", "social", "designer", "copywriter", "video_editor", "collaborator", "client"] }).notNull().default("collaborator"),
-  agencyOwnerId: text("agency_owner_id"),
-  clientAccessMode: text("client_access_mode", { enum: ["all", "selected"] }).notNull().default("selected"),
+  profession: text("profession").notNull().default("other"),
+  emailVerifiedAt: text("email_verified_at"),
   status: text("status", { enum: ["pending", "active", "inactive"] }).notNull().default("pending"),
   createdAt: text("created_at").notNull(),
 }, (table) => [uniqueIndex("members_email_unique").on(table.email)]);
 
-export const memberPermissions = sqliteTable("member_permissions", {
+export const agencies = sqliteTable("agencies", {
+  id: text("id").primaryKey(), name: text("name").notNull(),
+  createdBy: text("created_by").notNull().references(() => members.id),
+  createdAt: text("created_at").notNull(),
+});
+
+export const agencyMemberships = sqliteTable("agency_memberships", {
+  agencyId: text("agency_id").notNull().references(() => agencies.id, { onDelete: "cascade" }),
   memberId: text("member_id").notNull().references(() => members.id, { onDelete: "cascade" }),
-  permission: text("permission").notNull(),
-}, (table) => [
-  primaryKey({ columns: [table.memberId, table.permission] }),
-  index("idx_member_permissions_member").on(table.memberId),
-]);
+  role: text("role", { enum: ["manager", "admin", "editor", "viewer"] }).notNull().default("editor"),
+  clientAccessMode: text("client_access_mode", { enum: ["all", "selected"] }).notNull().default("selected"),
+  permissions: jsonb("permissions").$type<string[]>().notNull().default([]),
+  status: text("status", { enum: ["active", "inactive"] }).notNull().default("active"),
+  createdAt: text("created_at").notNull(),
+}, t => [primaryKey({columns:[t.agencyId,t.memberId]}), index("memberships_member_idx").on(t.memberId)]);
+
+export const sessions = sqliteTable("sessions", {
+  tokenHash: text("token_hash").primaryKey(),
+  memberId: text("member_id").notNull().references(() => members.id, { onDelete: "cascade" }),
+  agencyId: text("agency_id").references(() => agencies.id, { onDelete: "set null" }),
+  expiresAt: text("expires_at").notNull(), createdAt: text("created_at").notNull(),
+}, t => [index("sessions_member_idx").on(t.memberId)]);
+
+export const authChallenges = sqliteTable("auth_challenges", {
+  id: text("id").primaryKey(), memberId: text("member_id").notNull().references(() => members.id, { onDelete:"cascade" }),
+  kind: text("kind", {enum:["verify", "reset"]}).notNull(), tokenHash: text("token_hash").notNull(),
+  attempts: integer("attempts").notNull().default(0), expiresAt: text("expires_at").notNull(),
+  consumedAt: text("consumed_at"), createdAt: text("created_at").notNull(),
+}, t => [index("challenges_member_idx").on(t.memberId,t.kind)]);
+
+export const rateLimits = sqliteTable("rate_limits", {
+  key: text("key").primaryKey(), count: integer("count").notNull().default(0), resetAt: text("reset_at").notNull(),
+});
+
+export const agencyInvites = sqliteTable("agency_invites", {
+  id: text("id").primaryKey(), agencyId: text("agency_id").notNull().references(() => agencies.id,{onDelete:"cascade"}),
+  tokenHash: text("token_hash").notNull(), email: text("email"),
+  role: text("role",{enum:["admin","editor","viewer"]}).notNull(),
+  permissions: jsonb("permissions").$type<string[]>().notNull().default([]),
+  clientIds: jsonb("client_ids").$type<string[]>().notNull().default([]),
+  clientAccessMode: text("client_access_mode",{enum:["all","selected"]}).notNull().default("selected"),
+  createdBy: text("created_by").notNull().references(() => members.id),
+  expiresAt: text("expires_at").notNull(), usedAt: text("used_at"), revokedAt: text("revoked_at"),
+  createdAt: text("created_at").notNull(),
+}, t => [uniqueIndex("invite_token_idx").on(t.tokenHash), index("invite_agency_idx").on(t.agencyId)]);
 
 export const clients = sqliteTable("clients", {
+  agencyId: text("agency_id").notNull().references(() => agencies.id, {onDelete:"cascade"}),
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   handle: text("handle").notNull().default(""),
@@ -64,12 +104,12 @@ export const deliverables = sqliteTable("deliverables", {
   kind: text("kind", { enum: ["carousel", "reels", "stories", "static"] }).notNull(),
   slideCount: integer("slide_count").notNull().default(1),
   status: text("status", { enum: ["briefing", "production", "review", "changes", "approved"] }).notNull().default("briefing"),
-  hasStoriesVersion: integer("has_stories_version", { mode: "boolean" }).notNull().default(false),
+  hasStoriesVersion: boolean("has_stories_version").notNull().default(false),
   assigneeId: text("assignee_id").references(() => members.id),
   dueAt: text("due_at").notNull(),
   notes: text("notes").notNull().default(""),
   sourceUrl: text("source_url").notNull().default(""),
-  sortOrder: integer("sort_order").notNull().default(0),
+  sortOrder: bigint("sort_order", { mode: "number" }).notNull().default(0),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 }, (table) => [
@@ -126,7 +166,7 @@ export const annotations = sqliteTable("annotations", {
 
 export const transactions = sqliteTable("transactions", {
   id: text("id").primaryKey(),
-  agencyOwnerId: text("agency_owner_id"),
+  agencyOwnerId: text("agency_owner_id").notNull().references(() => agencies.id, {onDelete:"cascade"}),
   type: text("type", { enum: ["income", "expense", "transfer", "contribution", "withdrawal", "reimbursement", "reversal", "fee", "tax", "adjustment"] }).notNull(),
   amount: integer("amount").notNull(), // stored in cents
   paidAmount: integer("paid_amount").notNull().default(0),
@@ -140,7 +180,7 @@ export const transactions = sqliteTable("transactions", {
   clientId: text("client_id").references(() => clients.id, { onDelete: "set null" }),
   counterpart: text("counterpart").notNull().default(""),
   paymentMethod: text("payment_method").notNull().default(""),
-  recurring: integer("recurring", { mode: "boolean" }).notNull().default(false),
+  recurring: boolean("recurring").notNull().default(false),
   recurrence: text("recurrence").notNull().default(""),
   description: text("description").notNull().default(""),
   notes: text("notes").notNull().default(""),
@@ -156,7 +196,7 @@ export const transactions = sqliteTable("transactions", {
 
 export const financeWorkers = sqliteTable("finance_workers", {
   id: text("id").primaryKey(),
-  agencyOwnerId: text("agency_owner_id").notNull(),
+  agencyOwnerId: text("agency_owner_id").notNull().references(() => agencies.id, {onDelete:"cascade"}),
   name: text("name").notNull(),
   employmentType: text("employment_type", { enum: ["clt", "pj", "partner", "intern", "freelancer", "other"] }).notNull().default("pj"),
   status: text("status", { enum: ["active", "away", "inactive"] }).notNull().default("active"),
@@ -170,7 +210,7 @@ export const financeWorkers = sqliteTable("finance_workers", {
   paymentDay: integer("payment_day").notNull().default(5),
   paymentMethod: text("payment_method").notNull().default("Pix"),
   paymentDetails: text("payment_details").notNull().default(""),
-  invoiceRequired: integer("invoice_required", { mode: "boolean" }).notNull().default(false),
+  invoiceRequired: boolean("invoice_required").notNull().default(false),
   contractEnd: text("contract_end"),
   notes: text("notes").notNull().default(""),
   createdAt: text("created_at").notNull(),
@@ -181,7 +221,7 @@ export const financeWorkers = sqliteTable("finance_workers", {
 
 export const workerCompetencies = sqliteTable("worker_competencies", {
   id: text("id").primaryKey(),
-  agencyOwnerId: text("agency_owner_id").notNull(),
+  agencyOwnerId: text("agency_owner_id").notNull().references(() => agencies.id, {onDelete:"cascade"}),
   workerId: text("worker_id").notNull().references(() => financeWorkers.id, { onDelete: "cascade" }),
   competence: text("competence").notNull(),
   expectedAmount: integer("expected_amount").notNull().default(0),
@@ -200,7 +240,7 @@ export const workerCompetencies = sqliteTable("worker_competencies", {
 
 export const financialDocuments = sqliteTable("financial_documents", {
   id: text("id").primaryKey(),
-  agencyOwnerId: text("agency_owner_id").notNull(),
+  agencyOwnerId: text("agency_owner_id").notNull().references(() => agencies.id, {onDelete:"cascade"}),
   transactionId: text("transaction_id").references(() => transactions.id, { onDelete: "cascade" }),
   workerCompetencyId: text("worker_competency_id").references(() => workerCompetencies.id, { onDelete: "cascade" }),
   type: text("type", { enum: ["invoice", "receipt", "bill", "contract", "statement", "other"] }).notNull().default("other"),
@@ -228,7 +268,7 @@ export const deliverableReferences = sqliteTable("deliverable_references", {
 
 export const crmLeads = sqliteTable("crm_leads", {
   id: text("id").primaryKey(),
-  agencyOwnerId: text("agency_owner_id").notNull(),
+  agencyOwnerId: text("agency_owner_id").notNull().references(() => agencies.id, {onDelete:"cascade"}),
   company: text("company").notNull(),
   contactName: text("contact_name").notNull().default(""),
   email: text("email").notNull().default(""),
@@ -250,7 +290,7 @@ export const crmLeads = sqliteTable("crm_leads", {
 
 export const crmDeals = sqliteTable("crm_deals", {
   id: text("id").primaryKey(),
-  agencyOwnerId: text("agency_owner_id").notNull(),
+  agencyOwnerId: text("agency_owner_id").notNull().references(() => agencies.id, {onDelete:"cascade"}),
   leadId: text("lead_id").references(() => crmLeads.id, { onDelete: "set null" }),
   company: text("company").notNull(),
   contactName: text("contact_name").notNull().default(""),
@@ -272,7 +312,7 @@ export const crmDeals = sqliteTable("crm_deals", {
 
 export const crmActivities = sqliteTable("crm_activities", {
   id: text("id").primaryKey(),
-  agencyOwnerId: text("agency_owner_id").notNull(),
+  agencyOwnerId: text("agency_owner_id").notNull().references(() => agencies.id, {onDelete:"cascade"}),
   leadId: text("lead_id").references(() => crmLeads.id, { onDelete: "cascade" }),
   dealId: text("deal_id").references(() => crmDeals.id, { onDelete: "cascade" }),
   type: text("type", { enum: ["call", "whatsapp", "email", "meeting", "task", "note"] }).notNull().default("task"),
@@ -283,3 +323,18 @@ export const crmActivities = sqliteTable("crm_activities", {
   createdBy: text("created_by").notNull().references(() => members.id),
   createdAt: text("created_at").notNull(),
 }, (table) => [index("idx_crm_activities_agency_due").on(table.agencyOwnerId, table.dueAt)]);
+
+export const activityLog = sqliteTable("activity_log", {
+  id: text("id").primaryKey(), agencyId: text("agency_id").notNull().references(() => agencies.id,{onDelete:"cascade"}),
+  memberId: text("member_id").notNull().references(() => members.id),
+  action: text("action").notNull(), entityId: text("entity_id"),
+  createdAt: text("created_at").notNull(),
+}, t => [index("activity_agency_idx").on(t.agencyId,t.createdAt)]);
+
+export const uploadTickets = sqliteTable("upload_tickets", {
+ id: text("id").primaryKey(), agencyId:text("agency_id").notNull().references(()=>agencies.id,{onDelete:"cascade"}),
+ memberId:text("member_id").notNull().references(()=>members.id), storageKey:text("storage_key").notNull(),
+ purpose:text("purpose",{enum:["asset","attachment","avatar","banner","transaction","competency"]}).notNull(),
+ targetId:text("target_id").notNull(), fileName:text("file_name").notNull(),mimeType:text("mime_type").notNull(),fileSize:integer("file_size").notNull(),
+ slidePosition:integer("slide_position"), expiresAt:text("expires_at").notNull(),consumedAt:text("consumed_at"), createdAt:text("created_at").notNull(),
+},t=>[index("upload_tickets_member_idx").on(t.memberId,t.createdAt)]);

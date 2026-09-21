@@ -1,0 +1,41 @@
+{
+  "date": "2026-09-20T23:41:11.349Z",
+  "project_id": "olfkjpfluqifslrhppsu",
+  "region": "sa-east-1",
+  "approved_initial_monthly_cost": 0,
+  "table_count": 25,
+  "all_tables_rls_enabled": true,
+  "anonymous_and_authenticated_access_revoked": true,
+  "constraint_count": 74,
+  "migrations": [
+    {
+      "hash": "9c712db1a0ac0963d97a32c5ee51c048f46d66e7af7942d9e943beb21ef57bb5",
+      "created_at": 1789875344840
+    },
+    {
+      "hash": "b54b5f23de9ede7e82cbfa374dc855c6337b9d5f5538221b56750797219f3f9b",
+      "created_at": 1789875939122
+    },
+    {
+      "hash": "5114ceb3973eb6be97bd01b6219b6f0f210bb821014b0d214cf664139a07220e",
+      "created_at": 1789879000000
+    }
+  ],
+  "remote_sql_checks": "passed",
+  "test_records_rolled_back": true,
+  "storage": {
+    "bucket": "postito-private",
+    "public": false,
+    "file_size_limit": 52428800
+  },
+  "application_deployed": false,
+  "live_email_tested": false,
+  "live_object_upload_tested": false,
+  "security_advisors": {
+    "errors": 0,
+    "warnings": 0,
+    "info_count": 26,
+    "info_type": "rls_enabled_no_policy",
+    "reason": "Private server-only schemas with deliberately no client access policies."
+  }
+}

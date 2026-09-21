@@ -1,40 +1,21 @@
-import { env } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { attachments } from "@/db/schema";
-import { canAccessAttachment, getCurrentMember } from "@/lib/server-workspace";
-
-export const dynamic = "force-dynamic";
-
-type StoredObject = { body: ReadableStream; writeHttpMetadata(headers: Headers): void };
-type Bucket = { get(key: string): Promise<StoredObject | null>; delete(key: string): Promise<void> };
-
-export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
-  const member = await getCurrentMember({ seed: false });
-  if (!member) return new Response("Não autorizado", { status: 403 });
-  const { id } = await context.params;
-  if (!(await canAccessAttachment(member.id, id, member.role))) return new Response("Não autorizado", { status: 403 });
-  const [attachment] = await getDb().select().from(attachments).where(eq(attachments.id, id)).limit(1);
-  if (!attachment) return new Response("Arquivo não encontrado", { status: 404 });
-  const object = await (env as unknown as { BUCKET: Bucket }).BUCKET.get(attachment.storageKey);
-  if (!object) return new Response("Arquivo não encontrado", { status: 404 });
-  const headers = new Headers();
-  object.writeHttpMetadata(headers);
-  headers.set("Content-Type", attachment.mimeType);
-  headers.set("Content-Disposition", `inline; filename="${attachment.fileName.replace(/["\\]/g, "-")}"`);
-  headers.set("Cache-Control", "private, max-age=3600");
-  return new Response(object.body, { headers });
+import { getCurrentMember, canAccessAttachment, canManageDeliverable } from "@/lib/server-workspace";
+import { bucket } from "@/lib/storage";
+import { AppError, errorResponse, assertSameOrigin } from "@/lib/http";
+export const dynamic="force-dynamic";
+export async function GET(_request:Request,{params}:{params:Promise<{id:string}>}){
+ try{const me=await getCurrentMember();const {id}=await params;
+ if(!me||!await canAccessAttachment(me.id,id))throw new AppError("Arquivo não disponível.",403);
+ const [row]=await getDb().select().from(attachments).where(eq(attachments.id,id)).limit(1);
+ return bucket.response(row.storageKey,row.mimeType,/^(image\/(png|jpeg|webp|gif)|video\/(mp4|webm|quicktime)|application\/pdf)$/.test(row.mimeType)?undefined:row.fileName);
+ }catch(e){return errorResponse(e);}
 }
-
-export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> }) {
-  const member = await getCurrentMember({ seed: false });
-  if (!member || member.role === "client") return Response.json({ error: "Acesso negado." }, { status: 403 });
-  const { id } = await context.params;
-  if (!(await canAccessAttachment(member.id, id, member.role))) return Response.json({ error: "Acesso negado." }, { status: 403 });
-  const db = getDb();
-  const [attachment] = await db.select().from(attachments).where(eq(attachments.id, id)).limit(1);
-  if (!attachment) return Response.json({ error: "Arquivo não encontrado." }, { status: 404 });
-  await (env as unknown as { BUCKET: Bucket }).BUCKET.delete(attachment.storageKey);
-  await db.delete(attachments).where(eq(attachments.id, id));
-  return Response.json({ ok: true });
+export async function DELETE(request:Request,{params}:{params:Promise<{id:string}>}){
+ try{assertSameOrigin(request);const me=await getCurrentMember();const {id}=await params;
+ const [row]=await getDb().select().from(attachments).where(eq(attachments.id,id)).limit(1);
+ if(!me||!row||!await canManageDeliverable(me.id,row.deliverableId))throw new AppError("Você não pode remover este anexo.",403);
+ await getDb().delete(attachments).where(eq(attachments.id,id));await bucket.delete(row.storageKey);return Response.json({ok:true});
+ }catch(e){return errorResponse(e);}
 }

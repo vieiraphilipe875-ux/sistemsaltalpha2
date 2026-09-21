@@ -5,18 +5,19 @@ export type PermissionKey = typeof permissionKeys[number];
 export const rolePermissionDefaults: Record<string, PermissionKey[]> = {
   manager: [...permissionKeys],
   admin: [...permissionKeys],
-  social: ["clients.view", "clients.manage", "demands.create"],
-  designer: ["clients.view", "demands.execute"],
-  copywriter: ["clients.view", "demands.execute"],
-  video_editor: ["clients.view", "demands.execute"],
-  collaborator: ["clients.view", "demands.execute"],
-  client: ["clients.view"],
+  editor: ["clients.view", "demands.create", "demands.execute"],
+  viewer: ["clients.view"],
 };
 
-export function effectivePermissions(role: string, explicit: string[]): PermissionKey[] {
+export function effectivePermissions(role: string, explicit: string[] | null = null): PermissionKey[] {
   if (role === "manager" || role === "admin") return [...permissionKeys];
-  return explicit.length ? permissionKeys.filter((permission) => explicit.includes(permission)) : (rolePermissionDefaults[role] ?? []);
+  return explicit === null ? (rolePermissionDefaults[role] ?? []) : permissionKeys.filter((permission) => explicit.includes(permission));
 }
+
+export const professionLabels: Record<string,string> = {
+  designer:"Designer", social:"Social media", copywriter:"Redator(a)", video_editor:"Editor(a) de vídeo", traffic:"Gestor(a) de tráfego", account:"Atendimento", manager:"Gestão", other:"Outra profissão",
+};
+export const roleLabels: Record<string,string> = {manager:"Proprietário",admin:"Administrador",editor:"Editor",viewer:"Leitor"};
 
 export function hasPermission(role: string, explicit: string[], permission: PermissionKey) {
   return effectivePermissions(role, explicit).includes(permission);

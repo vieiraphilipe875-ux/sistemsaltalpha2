@@ -2,7 +2,9 @@ export type Member = {
   id: string;
   email: string;
   name: string;
-  role: "manager" | "admin" | "social" | "designer" | "copywriter" | "video_editor" | "collaborator" | "client";
+  role: "manager" | "admin" | "editor" | "viewer";
+  profession: string;
+  permissions: import("./permissions").PermissionKey[];
   agencyOwnerId: string | null;
   clientAccessMode: "all" | "selected";
   status: "pending" | "active" | "inactive";
@@ -91,6 +93,7 @@ export type Deliverable = {
   title: string;
   kind: "carousel" | "reels" | "stories" | "static";
   slideCount: number;
+  hasStoriesVersion: boolean;
   status: "briefing" | "production" | "review" | "changes" | "approved";
   assigneeId: string | null;
   dueAt: string;
@@ -114,6 +117,10 @@ export type DeliverableReference = {
 };
 
 export type WorkspaceData = {
+  agency: {id:string;name:string;role:string};
+  agencies: {id:string;name:string;role:string}[];
+  invites: {id:string;email:string|null;role:string;clientIds:string[];expiresAt:string;usedAt:string|null;revokedAt:string|null}[];
+  activity: {id:string;agencyId:string;memberId:string;action:string;entityId:string|null;createdAt:string}[];
   currentMember: Member;
   members: Member[];
   clients: Client[];

@@ -1,0 +1,98 @@
+{
+  "date": "2026-09-20T23:44:12.507Z",
+  "mode": "local PostgreSQL (PGlite), caixa de e-mail local",
+  "results": [
+    {
+      "name": "Cadastro, confirmação obrigatória, código de uso único",
+      "status": "passed"
+    },
+    {
+      "name": "Agências independentes e autorização de criação",
+      "status": "passed"
+    },
+    {
+      "name": "Convite restrito ao e-mail, agência e uso único",
+      "status": "passed"
+    },
+    {
+      "name": "Atribuição: apenas a demanda recebida e sua pasta aparecem",
+      "status": "passed"
+    },
+    {
+      "name": "Acesso explícito à pasta, pesquisa de equipe e reassociação",
+      "status": "passed"
+    },
+    {
+      "name": "Pastas, pauta, referências e validação de dados",
+      "status": "passed"
+    },
+    {
+      "name": "Arquivos privados: envio, versão, leitura, revisão e exclusão",
+      "status": "passed"
+    },
+    {
+      "name": "Financeiro: previsão, parcial, quitação, reabertura e arquivo",
+      "status": "passed"
+    },
+    {
+      "name": "Equipe financeira: competência idempotente, notas e ajustes",
+      "status": "passed"
+    },
+    {
+      "name": "CRM: lead, conversão idempotente, negócio e atividades",
+      "status": "passed"
+    },
+    {
+      "name": "Múltiplas agências na mesma conta, troca e desativação local",
+      "status": "passed"
+    },
+    {
+      "name": "Permissões vazias não concedem acesso; origem externa bloqueada",
+      "status": "passed"
+    },
+    {
+      "name": "Senha: link único, senha antiga recusada e sessões encerradas",
+      "status": "passed"
+    },
+    {
+      "name": "Exclusões verificadas e dados persistidos após recarregar",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: login, logo, navegação e busca de clientes",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: atribuir na pasta, filtrar pelo nome e persistir",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: editar demanda, alternar abas e salvar pauta",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: nova demanda na pasta escolhida, envio de anexo e arrastar",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: CRM, financeiro, equipe e perfil respondem",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: convite por link e edição de acesso",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: layout móvel, menu, foco e movimento reduzido",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: cadastro, código, onboarding e recuperação por e-mail",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: sem erros de execução no fluxo percorrido",
+      "status": "passed"
+    }
+  ]
+}
