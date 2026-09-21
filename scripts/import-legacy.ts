@@ -8,6 +8,7 @@ import type {PgTable} from 'drizzle-orm/pg-core';
 import * as schema from '../db/schema';
 import {getDb,closeLocalDb} from '../db';
 import {permissionKeys,rolePermissionDefaults} from '../lib/permissions';
+async function main() {
 const args=process.argv.slice(2),value=(flag:string)=>args[args.indexOf(flag)+1];
 if(!args.includes('--source'))throw new Error('Use --source caminho.sqlite [--plan plano.json] [--apply]. Sem --apply, somente gera a proposta.');
 const source=new DatabaseSync(value('--source'),{readOnly:true});
@@ -79,3 +80,9 @@ if(!args.includes('--apply')){
  });
  source.close();await closeLocalDb();console.log('Importação concluída em um destino novo. Fonte preservada.');
 }
+}
+
+main().catch(error => {
+ console.error('Falha na importação:', error instanceof Error ? error.message : 'Erro desconhecido');
+ process.exitCode = 1;
+});

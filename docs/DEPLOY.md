@@ -47,6 +47,8 @@ O build não aplica migrações automaticamente. Isso evita alteração de dados
 
 O arquivo `vercel.json` configura o framework, build, região `gru1` e duração máxima de 60 segundos nas rotas de API. Respeite os limites efetivos da conta Vercel. Arquivos grandes usam upload direto; aumentar a duração da Function não aumenta seu limite de corpo.
 
+O pacote raiz não força um formato global de módulos. Isso permite ao Next.js compilar o TypeScript e ao carregador Vercel executar o JavaScript CommonJS gerado para as Functions. Os utilitários TypeScript de migração/importação usam uma função assíncrona de entrada; os utilitários `.mjs` preservam seu formato ESM explícito. Não definir `type: module` ou `type: commonjs` globalmente sem verificar compilação e APIs hospedadas: um build pode terminar em READY e ainda falhar ao carregar uma Function com `ERR_REQUIRE_ESM`.
+
 ## Homologação mínima em serviços reais
 
 - `GET /api/health` retorna HTTP 200 e apenas `{ "database": "ok" }`, sem cache. Em falha de conexão, retorna 503 sem detalhes internos. A resposta confirma banco e leitura, não entrega de e-mails nem Storage.

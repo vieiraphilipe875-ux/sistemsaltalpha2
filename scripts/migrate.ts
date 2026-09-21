@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { getDb, closeLocalDb } from "../db";
 
+async function main() {
 if (process.env.DATABASE_URL) {
   const client = postgres(process.env.DATABASE_URL, {max:1,prepare:false});
   await migrateRemote(drizzle(client), {migrationsFolder:"drizzle"});
@@ -13,3 +14,9 @@ if (process.env.DATABASE_URL) {
   await closeLocalDb();
 }
 console.log("Migrações do Postito aplicadas.");
+}
+
+main().catch(error => {
+  console.error("Falha na migração:", error instanceof Error ? error.message : "Erro desconhecido");
+  process.exitCode = 1;
+});

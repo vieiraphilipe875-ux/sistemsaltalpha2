@@ -49,6 +49,7 @@ Em 21/09/2026, os acessos aos painéis Vercel e Supabase foram concluídos. O pr
 | Permissões | Lista vazia podia herdar poderes padrão | Vazio significa nenhum acesso |
 | Cadastro | Faltavam confirmação e recuperação completas | Fluxos de código e token com consumo único |
 | Interface | Componentes/ícones ausentes e propriedades incompatíveis | Correção de referências e compilação verificada |
+| Vercel | Functions falhavam antes de executar por `ERR_REQUIRE_ESM`, apesar do build READY | Remoção do formato global forçado, utilitários TypeScript compatíveis e nova verificação das APIs hospedadas |
 | Perfil | Controle sem edição funcional | Formulário com persistência de nome/profissão |
 | Pastas | Filtro em pasta mensal vazia escondia demandas existentes | Abertura em todas as pastas e filtro explícito |
 | Demanda | Criação podia manter a pasta de outro contexto | Contexto reinicializado e pasta escolhida respeitada |
