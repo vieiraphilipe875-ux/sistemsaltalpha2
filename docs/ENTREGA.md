@@ -8,7 +8,7 @@ O sistema original foi transformado em uma aplicação Next.js com PostgreSQL, a
 
 A versão foi executada e testada localmente e publicada como Preview na Vercel. O código está na branch `postito/release-0.2.0`, com [PR de acompanhamento](https://github.com/vieiraphilipe875-ux/sistemsaltalpha2/pull/1). Após a confirmação do usuário, o projeto Supabase Postito foi criado em São Paulo, com as três migrações aplicadas, 25 tabelas protegidas e um bucket privado. Os testes de vínculos e limites financeiros passaram no banco remoto. A homologação completa com e-mails e arquivos reais ainda está pendente. O código não contém credenciais, contas de demonstração pré-instaladas nem o banco real do usuário.
 
-Em 21/09/2026, os acessos aos painéis Vercel e Supabase foram concluídos. O projeto Vercel foi renomeado para `postito`; Next.js e Node.js 24 foram conferidos. Foram configurados `APP_URL`, `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` e `SUPABASE_STORAGE_BUCKET`, restritos à branch de Preview. A conexão usa um papel de banco exclusivo e limitado. O Resend está conectado, mas ainda precisa de domínio remetente e chave de envio. A versão não foi promovida a produção.
+Em 21/09/2026, os acessos aos painéis Vercel e Supabase foram concluídos. O projeto Vercel foi renomeado para `postito`; Next.js e Node.js 24 foram conferidos. Foram configurados `APP_URL`, `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` e `SUPABASE_STORAGE_BUCKET`, restritos à branch de Preview. A conexão usa um papel de banco exclusivo e limitado. Em seguida foram salvos `RESEND_API_KEY`, com permissão exclusiva de envio, e `RESEND_FROM_EMAIL`, com o remetente de teste do Resend. O usuário ainda não possui domínio próprio; a entrega real precisa ser validada com seu destinatário antes de ser declarada funcional. A versão não foi promovida a produção.
 
 ## Etapas executadas
 
@@ -83,7 +83,7 @@ Isso é uma auditoria com escopo e evidências, não uma garantia de inexistênc
 
 ## O que falta para operação real
 
-1. Cadastrar e verificar o domínio remetente no Resend e configurar a chave de envio e o endereço remetente.
+1. Validar a configuração de teste do Resend; para envio aos demais usuários, cadastrar e verificar um domínio próprio e trocar o remetente.
 2. Homologar cadastro, confirmação, recuperação, convites, upload direto grande, persistência e isolamento com os serviços reais.
 3. Configurar o ambiente de produção, sua URL definitiva e credenciais próprias antes da promoção.
 4. Promover somente a versão homologada.

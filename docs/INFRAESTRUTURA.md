@@ -1,6 +1,6 @@
 # Postito — infraestrutura provisionada
 
-Atualizado em 21/09/2026. O Preview está publicado; a ativação completa ainda depende do remetente de e-mails e da homologação dos serviços reais.
+Atualizado em 21/09/2026. O Preview está publicado. O remetente de teste do Resend foi configurado; a ativação completa depende da homologação dos serviços reais e de um domínio verificado para atender outros destinatários.
 
 ## Recursos criados
 
@@ -52,7 +52,7 @@ O login pelo navegador foi concluído em 21/09/2026. O acesso à conta, à equip
 | Framework | Next.js |
 | Node.js | 24.x |
 | Diretório raiz | Raiz do repositório |
-| Variáveis de ambiente | Cinco configuradas exclusivamente para a branch de Preview |
+| Variáveis de ambiente | Sete configuradas exclusivamente para a branch de Preview |
 | Repositório vinculado | `vieiraphilipe875-ux/sistemsaltalpha2`, branch `postito/release-0.2.0` |
 | Publicação | Preview READY; produção ainda não promovida |
 
@@ -69,8 +69,8 @@ O login no painel Supabase foi concluído. A credencial privada do Storage e a c
 | `SUPABASE_URL` | Config, projeto Postito |
 | `SUPABASE_SERVICE_ROLE_KEY` | Secret, chave privada moderna de Storage |
 | `SUPABASE_STORAGE_BUCKET` | Config, `postito-private` |
-| `RESEND_API_KEY` | Pendente |
-| `RESEND_FROM_EMAIL` | Pendente |
+| `RESEND_API_KEY` | Secret, chave exclusiva do Preview com permissão `sending_access` |
+| `RESEND_FROM_EMAIL` | Config, `Postito <onboarding@resend.dev>` para testes |
 
 Todos os valores cadastrados estão restritos a Preview da branch `postito/release-0.2.0`. O nome legado `SUPABASE_SERVICE_ROLE_KEY` armazena uma chave moderna `sb_secret_…`, aceita pelo SDK fixado no projeto; ela não vai para o navegador.
 
@@ -84,10 +84,18 @@ No commit `9147481ec791fd4cdf9c58a7ad78f5317bb87bb8`, a [implantação de teste]
 
 Persistem pendentes escrita por fluxos autenticados, entrega real de e-mail, upload real e homologação completa online. A suíte local de API e navegador é evidência separada. A verificação desta ativação está em `evidence/activation-20260921.json`.
 
+## E-mail sem domínio próprio
+
+O usuário informou que ainda não possui domínio. O sistema pode continuar no endereço gerado pela Vercel. A conexão do Resend respondeu às consultas de domínios e chaves; havia duas chaves anteriores, que foram preservadas. Foi criada uma chave separada, `Postito Preview 2026-09-21`, limitada ao envio, e salva como Secret na branch de Preview. O valor não consta no repositório.
+
+O remetente `onboarding@resend.dev` permite testes para o endereço associado à conta Resend; não libera cadastro por e-mail para toda a equipe. O usuário indicou um destinatário próprio para a validação, mas a correspondência com a conta Resend e a entrega real ainda precisam ser confirmadas pelo fluxo. Não se deve presumir sucesso apenas porque as variáveis foram salvas. [Restrição oficial do Resend](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain), [endereços gerados pela Vercel](https://vercel.com/docs/deployments/generated-urls).
+
+A próxima publicação deve carregar essas duas variáveis e permitir o teste pelo cadastro normal, sem desativar a confirmação de e-mail ou inserir contas ativas diretamente no banco. A senha e o código devem ser informados pelo usuário no formulário seguro. A compra de domínio não foi realizada.
+
 ## Pendências para publicar
 
-1. Informar o domínio remetente, cadastrá-lo e verificar o DNS no Resend; a consulta atual não retornou domínios cadastrados.
-2. Criar e salvar a chave de envio e o endereço remetente e republicar o Preview.
+1. Republicar o Preview e validar o remetente de teste com o destinatário indicado pelo usuário.
+2. Para liberar envio aos demais usuários, cadastrar e verificar um domínio próprio no Resend e substituir o remetente de teste.
 3. Homologar cadastro, confirmação, recuperação, convites, múltiplas agências e arquivos privados com contas controladas.
 4. Configurar produção, URL definitiva e credenciais próprias, e promover a versão homologada.
 5. Revisar o plano de importação do sistema antigo antes de levar dados operacionais para o banco de produção.
