@@ -4,7 +4,7 @@
 
 O projeto Supabase **Postito** foi criado em 20/09/2026, em São Paulo (`sa-east-1`), após confirmação do custo inicial informado de US$ 0/mês. As três migrações foram aplicadas, com 25 tabelas privadas e histórico Drizzle sincronizado. O bucket privado `postito-private` também foi criado, com limite de 50 MB. Os vínculos, limites financeiros e bloqueios de acesso público foram verificados no banco remoto. Consulte `docs/INFRAESTRUTURA.md`.
 
-A aplicação está publicada em [Preview](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app), com o código na branch `postito/release-0.2.0`. Os painéis Vercel e Supabase estão acessíveis. As cinco variáveis de URL, banco e Storage foram salvas somente para essa branch. O Resend está conectado, mas não tem domínio cadastrado, remetente ou chave de envio configurados na aplicação. Não há credenciais no código e a versão não foi promovida a produção.
+A aplicação está publicada em [Preview](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app), com o código na branch `postito/release-0.2.0`. Os painéis Vercel e Supabase estão acessíveis. As sete variáveis de URL, banco, Storage e Resend foram salvas somente para essa branch. O Resend usa seu remetente de teste, restrito ao endereço da conta. A integração alternativa com Brevo foi preparada a pedido do usuário; sua ativação depende da conta e do remetente verificados. Consulte `docs/EMAIL.md`. Não há credenciais no código e a versão não foi promovida a produção.
 
 ## Ordem de ativação
 
@@ -13,7 +13,7 @@ A criação do projeto, as migrações, o bucket e as credenciais de Preview já
 1. Selecionar a organização Supabase, consultar o custo/plano e confirmar o projeto. Para a operação no Brasil, escolher uma região próxima à hospedagem.
 2. Criar o projeto e obter uma conexão PostgreSQL de servidor. Usar pooler transacional com `prepare:false`, já configurado no código. Aplicar as migrações com uma conexão autorizada a criar schema/tabelas.
 3. Criar o bucket privado `postito-private`. Não criar política de leitura pública. O plano gratuito adotado limita cada arquivo a 50 MB, e a aplicação foi ajustada para rejeitar tamanhos maiores antes de emitir autorização de envio.
-4. Verificar um domínio remetente no Resend e adicionar os registros DNS solicitados pelo serviço. Definir um endereço, por exemplo `Postito <acesso@seu-dominio>`, e a chave privada de API.
+4. Configurar um provedor de e-mail: Brevo para o teste sem domínio, com conta/remetente verificados, ou Resend com domínio autenticado. Seguir `docs/EMAIL.md`; definir o remetente e a chave privada de API correspondentes.
 5. Enviar o código desta entrega ao projeto Vercel `postito`, cujo acesso pelo painel já foi confirmado, e configurar as variáveis abaixo. O build usa Next.js nativo; não depende de Cloudflare, D1, R2 ou vinext.
 6. Aplicar as migrações em uma base de homologação, publicar Preview e executar os testes com duas agências e usuários controlados.
 7. Validar entrega real de e-mail, código, recuperação, convite, troca de agência e arquivos privados. Conferir também um arquivo maior que 4,5 MB enviado diretamente ao bucket.
@@ -29,8 +29,11 @@ A criação do projeto, as migrações, o bucket e as credenciais de Preview já
 | `SUPABASE_URL` | URL do projeto Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Credencial privada de servidor para Storage |
 | `SUPABASE_STORAGE_BUCKET` | `postito-private` |
-| `RESEND_API_KEY` | Chave privada de envio de e-mails |
-| `RESEND_FROM_EMAIL` | Remetente do domínio verificado |
+| `MAIL_PROVIDER` | `brevo` ou `resend`; ausência mantém Resend |
+| `RESEND_API_KEY` | Chave privada, obrigatória quando o provedor é Resend |
+| `RESEND_FROM_EMAIL` | Remetente autorizado no Resend |
+| `BREVO_API_KEY` | Chave privada, obrigatória quando o provedor é Brevo |
+| `BREVO_FROM_EMAIL` | Endereço verificado na Brevo, sem nome de exibição |
 
 Não adicionar prefixo `NEXT_PUBLIC_` a credenciais privadas. Não usar `MAIL_TRANSPORT=local` em produção. Usar bancos e credenciais distintos em Preview e Production.
 

@@ -49,6 +49,8 @@ Em 21/09/2026, os acessos aos painéis Vercel e Supabase foram concluídos. O pr
 | Permissões | Lista vazia podia herdar poderes padrão | Vazio significa nenhum acesso |
 | Cadastro | Faltavam confirmação e recuperação completas | Fluxos de código e token com consumo único |
 | E-mail de teste | Recusa do Resend por destinatário não autorizado aparecia apenas como falha genérica | Mensagem específica sobre a restrição, diagnóstico sem conteúdo privado e teste do formato real do erro do SDK |
+| Provedor de e-mail | O remetente de teste do Resend não atendia outros destinatários sem domínio | Adaptador Brevo preparado, com validação de aceite, timeout e diagnóstico privado; ativação real depende da conta e do remetente |
+| Confirmação | A abertura da tela podia sugerir envio mesmo em cadastro repetido | Estado de envio explícito, texto neutro e atalhos para solicitar código ou criar conta |
 | Interface | Componentes/ícones ausentes e propriedades incompatíveis | Correção de referências e compilação verificada |
 | Vercel | Functions falhavam antes de executar por `ERR_REQUIRE_ESM`, apesar do build READY | Remoção do formato global forçado, utilitários TypeScript compatíveis e nova verificação das APIs hospedadas |
 | Banco hospedado | Validação TLS falhava por falta da CA do provedor | Inclusão da CA pública oficial, restrita aos hosts Supabase, com verificação de certificado e hostname preservada |
@@ -80,13 +82,15 @@ A correção TLS acrescenta um sétimo teste unitário: valida a identidade e a 
 
 A correção da mensagem de e-mail de teste acrescenta três testes, totalizando dez: reconhecimento da recusa real do Resend mesmo sem `statusCode`, manutenção da resposta genérica para outros erros e preservação de destinatário, remetente e idempotência no envio aceito. Os dez testes unitários e os quinze cenários locais de API passaram. A nova evidência de integração está em `evidence/results-mail-integration-20260921.json`. A evidência histórica dos 23 cenários foi preservada; a suíte autônoma de navegador não foi repetida nesta rodada. A verificação hospedada usa o navegador autorizado e continua dependente da confirmação da conta pelo usuário.
 
+A preparação da Brevo elevou a suíte para 19 testes unitários aprovados. Ela cobre o contrato de envio com respostas simuladas, falhas HTTP, resposta sem aceite, indisponibilidade de rede, privacidade dos logs e configuração por provedor. Os 16 cenários locais de API passaram; o novo cenário confirma que repetir cadastro não anuncia envio nem troca a senha, e que solicitar outro código permite concluir a confirmação. O cenário foi ajustado para criar a agência de teste antes de consultar a área de trabalho, que exige agência ativa. TypeScript, lint dos arquivos alterados (zero erros; um aviso preexistente de variável não usada) e build de produção passaram. Consulte `evidence/results-brevo-integration-20260921.json` e `evidence/brevo-adapter-20260921.json`. A entrega real pela Brevo segue pendente de conexão da conta e verificação do remetente.
+
 Também foram executados TypeScript, lint e build de produção. O lint não reportou erros; restam avisos de manutenção, sobretudo imports não usados e recomendações de otimização de imagens. O build emite um aviso de rastreamento do adaptador local de arquivos; a lista de arquivos rastreados foi inspecionada e não incluía o diretório de dados locais. A publicação deve conferir o tamanho final das Functions.
 
 Isso é uma auditoria com escopo e evidências, não uma garantia de inexistência de qualquer bug possível. Não foram realizados teste de carga, auditoria independente de segurança, homologação Safari/Firefox ou homologação completa da aplicação em produção. A execução no navegador usou Chromium e dimensões de desktop e celular. As verificações SQL no Supabase estão registradas em `docs/INFRAESTRUTURA.md`.
 
 ## O que falta para operação real
 
-1. Validar a configuração de teste do Resend; para envio aos demais usuários, cadastrar e verificar um domínio próprio e trocar o remetente.
+1. Ativar e validar a alternativa Brevo solicitada pelo usuário, conforme `docs/EMAIL.md`; preparar domínio autenticado para o envio definitivo.
 2. Homologar cadastro, confirmação, recuperação, convites, upload direto grande, persistência e isolamento com os serviços reais.
 3. Configurar o ambiente de produção, sua URL definitiva e credenciais próprias antes da promoção.
 4. Promover somente a versão homologada.

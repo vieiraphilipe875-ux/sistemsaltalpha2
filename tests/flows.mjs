@@ -36,6 +36,25 @@ export async function runFlows({base,mailDir,check}){
  }
  const owner=new Actor('owner@example.invalid','Marina Costa'),editor=new Actor('editor@example.invalid','Bruno Nunes'),reader=new Actor('reader@example.invalid','Clara Alves'),outside=new Actor('outside@example.invalid','Daniel Reis');
  await check('Cadastro, confirmação obrigatória, código de uso único',async()=>{for(const actor of [owner,editor,reader,outside])await register(actor);});
+ await check('Cadastro pendente: repetição não anuncia envio; reenvio permite concluir sem trocar a senha',async()=>{
+  const pending=new Actor('pending@example.invalid','Paula Teste');
+  const first=await pending.auth('signup',{name:pending.name,password,profession:'designer'});
+  assert.equal(first.emailStatus,'accepted');
+  const before=(await readdir(mailDir)).length;
+  const duplicate=await pending.auth('signup',{name:'Nome alterado',password:'Different-Fixture-Password!',profession:'designer'});
+  assert.equal(duplicate.emailStatus,'not_requested');
+  assert.match(duplicate.message,/não gerou um novo código/);
+  assert.equal((await readdir(mailDir)).length,before);
+  await pending.auth('resend');
+  assert.equal((await readdir(mailDir)).length,before+1);
+  const html=await emailFor(pending,'Confirme');
+  const code=html.match(/>(\d{6})<\/p>/)?.[1];assert(code);
+  await pending.auth('verify',{code});
+  await pending.auth('login',{password:'Different-Fixture-Password!'},401);
+  await pending.auth('login',{password});
+  await pending.action('createAgency',{name:'Agência de teste de confirmação'});
+  assert.equal((await pending.workspace()).currentMember.name,'Paula Teste');
+ });
  let agency,otherAgency,c1,c2,otherClient,task,hiddenTask;
  await check('Agências independentes e autorização de criação',async()=>{
   agency=(await owner.action('createAgency',{name:'Estúdio Horizonte'})).agencyId;

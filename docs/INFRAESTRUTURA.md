@@ -1,6 +1,6 @@
 # Postito — infraestrutura provisionada
 
-Atualizado em 21/09/2026. O Preview está publicado. O remetente de teste do Resend foi configurado; a ativação completa depende da homologação dos serviços reais e de um domínio verificado para atender outros destinatários.
+Atualizado em 21/09/2026. O Preview está publicado. O remetente de teste do Resend foi configurado. A pedido do usuário, foi preparada uma integração alternativa com Brevo para testar envio sem domínio próprio; a conta, o remetente e a entrega real ainda precisam ser validados.
 
 ## Recursos criados
 
@@ -98,10 +98,18 @@ Na tentativa seguinte, o cadastro chegou ao envio e a Function retornou 502. O l
 
 O tratamento em `lib/mail.ts` passou a explicar a restrição do remetente de teste, sem revelar o endereço privado da conta na tela pública. O diagnóstico do servidor registra apenas provedor, categoria e status disponível. O SDK pode devolver o erro sem `statusCode`; a identificação usa a categoria e a mensagem oficial, com teste específico para esse formato. As demais falhas mantêm a mensagem genérica. A restrição do provedor continua respeitada: o próximo cadastro de teste deve usar o endereço permitido, indicado ao usuário na conversa.
 
+## Alternativa Brevo solicitada pelo usuário
+
+A pesquisa oficial confirmou 300 mensagens gratuitas por dia e substituição temporária do remetente para envio sem domínio autenticado. A integração está em `lib/mail.ts`, selecionada por `MAIL_PROVIDER=brevo`, `BREVO_API_KEY` e `BREVO_FROM_EMAIL`. As condições e fontes estão em `docs/EMAIL.md`.
+
+Nenhuma variável Brevo foi salva na Vercel nesta etapa; as sete existentes foram preservadas. O cadastro gratuito foi aberto, mas a conta e seu remetente ainda dependem da validação do usuário. Respostas simuladas da API e caixa de e-mail local são evidências de implementação, não de entrega real.
+
+A tela de confirmação passou a usar linguagem neutra, com atalhos para solicitar código e iniciar cadastro. O servidor informa explicitamente quando o pedido de cadastro não gerou novo envio. Um cadastro repetido não altera as credenciais armazenadas.
+
 ## Pendências para publicar
 
-1. Concluir o cadastro no Preview publicado e validar o remetente de teste com o destinatário indicado pelo usuário.
-2. Para liberar envio aos demais usuários, cadastrar e verificar um domínio próprio no Resend e substituir o remetente de teste.
+1. Conectar a conta gratuita da Brevo, verificar o remetente, conferir a ativação transacional, salvar suas variáveis apenas no Preview e republicar.
+2. Validar entrega e confirmação com o endereço controlado pelo usuário. Preparar um domínio autenticado para a operação definitiva; a substituição temporária do remetente não garante entrega.
 3. Homologar cadastro, confirmação, recuperação, convites, múltiplas agências e arquivos privados com contas controladas.
 4. Configurar produção, URL definitiva e credenciais próprias, e promover a versão homologada.
 5. Revisar o plano de importação do sistema antigo antes de levar dados operacionais para o banco de produção.

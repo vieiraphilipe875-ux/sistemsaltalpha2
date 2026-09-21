@@ -42,17 +42,19 @@ export async function POST(request:Request,{params}:{params:Promise<{action:stri
     const p=z.object({email:emailSchema,name:z.string().trim().min(2).max(120),password:passwordSchema,profession:z.string().refine(v=>v in professionLabels)}).parse(raw);
     await rateLimit(`signup:${p.email}`,5,60);assertMailConfigured();
     const [existing]=await db.select().from(members).where(eq(members.email,p.email)).limit(1);
-    if(existing) return Response.json({ok:true,email:p.email,message:"Se houver uma conta pendente, use Reenviar código. Se já confirmou, entre com sua senha."});
+    if(existing) return Response.json({ok:true,email:p.email,emailStatus:"not_requested",message:"Este pedido não gerou um novo código. Se já começou o cadastro, clique em Solicitar código. Se já confirmou o e-mail, entre com sua senha."});
     const [user]=await db.insert(members).values({id:randomUUID(),email:p.email,name:p.name,profession:p.profession,passwordHash:await hashPassword(p.password),status:"pending",createdAt:now()}).returning();
     await challenge(user,"verify");
-    return Response.json({ok:true,email:p.email});
+    return Response.json({ok:true,email:p.email,emailStatus:"accepted"});
   }
   if(action==="resend" || action==="forgot") {
     const {email}=z.object({email:emailSchema}).parse(raw);
     await rateLimit(`${action}:${email}`,4,15);assertMailConfigured();
     const [user]=await db.select().from(members).where(eq(members.email,email)).limit(1);
     if(user && (action==="resend"?user.status==="pending":user.status==="active")) await challenge(user,action==="resend"?"verify":"reset");
-    return Response.json({ok:true,message:"Se o e-mail estiver cadastrado para esta ação, você receberá as instruções."});
+    return Response.json({ok:true,message:action==="resend"
+      ? "Se houver um cadastro aguardando confirmação neste e-mail, enviaremos um código. Se ainda não começou, crie sua conta."
+      : "Se este e-mail tiver uma conta confirmada, enviaremos o link para recuperar o acesso."});
   }
   if(action==="verify") {
     const p=z.object({email:emailSchema,code:z.string().regex(/^\d{6}$/)}).parse(raw);
