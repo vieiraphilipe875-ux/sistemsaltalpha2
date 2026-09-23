@@ -1,6 +1,7 @@
 import {chromium,expect} from '@playwright/test';
 import {runFinancialDocumentsBrowser,runAssigneeEligibilityBrowser} from './financial-documents-browser.mjs';
 import assert from 'node:assert/strict';
+import {runRedesignControlsBrowser,runRedesignMobileBrowser} from './redesign-browser.mjs';
 import {writeFile} from 'node:fs/promises';
 export async function runBrowser({base,state,check}){
  const browser=await chromium.launch({headless:true});
@@ -8,15 +9,17 @@ export async function runBrowser({base,state,check}){
  const page=await context.newPage();const errors=[];let expectedConflict=false;
  page.on('pageerror',e=>errors.push(e.message));
  page.on('console',m=>{if(m.type()==='error'&&!(expectedConflict&&/409/.test(m.text())))errors.push(m.text());});
- async function snapshot(name){await page.screenshot({path:'evidence/'+name+'.png',fullPage:true});}
+ async function snapshot(name){await page.screenshot({path:'evidence/'+name+'.png',fullPage:true,animations:'disabled',caret:'initial'});}
  async function closeDialog(){await page.keyboard.press('Escape');}
  try{
   await check('Navegador: login, logo, navegação e busca de clientes',async()=>{
-   await page.goto(base);await page.getByRole('button',{name:'Confirmar meu e-mail'}).click();await expect(page.getByRole('heading',{name:'Confirme seu e-mail.'})).toBeVisible();await page.getByRole('button',{name:'Voltar para entrar'}).click();await page.getByRole('textbox',{name:'E-mail',exact:true}).fill(state.owner.email);
+   await page.goto(base);await page.getByRole('button',{name:'Confirmar meu e-mail'}).click();await expect(page.getByRole('heading',{name:'Confirme seu e-mail.'})).toBeVisible();await page.getByRole('button',{name:'Voltar para entrar'}).click();await snapshot('login-desktop');await page.getByRole('textbox',{name:'E-mail',exact:true}).fill(state.owner.email);
    await page.locator('input[name=password]').fill(state.password);
    await page.getByRole('button',{name:'Mostrar senha'}).click();await expect(page.locator('input[name=password]')).toHaveAttribute('type','text');
    await page.getByRole('button',{name:'Entrar',exact:true}).click();
    await page.getByRole('button',{name:'Clientes e pautas',exact:true}).waitFor({timeout:60000});
+   await expect(page.locator('.postito-workspace')).toHaveCSS('background-color','rgb(245, 246, 251)');
+   await expect(page.locator('.metric-value').first()).toHaveCSS('font-family',/DM Sans/);
    await snapshot('dashboard');
    await page.getByRole('textbox',{name:'Buscar clientes ou demandas'}).fill('vanessa');
    await page.locator('.search-results').getByRole('button',{name:'Vanessa Lopes',exact:true}).click();
@@ -145,6 +148,7 @@ export async function runBrowser({base,state,check}){
   });
   await runFinancialDocumentsBrowser({page,state,check,base});
   await runAssigneeEligibilityBrowser({page,state,check,base});
+  await runRedesignControlsBrowser({page,state,check,base});
   await check('Navegador: layout móvel, menu, foco e movimento reduzido',async()=>{
    await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});await page.reload();
    await page.getByRole('textbox',{name:'Buscar clientes ou demandas'}).waitFor();await snapshot('mobile-dashboard');
@@ -158,10 +162,11 @@ export async function runBrowser({base,state,check}){
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'Pasta do cliente transborda no celular');
 
   });
+  await runRedesignMobileBrowser({page,state,check,base});
   await check('Navegador: cadastro, código, onboarding e recuperação por e-mail',async()=>{
    const newcomer=await browser.newContext({viewport:{width:390,height:844}}),form=await newcomer.newPage();
    form.on('pageerror',e=>errors.push(e.message));
-   await form.goto(base);await form.getByRole('button',{name:'Começar agora'}).click();
+   await form.goto(base);await form.screenshot({path:'evidence/login-mobile.png',fullPage:true,animations:'disabled',caret:'initial'});assert.equal(await form.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);await form.getByRole('button',{name:'Começar agora'}).click();
    await form.getByLabel('Seu nome').fill('Elisa Prado');await form.getByLabel('E-mail',{exact:true}).fill('elisa@example.invalid');
    await form.getByLabel('Sua profissão').selectOption('copywriter');
    await form.locator('input[name=password]').fill(state.password);await form.getByLabel('Confirmar senha',{exact:true}).fill(state.password);

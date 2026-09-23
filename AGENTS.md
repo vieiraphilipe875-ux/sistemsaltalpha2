@@ -13,6 +13,8 @@ Leia `docs/REQUISITOS.md`, `docs/DESIGN.md`, `docs/ARQUITETURA.md` e `docs/ENTRE
 - Para alterações em autenticação, escopo ou financeiro, execute `npm test`, `npm run test:e2e`, `npm run typecheck` e `npm run build`. Use fixtures isoladas.
 - Mantenha foco visível, rótulos acessíveis, nomes nos botões de ícone, estados de erro e opção de movimento reduzido.
 - Não introduza neon, gradientes automáticos, brilhos decorativos, ícones de estrelinha sem função ou grades de cartões iguais em todas as telas.
+- Direção visual vigente de 23/09/2026: moderno com cores pastéis. `docs/DESIGN.md` versão 3 prevalece sobre a direção antiga de papel, trigo, verdes terrosos e serif. Use DM Sans, branco frio, grafite e superfícies azul/lilás/menta/rosa pastel; azul e lilás estão expressamente permitidos. Não retome a aparência rústica.
+- Preserve a busca por teclado, o foco visível e ações rápidas ligadas aos diálogos reais e às permissões. Registre a verificação do redesign em `docs/REDESIGN-2026-09-23.md`; aprovação de testes anteriores não comprova a versão nova.
 - Preserve o RAR original. A migração lê uma cópia e só escreve em destino novo.
 - Planos, valores e checkout exigem decisão de produto posterior; não transforme previsões financeiras em cobranças reais.
 - Decisão do titular de 23/09/2026: remover a troca de senha pelo perfil sem e-mail. Retomar cadastro, confirmação, recuperação de senha e envio de e-mails após finalizar o restante do sistema. Preservar o acesso ADM já provisionado, suas credenciais e seus dados.

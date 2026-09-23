@@ -1,5 +1,14 @@
 # Postito — entrega e verificação
 
+## Reformulação visual de 23/09/2026
+
+A direção vigente é moderna e pastel: branco frio, grafite, lilás, azul, menta e rosa, com DM Sans. Entrada, onboarding, navegação, dashboard, clientes, Kanban, CRM, financeiro, equipe e diálogos foram reformulados. Foram acrescentadas busca por `Ctrl+K`/`Cmd+K`, navegação de resultados por teclado e ações rápidas de criação respeitando as permissões.
+
+Validação desta versão: **36 cenários de API/navegador e 19 testes unitários aprovados**, TypeScript e build aprovados, lint com zero erros e 39 avisos. A revisão incluiu desktop, celular, movimento reduzido e dashboard com texto ampliado. O transbordamento financeiro encontrado no celular foi corrigido e a regressão foi repetida. Referências, limites, decisões e evidências estão em `docs/REDESIGN-2026-09-23.md` e `evidence/results.json`.
+
+Entrega na mesma branch de Preview e no PR de acompanhamento. Esta rodada preserva a decisão abaixo sobre autenticação, o acesso ADM existente e a postergação de e-mail, cadastro e planos.
+
+
 ## Decisão atual de 23/09/2026: autenticação e e-mail
 
 Por solicitação explícita do titular, a opção **Seu perfil → Alterar senha** sem e-mail foi removida, junto com sua operação no servidor. O acesso ADM já provisionado, suas credenciais e seus dados permanecem preservados. Cadastro, confirmação, recuperação de senha e envio de e-mails serão retomados após finalizar o restante do sistema.

@@ -382,9 +382,9 @@ export function PautaApp({
   }
 
   return (
-    <div className="postito-workspace min-h-screen bg-[#f5f4ee] text-[#15181d]">
+    <div className="postito-workspace min-h-screen bg-background text-foreground">
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-[248px] bg-[#283c32] text-white transition-transform lg:visible lg:translate-x-0 ${mobileMenu ? "visible translate-x-0" : "invisible -translate-x-full"}`}
+        className={`workspace-sidebar fixed inset-y-0 left-0 z-40 w-[248px] transition-transform lg:visible lg:translate-x-0 ${mobileMenu ? "visible translate-x-0" : "invisible -translate-x-full"}`}
       >
         <div className="flex h-full flex-col p-4">
           <div className="flex h-14 items-center justify-between px-2">
@@ -402,7 +402,7 @@ export function PautaApp({
             <Button
               variant="ghost"
               size="icon-sm"
-              className="text-white/60 hover:bg-white/10 hover:text-white lg:hidden"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
               aria-label="Fechar menu"
               onClick={() => setMobileMenu(false)}
             >
@@ -411,12 +411,15 @@ export function PautaApp({
           </div>
 
           <AgencySwitcher data={data} />
-          <nav className="mt-5 space-y-1" aria-label="Navegação principal">
+          <p className="workspace-nav-label">Seu espaço de trabalho</p>
+          <nav className="space-y-1" aria-label="Navegação principal">
             {navItems.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => navigate(id)}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${view === id && !activeClientId ? "bg-white text-[#16181c]" : "text-white/62 hover:bg-white/7 hover:text-white"}`}
+                aria-current={view === id ? "page" : undefined}
+                data-active={view === id}
+                className="workspace-nav-item flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition"
               >
                 <Icon className="size-[18px]" />
                 {label}
@@ -424,25 +427,25 @@ export function PautaApp({
             ))}
           </nav>
 
-          <div className="mt-auto rounded-2xl border border-white/8 bg-white/[0.045] p-3">
+          <div className="workspace-profile mt-auto rounded-2xl border p-3">
             <div className="flex items-center gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#526949] text-xs font-bold">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--brand-lilac)] text-xs font-bold text-primary">
                 {initials(me.name)}
               </span>
               <div className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-bold leading-tight">
                   {me.name}
                 </span>
-                <span className="block text-xs font-medium text-white/45">
+                <span className="block text-xs font-medium text-muted-foreground">
                   {professionLabels[me.profession] || roleLabels[me.role]}
                 </span>
               </div>
             </div>
-            <div className="mt-3 flex items-center justify-between gap-1 border-t border-white/10 pt-3">
+            <div className="mt-3 flex items-center justify-between gap-1 border-t border-border pt-3">
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className="text-white/50 hover:bg-white/10 hover:text-white"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label="Editar meu perfil"
                 onClick={() => setProfileOpen(true)}
               >
@@ -454,7 +457,7 @@ export function PautaApp({
                   size="icon-sm"
                   type="submit"
                   aria-label="Sair"
-                  className="text-white/50 hover:bg-white/10 hover:text-white"
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
                   <LogOut aria-hidden="true" />
                 </Button>
@@ -464,8 +467,9 @@ export function PautaApp({
         </div>
       </aside>
 
+      {mobileMenu && <button type="button" aria-label="Fechar navegação" className="fixed inset-0 z-30 bg-primary/20 lg:hidden" onClick={() => setMobileMenu(false)} />}
       <main className="min-w-0 flex-1 lg:pl-[248px]">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/60 bg-white/70 px-4 py-3  sm:px-6 lg:px-8">
+        <header className="workspace-topbar sticky top-0 z-30 flex items-center gap-4 border-b bg-white px-4 py-3 sm:px-6 lg:px-8">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -475,6 +479,10 @@ export function PautaApp({
           >
             <Menu aria-hidden="true" />
           </Button>
+          <div className="workspace-breadcrumb">
+            <span>{navItems.find((item) => item.id === view)?.label}</span>
+            {activeClient && <><ChevronRight aria-hidden="true" className="size-3.5" /><strong>{activeClient.name}</strong></>}
+          </div>
           <GlobalSearch
             data={data}
             onTask={setActiveDeliverableId}
@@ -487,14 +495,14 @@ export function PautaApp({
             <button
               aria-label={`${urgent.length} demandas com prazo próximo ou vencido`}
               onClick={() => navigate("dashboard")}
-              className="relative grid size-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:text-slate-900"
+              className="workspace-alert-button relative grid size-10 shrink-0 place-items-center rounded-xl border border-border bg-white text-muted-foreground transition hover:bg-muted hover:text-foreground"
             >
               <Bell className="size-[18px]" />
               <span className="absolute right-2 top-2 size-2 rounded-full bg-rose-500 ring-2 ring-white" />
             </button>
           )}
         </header>
-        <div className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">{syncError&&<p role="status" className="notice mb-4">A conexão está instável. Tentaremos atualizar novamente.</p>}
+        <div className="workspace-content mx-auto max-w-[1680px] p-4 sm:p-6 lg:p-8">{syncError&&<p role="status" className="notice mb-4">A conexão está instável. Tentaremos atualizar novamente.</p>}
           {view === "dashboard" &&
             !activeClientId &&
             (executeOnly ? (
@@ -504,6 +512,12 @@ export function PautaApp({
                 data={data}
                 tasks={visibleTasks}
                 urgent={urgent}
+                onCreateClient={canManageClients ? () => setCreateClientOpen(true) : undefined}
+                onCreateTask={canPlan && data.boards.some((board) => canPlanClient(data, board.clientId)) ? () => {
+                  setCreateBoardId(data.boards.find((board) => canPlanClient(data, board.clientId))?.id);
+                  setCreateTaskOpen(true);
+                } : undefined}
+                onBrowseClients={canSeeClients ? () => navigate("clients") : undefined}
                 onOpen={setActiveDeliverableId}
                 onClient={(id) => {
                   setView("clients");
@@ -582,7 +596,7 @@ export function PautaApp({
         postAction={postAction}
       />
       <CreateTaskDialog
-        key={`${createTaskOpen}-${activeClientId}`}
+        key={`${createTaskOpen}-${activeClientId}-${createBoardId}`}
         open={createTaskOpen}
         onOpenChange={setCreateTaskOpen}
         data={data}
@@ -606,220 +620,127 @@ function Dashboard({
   urgent,
   onOpen,
   onClient,
+  onCreateTask,
+  onCreateClient,
+  onBrowseClients,
 }: {
   data: WorkspaceData;
   tasks: Deliverable[];
   urgent: Deliverable[];
   onOpen(id: string): void;
   onClient(id: string): void;
+  onCreateTask?: () => void;
+  onCreateClient?: () => void;
+  onBrowseClients?: () => void;
 }) {
+  const [allReviews, setAllReviews] = useState(false);
   const active = tasks.filter((item) => item.status !== "approved");
-  const review = tasks.filter((item) =>
-    ["review", "changes"].includes(item.status),
-  );
+  const review = tasks.filter((item) => ["review", "changes"].includes(item.status));
   const approved = tasks.filter((item) => item.status === "approved");
-  const prioritized = [...tasks]
-    .filter((item) => item.status !== "approved")
+  const prioritized = [...active]
     .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime())
     .slice(0, 7);
+  const activeClients = data.clients.filter((client) => client.status === "active");
   const today = new Intl.DateTimeFormat("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
+    weekday: "long", day: "numeric", month: "long",
   }).format(new Date());
   return (
-    <>
-      <section className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+    <div className="dashboard-layout">
+      <section className="dashboard-heading">
         <div>
-          <p className="text-sm font-semibold capitalize text-slate-500">
-            {today}
-          </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-[-0.04em] sm:text-[38px]">
-            Olá, {firstName(data.currentMember.name)}.
-          </h1>
-          <p className="mt-2 text-[15px] text-slate-500">
-            Aqui está o que precisa da sua atenção agora.
-          </p>
+          <p className="eyebrow capitalize">{today}</p>
+          <h1>Olá, {firstName(data.currentMember.name)}.</h1>
+          <p>Seu dia, organizado. Acompanhe o que vem a seguir.</p>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
-          <ListFilter className="size-4" />
-          Ordenado por urgência
+        <div className="dashboard-actions">
+          {onCreateClient && <Button variant="outline" onClick={onCreateClient}><Plus />Novo cliente</Button>}
+          {onCreateTask && <Button onClick={onCreateTask}><Plus />Nova demanda</Button>}
         </div>
       </section>
 
+      <section className="dashboard-metrics grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Resumo da operação">
+        <Metric label="Em andamento" value={active.length} hint="demandas abertas" icon={CircleDot} tone="dark" />
+        <Metric label="Em revisão" value={review.length} hint="aguardando retorno" icon={MessageCircle} tone="amber" />
+        <Metric label="Aprovadas" value={approved.length} hint="nesta pauta" icon={CheckCircle2} tone="green" />
+        <Metric label="Clientes" value={data.clients.length} hint="na sua carteira" icon={Users} tone="violet" />
+      </section>
+
       {urgent.length > 0 && (
-        <section className="mt-7 flex items-center gap-4 rounded-2xl border border-orange-200 bg-amber-50 px-4 py-3.5 sm:px-5">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-orange-500 text-white">
-            <AlertCircle className="size-5" />
-          </span>
+        <section className="attention-strip">
+          <AlertCircle className="size-5 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-orange-950">
-              {urgent.length}{" "}
-              {urgent.length === 1 ? "demanda precisa" : "demandas precisam"} de
-              atenção
-            </p>
-            <p className="mt-0.5 text-sm text-orange-800/75">
-              O alerta aparece automaticamente nas 24 horas anteriores ao prazo.
-            </p>
+            <strong>{urgent.length} {urgent.length === 1 ? "demanda precisa" : "demandas precisam"} de atenção</strong>
+            <span>Prazo vencido ou nas próximas 24 horas.</span>
           </div>
-          <Button
-            variant="outline"
-            className="hidden rounded-xl border-orange-200 bg-white text-orange-900 hover:bg-orange-100 sm:inline-flex"
-            onClick={() => onOpen(urgent[0].id)}
-          >
-            Ver prioridade
-            <ChevronRight />
+          <Button variant="ghost" onClick={() => onOpen([...urgent].sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime())[0].id)}>
+            Ver prioridade<ChevronRight />
           </Button>
         </section>
       )}
 
-      {permissionsFor(data, data.currentMember).includes("demands.create") &&
-        review.length > 0 && (
-          <section className="mt-7 overflow-hidden rounded-[20px] border border-amber-200 bg-white shadow-sm ring-4 ring-amber-50">
-            <div className="flex items-center justify-between border-b border-amber-100 bg-amber-50/50 px-5 py-4">
-              <div>
-                <h2 className="font-bold tracking-tight text-amber-900">
-                  Aguardando sua aprovação
-                </h2>
-                <p className="mt-0.5 text-xs text-amber-700">
-                  Estas demandas voltaram da equipe e precisam do seu aval.
-                </p>
-              </div>
-              <MessageCircle className="size-6 text-amber-500" />
+      <section className="dashboard-work-grid">
+        <div className="dashboard-main-column">
+          <section className="workspace-panel overflow-hidden">
+            <div className="panel-heading">
+              <div><h2>Próximas entregas</h2><p>As demandas mais próximas, em primeiro lugar.</p></div>
+              <span className="panel-icon"><CalendarClock className="size-[18px]" aria-hidden="true" /></span>
             </div>
-            <div className="divide-y divide-slate-100">
-              {review.map((item) => (
-                <TaskRow
-                  key={item.id}
-                  item={item}
-                  data={data}
-                  onOpen={onOpen}
-                />
-              ))}
+            <div className="divide-y divide-border">
+              {prioritized.map((item) => <TaskRow key={item.id} item={item} data={data} onOpen={onOpen} />)}
+              {!prioritized.length && (
+                <div className="workspace-empty">
+                  <span className="empty-symbol"><CheckCircle2 aria-hidden="true" /></span>
+                  <strong>Tudo em dia por aqui</strong>
+                  <p>Nenhuma demanda aberta neste momento.</p>
+                  {onCreateTask && <Button variant="outline" onClick={onCreateTask}>Criar uma demanda<Plus /></Button>}
+                </div>
+              )}
             </div>
           </section>
-        )}
-
-      <section className="mt-7 grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <Metric
-          label="Em andamento"
-          value={active.length}
-          hint="demandas abertas"
-          icon={CircleDot}
-          tone="dark"
-        />
-        <Metric
-          label="Em revisão"
-          value={review.length}
-          hint="aguardando retorno"
-          icon={MessageCircle}
-          tone="amber"
-        />
-        <Metric
-          label="Aprovadas"
-          value={approved.length}
-          hint="nesta pauta"
-          icon={CheckCircle2}
-          tone="green"
-        />
-        <Metric
-          label="Clientes"
-          value={data.clients.length}
-          hint="na sua carteira"
-          icon={Users}
-          tone="violet"
-        />
-      </section>
-
-      <section className="mt-8 grid gap-6 xl:grid-cols-[1.55fr_.85fr]">
-        <div className="overflow-hidden rounded-[20px] border border-slate-200 bg-white">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <div>
-              <h2 className="font-bold tracking-tight">Próximas entregas</h2>
-              <p className="mt-0.5 text-xs text-slate-500">
-                A ordem muda conforme o prazo se aproxima
-              </p>
-            </div>
-            <CalendarClock className="size-5 text-slate-400" />
-          </div>
-          <div className="divide-y divide-slate-100">
-            {prioritized.map((item) => (
-              <TaskRow key={item.id} item={item} data={data} onOpen={onOpen} />
-            ))}
-            {!prioritized.length && (
-              <div className="px-5 py-12 text-center text-sm text-slate-500">
-                Nenhuma demanda encontrada.
+          {permissionsFor(data, data.currentMember).includes("demands.create") && review.length > 0 && (
+            <section className="workspace-panel review-panel overflow-hidden">
+              <div className="panel-heading">
+                <div><h2>Aguardando sua aprovação <span className="section-count">{review.length}</span></h2><p>Confira as entregas e dê o próximo passo.</p></div>
+                <MessageCircle className="size-[18px] text-muted-foreground" aria-hidden="true" />
               </div>
-            )}
-          </div>
+              <div className="divide-y divide-border">
+                {(allReviews ? review : review.slice(0, 3)).map((item) => <TaskRow key={item.id} item={item} data={data} onOpen={onOpen} />)}
+              </div>
+              {review.length > 3 && <button className="panel-footer-action" onClick={() => setAllReviews((current) => !current)}>{allReviews ? "Mostrar menos" : `Ver todas as ${review.length} revisões`}<ChevronRight className="size-4" /></button>}
+            </section>
+          )}
         </div>
-        <div className="rounded-[20px] border border-slate-200 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-bold tracking-tight">Clientes ativos</h2>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Progresso da pauta atual
-              </p>
-            </div>
-            <FolderOpen className="size-5 text-[#526949]" />
+
+        <section className="workspace-panel client-progress-panel">
+          <div className="panel-heading">
+            <div><h2>Clientes ativos</h2><p>Uma visão do ritmo de cada pauta.</p></div>
+            <span className="panel-icon"><FolderOpen className="size-[18px]" aria-hidden="true" /></span>
           </div>
-          <div className="mt-5 space-y-5">
-            {data.clients.map((client) => {
-              const boardIds = data.boards
-                .filter((board) => board.clientId === client.id)
-                .map((board) => board.id);
-              const clientTasks = data.deliverables.filter((item) =>
-                boardIds.includes(item.boardId),
-              );
-              const done = clientTasks.filter(
-                (item) => item.status === "approved",
-              ).length;
-              const progress = clientTasks.length
-                ? Math.round((done / clientTasks.length) * 100)
-                : 0;
+          <div className="client-progress-list">
+            {activeClients.slice(0, 6).map((client) => {
+              const boardIds = data.boards.filter((board) => board.clientId === client.id).map((board) => board.id);
+              const clientTasks = data.deliverables.filter((item) => boardIds.includes(item.boardId));
+              const done = clientTasks.filter((item) => item.status === "approved").length;
+              const progress = clientTasks.length ? Math.round((done / clientTasks.length) * 100) : 0;
               return (
-                <button
-                  key={client.id}
-                  onClick={() => onClient(client.id)}
-                  className="block w-full text-left group"
-                >
+                <button key={client.id} onClick={() => onClient(client.id)} className="client-progress-row">
                   <div className="flex items-center gap-3">
-                    <span
-                      className="grid size-10 place-items-center rounded-xl text-xs font-bold text-white"
-                      style={{ background: client.accent }}
-                    >
-                      {initials(client.name)}
-                    </span>
+                    <span className="client-mini-avatar" style={{ background: client.accent }}>{client.avatarUrl ? <img src={client.avatarUrl} alt="" className="h-full w-full object-cover" /> : initials(client.name)}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="truncate text-sm font-semibold">
-                          {client.name}
-                        </p>
-                        <span className="text-xs font-semibold text-slate-500">
-                          {progress}%
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        {clientTasks.length - done} pendentes · {done} aprovadas
-                      </p>
+                      <div className="flex items-center justify-between gap-2"><p className="truncate text-sm font-semibold">{client.name}</p><span className="text-xs font-semibold text-muted-foreground">{progress}%</span></div>
+                      <p className="mt-1 text-xs text-muted-foreground">{clientTasks.length - done} pendentes · {done} aprovadas</p>
                     </div>
                   </div>
-                  <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${progress}%`,
-                        background: client.accent,
-                      }}
-                    />
-                  </div>
+                  <div className="client-progress-track"><div style={{ width: `${progress}%` }} /></div>
                 </button>
               );
             })}
+            {!activeClients.length && <div className="workspace-empty compact"><FolderOpen className="size-6 text-muted-foreground" aria-hidden="true" /><strong>Sua carteira começa aqui</strong><p>Os clientes ativos e seu progresso aparecem neste espaço.</p></div>}
           </div>
-        </div>
+          {onBrowseClients && <button className="panel-footer-action" onClick={onBrowseClients}>Ver todos os clientes<ChevronRight className="size-4" /></button>}
+        </section>
       </section>
-    </>
+    </div>
   );
 }
 
@@ -923,7 +844,7 @@ function DesignerBoard({
                     }
                   : undefined
               }
-              className={`min-h-[420px] rounded-[22px] border p-4 transition ${over === group.key ? "border-[#526949] bg-stone-50 ring-4 ring-stone-100" : "border-slate-200 bg-slate-100/65"}`}
+              className={`min-h-[420px] rounded-[22px] border p-4 transition ${over === group.key ? "border-primary bg-muted ring-4 ring-border" : "border-slate-200 bg-slate-100/65"}`}
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -979,22 +900,11 @@ function Metric({
   icon: typeof CircleDot;
   tone: "dark" | "amber" | "green" | "violet";
 }) {
-  const color =
-    tone === "dark"
-      ? "bg-[#34483b] text-white"
-      : tone === "amber"
-        ? "bg-amber-100 text-amber-700"
-        : tone === "green"
-          ? "bg-emerald-100 text-emerald-700"
-          : "bg-stone-100 text-stone-700";
   return (
-    <article className="metric rounded-[18px] border border-slate-200 bg-white p-4 sm:p-5">
-      <div className={`grid size-9 place-items-center rounded-xl ${color}`}>
-        <Icon className="size-[18px]" />
-      </div>
-      <p className="mt-5 text-3xl font-bold tracking-[-0.04em]">{value}</p>
-      <p className="mt-1 text-sm font-semibold">{label}</p>
-      <p className="mt-0.5 text-xs text-slate-500">{hint}</p>
+    <article className="metric" data-tone={tone}>
+      <div className="metric-heading"><p>{label}</p><Icon className="size-[18px]" aria-hidden="true" /></div>
+      <strong className="metric-value">{value}</strong>
+      <p className="metric-hint">{hint}</p>
     </article>
   );
 }
@@ -1016,7 +926,7 @@ function TaskRow({
   return (
     <button
       onClick={() => onOpen(item.id)}
-      className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50 sm:gap-4 sm:px-5"
+      className="task-row flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-muted/60 sm:gap-4 sm:px-5"
     >
       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-600">
         <Icon className="size-[18px]" />
@@ -1041,13 +951,13 @@ function TaskRow({
       <div className="hidden items-center sm:flex">
         <span
           title={assignee?.name}
-          className="grid size-8 place-items-center rounded-full bg-[#526949] text-[10px] font-bold text-white ring-2 ring-white"
+          className="grid size-8 place-items-center rounded-full bg-primary text-xs font-bold text-white ring-2 ring-white"
         >
           {initials(assignee?.name ?? "Sem responsável")}
         </span>
       </div>
       <span
-        className={`min-w-[92px] rounded-lg px-2.5 py-1.5 text-center text-[11px] font-semibold ${dueClass(due.tone)}`}
+        className={`min-w-[92px] rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold ${dueClass(due.tone)}`}
       >
         {due.label}
       </span>
@@ -1130,24 +1040,25 @@ function Clients({
         description="Cada cliente concentra suas pautas, responsáveis e arquivos finais."
         action={
           onCreate ? (
-            <Button className="rounded-xl bg-[#34483b]" onClick={onCreate}>
+            <Button className="rounded-xl bg-primary" onClick={onCreate}>
               <Plus />
               Novo cliente
             </Button>
           ) : undefined
         }
       />
-      <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 sm:w-fit">
+      <div className="client-filter-row mt-6 flex flex-wrap items-center gap-2">
         {statuses.map((status) => (
           <button
             key={status.key}
             type="button"
             onClick={() => setStatusFilter(status.key)}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${statusFilter === status.key ? "bg-[#34483b] text-white shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"}`}
+            aria-pressed={statusFilter === status.key}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${statusFilter === status.key ? "bg-primary text-white shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"}`}
           >
             {status.label}
             <span
-              className={`ml-2 rounded-md px-1.5 py-0.5 text-[10px] ${statusFilter === status.key ? "bg-white/15 text-white" : "bg-slate-100 text-slate-500"}`}
+              className={`ml-2 rounded-md px-1.5 py-0.5 text-xs ${statusFilter === status.key ? "bg-white/15 text-white" : "bg-slate-100 text-slate-500"}`}
             >
               {
                 data.clients.filter((client) => client.status === status.key)
@@ -1157,7 +1068,7 @@ function Clients({
           </button>
         ))}
       </div>
-      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="client-grid mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibleClients.map((client) => {
           const boards = data.boards.filter(
             (board) => board.clientId === client.id,
@@ -1172,82 +1083,28 @@ function Clients({
           return (
             <article
               key={client.id}
-              className={`group relative isolate overflow-hidden rounded-[20px] border bg-white text-left transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/45 ${client.status === "inactive" ? "border-slate-200 opacity-80" : "border-slate-200 hover:border-slate-300"}`}
+              className={`client-card group relative isolate overflow-hidden rounded-[20px] border bg-white text-left transition ${client.status === "inactive" ? "opacity-80" : ""}`}
             >
-              <button
-                type="button"
-                onClick={() => onOpenClient(client.id)}
-                className="block w-full text-left"
-              >
-                <div className="relative z-0 h-28 bg-slate-100">
-                  {client.bannerUrl ? (
-                    <img
-                      src={client.bannerUrl}
-                      alt={`Banner de ${client.name}`}
-                      className={`h-full w-full object-cover ${client.status === "inactive" ? "grayscale" : ""}`}
-                    />
-                  ) : (
-                    <div
-                      className="h-full w-full"
-                      style={{
-                        background: `linear-gradient(135deg, ${client.accent}, #34483b)`,
-                      }}
-                    />
-                  )}
-                  <Badge
-                    className={`absolute right-3 top-3 rounded-lg ${client.status === "active" ? "bg-emerald-500 text-white" : client.status === "inactive" ? "bg-slate-700 text-white" : "bg-amber-400 text-slate-900"}`}
-                  >
-                    {client.status === "active"
-                      ? "Ativo"
-                      : client.status === "inactive"
-                        ? "Inativo"
-                        : "Prospecção"}
-                  </Badge>
-                </div>
-                <div className="relative z-10 p-5 pb-4 pt-11">
-                  <div className="flex items-start justify-between">
-                    <span className="absolute left-5 top-0 z-20 grid size-16 -translate-y-1/2 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-white font-bold text-white shadow-lg ring-1 ring-black/10">
-                      {client.avatarUrl ? (
-                        <img
-                          src={client.avatarUrl}
-                          alt={client.name}
-                          className="block h-full w-full object-contain opacity-100"
-                        />
-                      ) : (
-                        <span
-                          className="grid h-full w-full place-items-center"
-                          style={{ background: client.accent }}
-                        >
-                          {initials(client.name)}
-                        </span>
-                      )}
+              <button type="button" onClick={() => onOpenClient(client.id)} className="block w-full text-left">
+                {client.bannerUrl && <div className="client-card-banner"><img src={client.bannerUrl} alt={`Banner de ${client.name}`} className={`h-full w-full object-cover ${client.status === "inactive" ? "grayscale" : ""}`} /></div>}
+                <div className="client-card-body">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="client-card-avatar" style={{ background: client.avatarUrl ? "white" : client.accent }}>
+                      {client.avatarUrl ? <img src={client.avatarUrl} alt={client.name} className="h-full w-full object-contain" /> : initials(client.name)}
                     </span>
-                    <span aria-hidden="true" className="size-16 shrink-0" />
-                    <ChevronRight className="size-5 text-slate-300 transition group-hover:translate-x-1 group-hover:text-slate-600" />
-                  </div>
-                  <h2 className="mt-3 text-lg font-bold tracking-tight">
-                    {client.name}
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {client.handle || "Sem @ cadastrado"}
-                  </p>
-                  {client.revenue > 0 && (
-                    <p className="mt-2 text-sm font-bold text-emerald-700">
-                      {money(client.revenue)}{" "}
-                      <span className="font-medium text-slate-400">
-                        · vence dia {client.dueDay}
-                      </span>
-                    </p>
-                  )}
-                  <div className="mt-5 flex items-center gap-2 border-t border-slate-100 pt-4">
-                    <Badge variant="secondary" className="rounded-lg">
-                      {tasks.length} demandas
+                    <Badge className={`rounded-lg ${client.status === "active" ? "bg-[var(--brand-mint)] text-emerald-800" : client.status === "inactive" ? "bg-muted text-muted-foreground" : "bg-[var(--brand-sky)] text-blue-800"}`}>
+                      {client.status === "active" ? "Ativo" : client.status === "inactive" ? "Inativo" : "Prospecção"}
                     </Badge>
-                    {urgent > 0 && (
-                      <Badge className="rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-50">
-                        {urgent} urgentes
-                      </Badge>
-                    )}
+                  </div>
+                  <h2 className="mt-5 truncate text-lg font-bold tracking-tight">{client.name}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{client.handle || "Sem @ cadastrado"}</p>
+                  {client.revenue > 0 && <p className="mt-3 text-sm font-semibold text-foreground">{money(client.revenue)} <span className="font-normal text-muted-foreground">· vence dia {client.dueDay}</span></p>}
+                  <div className="client-card-summary">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><FolderOpen className="size-3.5" aria-hidden="true" />{tasks.length} demandas</span>
+                      {urgent > 0 && <Badge className="rounded-lg bg-[var(--brand-rose)] text-rose-800 hover:bg-[var(--brand-rose)]">{urgent} urgentes</Badge>}
+                    </div>
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" aria-hidden="true" />
                   </div>
                 </div>
               </button>
@@ -1433,47 +1290,17 @@ function ClientBoard({
         <ArrowLeft className="size-4" />
         Todos os clientes
       </button>
-      <div className="relative isolate mb-5 h-32 sm:h-40 overflow-hidden rounded-[24px] bg-slate-200 shadow-sm">
-        {client.bannerUrl ? (
-          <img
-            src={client.bannerUrl}
-            alt={`Banner de ${client.name}`}
-            className="absolute inset-0 z-0 h-full w-full object-cover"
-          />
-        ) : (
-          <div
-            className="absolute inset-0 z-0"
-            style={{ background: client.accent }}
-          />
-        )}
-        <div className="absolute inset-0 z-10 bg-black/25" />
-        <div className="absolute bottom-5 left-5 z-20 flex items-center gap-4 text-white">
-          <span className="relative z-30 grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-white text-xl font-black shadow-xl ring-1 ring-black/10">
-            {client.avatarUrl ? (
-              <img
-                src={client.avatarUrl}
-                alt={client.name}
-                className="block h-full w-full object-contain opacity-100"
-              />
-            ) : (
-              <span
-                className="grid h-full w-full place-items-center text-white"
-                style={{ background: client.accent }}
-              >
-                {initials(client.name)}
-              </span>
-            )}
-          </span>
-          <div>
-            <h1 className="text-2xl font-black">{client.name}</h1>
-            <p className="text-sm text-white/80">{client.handle}</p>
-          </div>
-        </div>
+      {client.bannerUrl && <div className="client-board-cover"><img src={client.bannerUrl} alt={`Banner de ${client.name}`} className="h-full w-full object-cover" /></div>}
+      <div className="client-board-identity">
+        <span className="client-card-avatar" style={{ background: client.avatarUrl ? "white" : client.accent }}>
+          {client.avatarUrl ? <img src={client.avatarUrl} alt={client.name} className="h-full w-full object-contain" /> : initials(client.name)}
+        </span>
+        <span className="text-sm font-medium text-muted-foreground">{client.handle || "Pasta do cliente"}</span>
       </div>
       <PageHeader
         eyebrow={activeBoard?.period ?? "Todas as pastas"}
         title={client.name}
-        description={`${client.handle} · ${activeBoard?.title ?? "Planejamento de conteúdo"}`}
+        description={activeBoard?.title ?? "Organize a produção, acompanhe os prazos e entregue em equipe."}
         action={
           <div className="flex gap-2">
             {client.driveUrl && (
@@ -1494,12 +1321,13 @@ function ClientBoard({
                   setDriveOpen(true);
                 }}
                 title="Personalizar link do Drive"
+                aria-label="Personalizar link do Drive"
               >
                 <Settings className="size-4 text-slate-500" />
               </Button>
             )}
             {onCreate && (
-              <Button className="rounded-xl bg-[#34483b]" onClick={()=>onCreate(activeBoard?.id)}>
+              <Button className="rounded-xl bg-primary" onClick={()=>onCreate(activeBoard?.id)}>
                 <Plus />
                 Nova demanda
               </Button>
@@ -1542,7 +1370,7 @@ function ClientBoard({
         <p className="text-xs text-slate-500 sm:hidden">Abra uma demanda para atualizar o status.</p>
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-5">
+      <div className="client-kanban mt-5">
         {groups.map((group) => {
           const items = tasks.filter((item) => item.status === group.key);
           return (
@@ -1561,11 +1389,13 @@ function ClientBoard({
                 event.preventDefault();
                 void move(group.key as "production" | "review");
               }}
-              className={`min-w-0 rounded-[18px] p-1.5 transition ${overStatus === group.key ? "bg-[#526949]/8 ring-2 ring-[#526949]/25" : ""}`}
+              data-status={group.key}
+              data-drag-over={overStatus === group.key}
+              className="kanban-column min-w-0 transition"
             >
-              <div className="flex items-center justify-between px-1.5">
+              <div className="kanban-column-heading flex items-center justify-between">
                 <h2 className="text-sm font-bold">{group.label}</h2>
-                <span className="rounded-md bg-slate-200/70 px-2 py-0.5 text-xs font-semibold text-slate-600">
+                <span className="rounded-md bg-white/70 px-2 py-0.5 text-xs font-semibold text-foreground">
                   {items.length}
                 </span>
               </div>
@@ -1586,7 +1416,7 @@ function ClientBoard({
                   />
                 ))}
                 {!items.length && (
-                  <div className="rounded-2xl border border-dashed border-slate-250 px-3 py-7 text-center text-xs text-slate-400">
+                  <div className="kanban-empty rounded-xl border border-dashed border-border px-3 py-7 text-center text-xs text-muted-foreground">
                     Solte uma demanda aqui
                   </div>
                 )}
@@ -1722,7 +1552,7 @@ function ClientBoard({
               Fechar
             </Button>
             <Button
-              className="rounded-xl bg-[#34483b]"
+              className="rounded-xl bg-primary"
               onClick={async () => {
                 try {
                   await postAction(
@@ -1814,7 +1644,7 @@ function CreateBoardDialog({
             Cancelar
           </Button>
           <Button
-            className="rounded-xl bg-[#34483b]"
+            className="rounded-xl bg-primary"
             disabled={saving || !period.trim()}
             onClick={submit}
           >
@@ -1850,11 +1680,11 @@ function CompactTask({
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className={`group relative rounded-2xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/40 ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
+      className={`kanban-task group relative rounded-2xl border border-border bg-white transition ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
     >
       <button onClick={() => onOpen(item.id)} className="w-full p-4 text-left">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             {kindMeta[item.kind].label}
             {item.slideCount > 1 ? ` · ${item.slideCount}` : ""}
           </span>
@@ -1869,11 +1699,11 @@ function CompactTask({
         </h3>
         <div className="mt-4 flex items-end justify-between gap-2">
           <span
-            className={`rounded-lg px-2 py-1 text-[10px] font-bold ${dueClass(due.tone)}`}
+            className={`rounded-lg px-2 py-1 text-xs font-bold ${dueClass(due.tone)}`}
           >
             {due.label}
           </span>
-          <span className="grid size-7 place-items-center rounded-full bg-[#526949] text-[9px] font-bold text-white">
+          <span className="grid size-7 place-items-center rounded-full bg-primary text-xs font-bold text-white">
             {initials(assignee?.name ?? "Sem")}
           </span>
         </div>
@@ -1912,7 +1742,7 @@ function FileViewerDialog({
   const isPdf = file.mimeType.includes("pdf");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[96vh] w-[98vw] max-w-[1500px] flex-col overflow-hidden rounded-[24px] border-0 bg-[#101216] p-0 text-white">
+      <DialogContent className="file-viewer-dialog flex h-[96vh] w-[98vw] max-w-[1500px] flex-col overflow-hidden rounded-[24px] border-0 bg-[#101216] p-0 text-white">
         <DialogHeader className="border-b border-white/10 px-5 py-4 pr-14 text-left">
           <DialogTitle className="truncate text-base text-white">
             {file.fileName}
@@ -1946,7 +1776,7 @@ function FileViewerDialog({
               href={file.url}
               target="_blank"
               rel="noreferrer"
-              className="rounded-xl bg-white px-5 py-3 font-bold text-[#34483b]"
+              className="rounded-xl bg-white px-5 py-3 font-bold text-primary"
             >
               Abrir arquivo
             </a>
@@ -2003,7 +1833,7 @@ function AttachmentPreview({
             href={file.url}
             target="_blank"
             rel="noreferrer"
-            className="flex min-h-72 flex-col items-center justify-center gap-3 px-6 text-center text-[#34483b]"
+            className="flex min-h-72 flex-col items-center justify-center gap-3 px-6 text-center text-primary"
           >
             <FileText className="size-12" />
             <span className="font-bold">Abrir arquivo</span>
@@ -2018,7 +1848,7 @@ function AttachmentPreview({
           href={file.url}
           target="_blank"
           rel="noreferrer"
-          className="shrink-0 font-bold text-[#34483b]"
+          className="shrink-0 font-bold text-primary"
         >
           Abrir em nova aba
         </a>
@@ -2293,7 +2123,7 @@ function TaskSheet({
 
   return (
     <Dialog open={open} onOpenChange={requestClose}>
-      <DialogContent className="h-[96vh] w-[98vw] max-w-none gap-0 overflow-hidden rounded-[24px] border-0 bg-[#f4f5f7] p-0 sm:max-w-[98vw]">
+      <DialogContent className="task-detail-dialog h-[96vh] w-[98vw] max-w-none gap-0 overflow-hidden rounded-[24px] border-0 bg-background p-0 sm:max-w-[98vw]">
         <DialogHeader className="border-b border-slate-200 bg-white px-5 py-4 pr-14 text-left sm:px-7">
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="font-bold" style={{ color: client?.accent }}>
@@ -2330,7 +2160,7 @@ function TaskSheet({
               {due.label}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 font-semibold text-slate-600">
-              <span className="grid size-5 place-items-center rounded-full bg-[#526949] text-[8px] font-bold text-white">
+              <span className="grid size-5 place-items-center rounded-full bg-primary text-xs font-bold text-white">
                 {initials(assignee?.name ?? "Sem")}
               </span>
               {assignee?.name ?? "Sem responsável"}
@@ -2340,7 +2170,7 @@ function TaskSheet({
                 href={client.driveUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#edf0e8] px-2.5 py-1.5 font-bold text-[#34483b]"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--brand-mint)] px-2.5 py-1.5 font-bold text-primary"
               >
                 <FolderOpen className="size-3.5" />
                 Pasta do Drive
@@ -2420,7 +2250,7 @@ function TaskSheet({
                     href={item.sourceUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-[#456048]"
+                    className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-primary"
                   >
                     <Paperclip className="size-4" />
                     Abrir referência
@@ -2459,7 +2289,7 @@ function TaskSheet({
                       >
                         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <span className="grid size-8 place-items-center rounded-xl bg-[#34483b] text-xs font-black text-white">
+                            <span className="grid size-8 place-items-center rounded-xl bg-primary text-xs font-black text-white">
                               {position}
                             </span>
                             <span className="text-xs font-bold uppercase tracking-wide text-slate-400">
@@ -2483,7 +2313,7 @@ function TaskSheet({
                                 alt={`Referência da fatia ${position}`}
                                 className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                               />
-                              <span className="absolute bottom-2 right-2 rounded-lg bg-black/65 px-2 py-1 text-[10px] font-bold text-white ">
+                              <span className="absolute bottom-2 right-2 rounded-lg bg-black/65 px-2 py-1 text-xs font-bold text-white ">
                                 Ampliar
                               </span>
                             </button>
@@ -2492,7 +2322,7 @@ function TaskSheet({
                               Sem referência anexada
                             </span>
                           ) : (
-                            <label className="grid h-full cursor-pointer place-items-center transition hover:bg-stone-50">
+                            <label className="grid h-full cursor-pointer place-items-center transition hover:bg-muted">
                               <input
                                 type="file"
                                 className="hidden"
@@ -2505,11 +2335,11 @@ function TaskSheet({
                                 }}
                               />
                               <span className="px-5">
-                                <ImagePlus className="mx-auto size-7 text-[#526949]" />
+                                <ImagePlus className="mx-auto size-7 text-primary" />
                                 <span className="mt-2 block text-xs font-bold text-slate-600">
                                   Clique ou arraste um arquivo
                                 </span>
-                                <span className="mt-1 block text-[11px] text-slate-400">
+                                <span className="mt-1 block text-xs text-slate-400">
                                   O envio começa automaticamente
                                 </span>
                               </span>
@@ -2522,7 +2352,7 @@ function TaskSheet({
                           )}
                         </div>
                         {preview && canExecute && (
-                          <label className="mx-3 mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-[#526949] hover:text-[#34483b]">
+                          <label className="mx-3 mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-primary hover:text-primary">
                             <Upload className="size-3.5" />
                             Substituir arquivo
                             <input
@@ -2606,7 +2436,7 @@ function TaskSheet({
                         )}
                         <div className="flex flex-1 flex-col gap-3 p-3">
                           <div>
-                            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-400">
                               Copy
                             </label>
                             <Textarea aria-label="Copy"
@@ -2626,7 +2456,7 @@ function TaskSheet({
                             />
                           </div>
                           <div>
-                            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-400">
                               Direção visual
                             </label>
                             <Textarea aria-label="Direção visual"
@@ -2666,10 +2496,10 @@ function TaskSheet({
                           },
                         ])
                       }
-                      className="grid w-[220px] shrink-0 place-items-center rounded-[20px] border-2 border-dashed border-slate-300 bg-white/55 px-6 text-center transition hover:border-[#526949] hover:bg-stone-50"
+                      className="grid w-[220px] shrink-0 place-items-center rounded-[20px] border-2 border-dashed border-slate-300 bg-white/55 px-6 text-center transition hover:border-primary hover:bg-muted"
                     >
                       <span>
-                        <Plus className="mx-auto size-7 text-[#526949]" />
+                        <Plus className="mx-auto size-7 text-primary" />
                         <span className="mt-3 block text-sm font-bold">
                           Adicionar fatia
                         </span>
@@ -2704,7 +2534,7 @@ function TaskSheet({
                     <Button
                       onClick={saveSlides}
                       disabled={saving || conflict || !dirty}
-                      className="rounded-xl bg-[#34483b]"
+                      className="rounded-xl bg-primary"
                     >
                       {saving ? "Salvando..." : "Salvar pauta"}
                     </Button>
@@ -2725,7 +2555,7 @@ function TaskSheet({
                               : "production",
                           )
                         }
-                        className="rounded-xl bg-[#34483b]"
+                        className="rounded-xl bg-primary"
                       >
                         {item.status === "production"
                           ? "Enviar para revisão"
@@ -2932,7 +2762,7 @@ function ReviewPanel({
                 href={latestAsset.url}
                 target="_blank"
                 rel="noreferrer"
-                className="grid min-h-80 place-items-center text-sm font-semibold text-[#34483b]"
+                className="grid min-h-80 place-items-center text-sm font-semibold text-primary"
               >
                 Abrir {latestAsset.fileName}
               </a>
@@ -2986,7 +2816,7 @@ function ReviewPanel({
       )}
 
       {point && (
-        <div className="mt-4 flex gap-2 rounded-2xl border border-stone-200 bg-stone-50 p-3">
+        <div className="mt-4 flex gap-2 rounded-2xl border border-stone-200 bg-muted p-3">
           <Input
             value={comment}
             onChange={(event) => setComment(event.target.value)}
@@ -2996,7 +2826,7 @@ function ReviewPanel({
           <Button
             onClick={addNote}
             disabled={!comment.trim()}
-            className="bg-[#34483b]"
+            className="bg-primary"
           >
             Marcar
           </Button>
@@ -3038,7 +2868,7 @@ function DraftFileField({
   };
   if (!file)
     return (
-      <label className="grid aspect-square cursor-pointer place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-3 text-center transition hover:border-[#526949] hover:bg-stone-50">
+      <label className="grid aspect-square cursor-pointer place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-3 text-center transition hover:border-primary hover:bg-muted">
         <input
           type="file"
           accept={accept}
@@ -3046,11 +2876,11 @@ function DraftFileField({
           onChange={chooseFile}
         />
         <span>
-          <ImagePlus className="mx-auto size-7 text-[#526949]" />
+          <ImagePlus className="mx-auto size-7 text-primary" />
           <span className="mt-2 block text-xs font-bold text-slate-600">
             Clique ou arraste um arquivo
           </span>
-          <span className="mt-1 block text-[11px] text-slate-400">
+          <span className="mt-1 block text-xs text-slate-400">
             A prévia aparece na hora
           </span>
         </span>
@@ -3076,17 +2906,17 @@ function DraftFileField({
             className="h-full w-full object-cover"
           />
         ) : (
-          <span className="grid h-full place-items-center px-4 text-center text-xs font-bold text-[#34483b]">
+          <span className="grid h-full place-items-center px-4 text-center text-xs font-bold text-primary">
             <FileText className="mb-2 size-9" />
             {file.name}
           </span>
         )}
-        <span className="absolute bottom-2 right-2 rounded-lg bg-black/65 px-2 py-1 text-[10px] font-bold text-white ">
+        <span className="absolute bottom-2 right-2 rounded-lg bg-black/65 px-2 py-1 text-xs font-bold text-white ">
           Ampliar
         </span>
       </button>
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-[#526949] hover:text-[#34483b]">
+        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-primary hover:text-primary">
           <Upload className="size-3.5" />
           Trocar
           <input
@@ -3322,7 +3152,7 @@ function CreateTaskDialog({
             referências visuais.
           </DialogDescription>
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto bg-[#f5f4ee] px-5 py-5 sm:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-background px-5 py-5 sm:px-6">
           <section className="grid gap-4 rounded-[20px] border border-slate-200 bg-white p-5 lg:grid-cols-4">
             <div className="lg:col-span-2">
               <label className="mb-1.5 block text-sm font-semibold">
@@ -3421,7 +3251,7 @@ function CreateTaskDialog({
                   onChange={(event) =>
                     setHasStoriesVersion(event.target.checked)
                   }
-                  className="size-5 accent-[#526949]"
+                  className="size-5 accent-primary"
                 />
                 Também precisa de versão Stories
               </label>
@@ -3543,7 +3373,7 @@ function CreateTaskDialog({
                 >
                   <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2.5">
                     <div className="flex items-center gap-2">
-                      <span className="grid size-7 place-items-center rounded-lg bg-[#34483b] text-[11px] font-black text-white">
+                      <span className="grid size-7 place-items-center rounded-lg bg-primary text-xs font-black text-white">
                         {index + 1}
                       </span>
                       <span className="text-xs font-bold text-slate-500">
@@ -3574,7 +3404,7 @@ function CreateTaskDialog({
                         )
                       }
                     />
-                    <label className="mb-1 mt-3 block text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                    <label className="mb-1 mt-3 block text-xs font-bold uppercase tracking-wide text-slate-400">
                       Copy
                     </label>
                     <Textarea aria-label="Copy"
@@ -3591,7 +3421,7 @@ function CreateTaskDialog({
                       placeholder={`Texto da fatia ${index + 1}`}
                       className="min-h-28 resize-none rounded-xl text-sm"
                     />
-                    <label className="mb-1 mt-3 block text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                    <label className="mb-1 mt-3 block text-xs font-bold uppercase tracking-wide text-slate-400">
                       Direção visual
                     </label>
                     <Textarea aria-label="Copy"
@@ -3620,10 +3450,10 @@ function CreateTaskDialog({
                       { id: crypto.randomUUID(), copy: "", direction: "" },
                     ])
                   }
-                  className="grid w-[190px] shrink-0 place-items-center rounded-[18px] border-2 border-dashed border-slate-300 bg-white/60 px-5 text-center hover:border-[#526949] hover:bg-stone-50"
+                  className="grid w-[190px] shrink-0 place-items-center rounded-[18px] border-2 border-dashed border-slate-300 bg-white/60 px-5 text-center hover:border-primary hover:bg-muted"
                 >
                   <span>
-                    <Plus className="mx-auto size-6 text-[#526949]" />
+                    <Plus className="mx-auto size-6 text-primary" />
                     <span className="mt-2 block text-sm font-bold">
                       Adicionar fatia
                     </span>
@@ -3640,7 +3470,7 @@ function CreateTaskDialog({
           <Button
             onClick={submit}
             disabled={saving}
-            className="rounded-xl bg-[#34483b]"
+            className="rounded-xl bg-primary"
           >
             {saving ? "Criando e enviando anexos..." : "Criar demanda"}
           </Button>
@@ -3823,7 +3653,7 @@ function CreateClientDialog({
               onRemove={() => setAvatar(null)}
               accept="image/*"
             />
-            <p className="mt-2 text-center text-[11px] text-slate-400">
+            <p className="mt-2 text-center text-xs text-slate-400">
               Quadrada, até 10 MB
             </p>
           </div>
@@ -3835,7 +3665,7 @@ function CreateClientDialog({
               onRemove={() => setBanner(null)}
               accept="image/*"
             />
-            <p className="mt-2 text-center text-[11px] text-slate-400">
+            <p className="mt-2 text-center text-xs text-slate-400">
               Recomendado: 1920 × 640, até 10 MB
             </p>
           </div>
@@ -3845,7 +3675,7 @@ function CreateClientDialog({
             Cancelar
           </Button>
           <Button
-            className="rounded-xl bg-[#34483b]"
+            className="rounded-xl bg-primary"
             disabled={
               saving ||
               !name.trim() ||
@@ -3960,10 +3790,10 @@ function CrmWorkspace({
     }
   }
   return (
-    <div className="p-1 sm:p-2">
+    <div className="crm-workspace">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[.14em] text-[#526949]">
+          <p className="text-xs font-bold uppercase tracking-[.14em] text-primary">
             Operação comercial
           </p>
           <h1 className="mt-1 text-3xl font-black tracking-tight">CRM</h1>
@@ -3974,7 +3804,7 @@ function CrmWorkspace({
         </div>
         <Button
           onClick={() => setNewLead(true)}
-          className="rounded-xl bg-[#34483b]"
+          className="rounded-xl bg-primary"
         >
           <Plus />
           Novo lead
@@ -4060,7 +3890,7 @@ function CrmWorkspace({
                       className="flex items-center gap-3 py-3"
                     >
                       <span
-                        className={`grid size-9 place-items-center rounded-xl ${activity.dueAt && new Date(activity.dueAt).getTime() < clock ? "bg-rose-50 text-rose-600" : "bg-stone-50 text-[#34483b]"}`}
+                        className={`grid size-9 place-items-center rounded-xl ${activity.dueAt && new Date(activity.dueAt).getTime() < clock ? "bg-rose-50 text-rose-600" : "bg-muted text-primary"}`}
                       >
                         <Clock3 className="size-4" />
                       </span>
@@ -4094,8 +3924,8 @@ function CrmWorkspace({
                 )}
               </div>
             </section>
-            <section className="rounded-[20px] border border-slate-200 bg-[#34483b] p-5 text-white">
-              <p className="text-xs font-bold uppercase tracking-wide text-white/50">
+            <section className="crm-conversion-panel rounded-[20px] border border-border bg-[var(--brand-lilac)] p-5 text-primary">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
                 Funil rápido
               </p>
               <h2 className="mt-1 text-xl font-black">Conversão atual</h2>
@@ -4116,12 +3946,12 @@ function CrmWorkspace({
                 ].map(([label, value], index) => (
                   <div key={String(label)}>
                     <div className="flex justify-between text-sm">
-                      <span className="text-white/65">{label}</span>
+                      <span className="text-muted-foreground">{label}</span>
                       <strong>{value}</strong>
                     </div>
-                    <div className="mt-2 h-1.5 rounded-full bg-white/10">
+                    <div className="mt-2 h-1.5 rounded-full bg-white/70">
                       <div
-                        className="h-full rounded-full bg-[#dfcd97]"
+                        className="h-full rounded-full bg-primary/75"
                         style={{ width: `${data.crmLeads.length ? Math.min(100, Number(value) / data.crmLeads.length * 100) : 0}%` }}
                       />
                     </div>
@@ -4148,14 +3978,14 @@ function CrmWorkspace({
               </Badge>
               <Button
                 onClick={() => setNewLead(true)}
-                className="rounded-xl bg-[#34483b]"
+                className="rounded-xl bg-primary"
               >
                 <Plus />
                 Lead
               </Button>
             </div>
           </div>
-          <div className="grid gap-3 overflow-x-auto pb-3 xl:grid-cols-5">
+          <div className="crm-kanban grid gap-3 overflow-x-auto pb-3 xl:grid-cols-5">
             {crmLeadStages.map((stage) => {
               const items = leads.filter((lead) => lead.status === stage.key);
               return (
@@ -4163,7 +3993,7 @@ function CrmWorkspace({
                   key={stage.key}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => moveLead(stage.key)}
-                  className="min-w-[240px] rounded-[18px] bg-slate-100/75 p-3"
+                  className="crm-stage min-w-[240px] rounded-[18px] bg-muted p-3"
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -4180,11 +4010,11 @@ function CrmWorkspace({
                         draggable
                         onDragStart={() => setDragLead(lead.id)}
                         onClick={() => setSelectedLeadId(lead.id)}
-                        className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-[#526949]"
+                        className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-primary"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <strong className="text-sm">{lead.company}</strong>
-                          <Badge className="rounded-md bg-stone-50 text-[#34483b]">
+                          <Badge className="rounded-md bg-muted text-primary">
                             {lead.score}
                           </Badge>
                         </div>
@@ -4231,13 +4061,13 @@ function CrmWorkspace({
             </div>
             <Button
               onClick={() => setNewDeal(true)}
-              className="rounded-xl bg-[#34483b]"
+              className="rounded-xl bg-primary"
             >
               <Plus />
               Oportunidade
             </Button>
           </div>
-          <div className="grid gap-3 overflow-x-auto pb-3 xl:grid-cols-6">
+          <div className="crm-kanban grid gap-3 overflow-x-auto pb-3 xl:grid-cols-6">
             {crmDealStages.map((stage) => {
               const items = openDeals.filter((d) => d.stage === stage.key);
               return (
@@ -4245,7 +4075,7 @@ function CrmWorkspace({
                   key={stage.key}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => moveDeal(stage.key)}
-                  className="min-w-[220px] rounded-[18px] bg-slate-100/75 p-3"
+                  className="crm-stage min-w-[220px] rounded-[18px] bg-muted p-3"
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -4265,7 +4095,7 @@ function CrmWorkspace({
                       >
                         <div className="flex items-start justify-between gap-2">
                           <strong className="text-sm">{deal.company}</strong>
-                          <span className="text-xs font-bold text-[#34483b]">
+                          <span className="text-xs font-bold text-primary">
                             {deal.probability}%
                           </span>
                         </div>
@@ -4307,7 +4137,7 @@ function CrmWorkspace({
                   key={activity.id}
                   className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
                 >
-                  <span className="grid size-10 place-items-center rounded-xl bg-stone-50 text-[#34483b]">
+                  <span className="grid size-10 place-items-center rounded-xl bg-muted text-primary">
                     <Clock3 className="size-4" />
                   </span>
                   <div className="min-w-0 flex-1">
@@ -4326,7 +4156,7 @@ function CrmWorkspace({
                         "Atividade concluída",
                       ).catch(notifyActionError)
                     }
-                    className="rounded-xl bg-[#34483b]"
+                    className="rounded-xl bg-primary"
                   >
                     Concluir
                   </Button>
@@ -4364,7 +4194,7 @@ function CrmWorkspace({
           </SheetHeader>
           {selectedLead && (
             <div className="space-y-5 p-6">
-              <div className="rounded-2xl bg-[#34483b] p-5 text-white">
+              <div className="rounded-2xl bg-primary p-5 text-white">
                 <p className="text-xs uppercase tracking-wide text-white/50">
                   Próxima ação
                 </p>
@@ -4408,7 +4238,7 @@ function CrmWorkspace({
               </div>
               <div className="flex gap-2">
                 <Button
-                  className="flex-1 rounded-xl bg-[#34483b]"
+                  className="flex-1 rounded-xl bg-primary"
                   onClick={async () => {
                     try { await postAction(
                       {
@@ -4600,7 +4430,7 @@ function NewCrmLeadDialog({
           <Button
             onClick={submit}
             disabled={saving || !company.trim()}
-            className="rounded-xl bg-[#34483b]"
+            className="rounded-xl bg-primary"
           >
             {saving ? "Salvando..." : "Criar lead"}
           </Button>
@@ -4738,7 +4568,7 @@ function NewCrmDealDialog({
           <Button
             onClick={submit}
             disabled={saving || !company.trim()}
-            className="rounded-xl bg-[#34483b]"
+            className="rounded-xl bg-primary"
           >
             {saving ? "Salvando..." : "Criar oportunidade"}
           </Button>
@@ -4794,7 +4624,7 @@ function CrmView({
   );
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="crm-workspace">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-black tracking-tight text-slate-900">
           CRM de Clientes
@@ -4815,7 +4645,7 @@ function CrmView({
           return (
             <div
               key={key}
-              className={`flex flex-col gap-3 rounded-2xl p-4 shadow-sm transition ${overStatus === key ? "bg-[#526949]/10 ring-2 ring-[#526949]/30" : "bg-white"}`}
+              className={`flex flex-col gap-3 rounded-2xl p-4 shadow-sm transition ${overStatus === key ? "bg-primary/10 ring-2 ring-primary/30" : "bg-white"}`}
               onDragOver={(e) => {
                 e.preventDefault();
                 setOverStatus(key);
@@ -4839,7 +4669,7 @@ function CrmView({
                   onDragStart={(e) =>
                     e.dataTransfer.setData("text/plain", client.id)
                   }
-                  className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:border-[#526949] cursor-grab active:cursor-grabbing"
+                  className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:border-primary cursor-grab active:cursor-grabbing"
                 >
                   <div className="flex justify-between items-start">
                     <span className="font-bold flex items-center gap-2">
@@ -5121,10 +4951,10 @@ function FinanceView({
     .sort((a, b) => b.value - a.value);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="finance-workspace">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#526949]">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
             Gestão da agência
           </p>
           <h1 className="text-2xl font-black tracking-tight text-slate-900">
@@ -5136,7 +4966,7 @@ function FinanceView({
         </div>
         <Button
           onClick={() => setOpen(true)}
-          className="rounded-xl bg-[#34483b]"
+          className="rounded-xl bg-primary"
         >
           <Plus className="size-4" />
           Novo lançamento
@@ -5245,7 +5075,7 @@ function FinanceView({
               setFilterYear(String(new Date().getFullYear()));
               setQuery("");
             }}
-            className="font-semibold text-[#526949]"
+            className="font-semibold text-primary"
           >
             Limpar filtros
           </button>
@@ -5293,11 +5123,11 @@ function FinanceView({
               tone="amber"
             />
           </div>
-          <div className="grid gap-5 xl:grid-cols-[1fr_1.4fr]">
+          <div className="finance-overview-grid grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-bold text-slate-900">Prioridades agora</h2>
-                <Bell className="size-4 text-[#526949]" />
+                <Bell className="size-4 text-primary" />
               </div>
               <div className="space-y-2">
                 <FinanceAlert
@@ -5444,7 +5274,7 @@ function FinanceView({
                   </div>
                   <div className="h-2 rounded-full bg-slate-100">
                     <div
-                      className="h-2 rounded-full bg-[#526949]"
+                      className="h-2 rounded-full bg-primary"
                       style={{
                         width: `${categoryTotals[0]?.value ? Math.max(4, (item.value / categoryTotals[0].value) * 100) : 0}%`,
                       }}
@@ -5494,20 +5324,11 @@ function FinanceKpi({
   detail: string;
   tone?: "slate" | "violet" | "green" | "red" | "amber";
 }) {
-  const toneClass = {
-    slate: "text-slate-900",
-    violet: "text-[#526949]",
-    green: "text-emerald-600",
-    red: "text-rose-600",
-    amber: "text-amber-600",
-  }[tone];
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <span className="text-xs font-semibold text-slate-500">{label}</span>
-      <span className={`mt-1 block text-2xl font-black ${toneClass}`}>
-        {money(value)}
-      </span>
-      <span className="mt-1 block text-[11px] text-slate-400">{detail}</span>
+    <div className="finance-kpi" data-tone={tone}>
+      <span className="text-xs font-semibold text-muted-foreground">{label}</span>
+      <strong className="finance-kpi-value">{money(value)}</strong>
+      <span className="mt-2 block text-xs text-muted-foreground">{detail}</span>
     </div>
   );
 }
@@ -5525,7 +5346,7 @@ function FinanceAlert({
   const classes = {
     red: "bg-rose-50 text-rose-700",
     amber: "bg-amber-50 text-amber-700",
-    violet: "bg-stone-50 text-stone-700",
+    violet: "bg-muted text-primary",
   }[tone];
   return (
     <div
@@ -5578,7 +5399,7 @@ function FinanceTransactionTable({
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-sm">
+        <table className="finance-table w-full min-w-[760px] text-left text-sm">
           <thead className="bg-slate-50 text-xs text-slate-500">
             <tr>
               <th className="p-4 font-semibold">Descrição / contraparte</th>
@@ -5880,7 +5701,7 @@ function FinanceWorkerCard({
                 <p className="text-sm font-semibold">
                   {c.competence} · {money(c.expectedAmount + c.adjustments)}
                 </p>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   NF:{" "}
                   {c.invoiceStatus === "not_required"
                     ? "não exigida"
@@ -6199,7 +6020,7 @@ function FinanceDialog({
             disabled={
               saving || !description.trim() || !category.trim() || !amount
             }
-            className="rounded-xl bg-[#34483b]"
+            className="rounded-xl bg-primary"
           >
             {saving ? "Salvando..." : "Salvar lançamento"}
           </Button>
@@ -6399,7 +6220,7 @@ function FinanceWorkerDialog({
           <Button
             onClick={submit}
             disabled={saving || !name.trim() || !monthlyAmount}
-            className="rounded-xl bg-[#34483b]"
+            className="rounded-xl bg-primary"
           >
             {saving ? "Salvando..." : "Adicionar profissional"}
           </Button>

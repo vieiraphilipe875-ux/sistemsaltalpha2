@@ -17,7 +17,7 @@ export async function runFinancialDocumentsBrowser({page,state,check}) {
   await row.getByRole('button',{name:`Ver ${documents.length} anexos de ${transaction.description}`,exact:true}).click({timeout:5000});
   const list=page.getByRole('dialog',{name:`Anexos de ${transaction.description}`,exact:true});
   await expect(list.getByRole('link')).toHaveCount(documents.length);
-  await page.screenshot({path:'evidence/documentos-financeiros.png',fullPage:true});
+  await page.screenshot({path:'evidence/documentos-financeiros.png',fullPage:true,animations:'disabled'});
   for(const document of documents) {
    const link=list.locator(`a[href="${document.url}"]`);
    await expect(link).toContainText(document.fileName);
@@ -42,7 +42,7 @@ export async function runFinancialDocumentsBrowser({page,state,check}) {
   await page.getByRole('button',{name:`Ver ${invoices.length} ${invoices.length===1?'anexo':'anexos'} de ${label}`,exact:true}).click();
   const invoiceList=page.getByRole('dialog',{name:`Anexos de ${label}`,exact:true});
   await expect(invoiceList.getByRole('link')).toHaveCount(invoices.length);
-  await page.screenshot({path:'evidence/notas-fiscais.png',fullPage:true});
+  await page.screenshot({path:'evidence/notas-fiscais.png',fullPage:true,animations:'disabled'});
   for(const document of invoices) {
    await expect(invoiceList.locator(`a[href="${document.url}"]`)).toContainText(document.fileName);
    assert.equal((await page.request.get(new URL(document.url,page.url()).href)).status(),200);

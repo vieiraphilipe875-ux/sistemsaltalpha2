@@ -25,7 +25,7 @@ export function FinancialDocuments({
           type="button"
           variant="ghost"
           size="sm"
-          className="mt-1 h-auto justify-start px-0 py-1 text-xs text-[#526949]"
+          className="mt-1 h-auto justify-start px-0 py-1 text-xs text-primary"
           aria-label={`Ver ${documents.length} ${documents.length === 1 ? "anexo" : "anexos"} de ${context}`}
         >
           <Paperclip className="size-3.5" />
@@ -45,7 +45,7 @@ export function FinancialDocuments({
                 href={document.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-start gap-2 rounded-md px-2 py-2 text-sm text-[#34483b] hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#526949]"
+                className="flex items-start gap-2 rounded-md px-2 py-2 text-sm text-primary hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
                 <span className="min-w-0 flex-1 break-words">
                   {document.fileName}

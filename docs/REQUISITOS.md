@@ -36,6 +36,7 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 | U24 | Adiar envio de e-mail e liberar uma conta administrativa indicada pelo titular | Provisionamento individual no banco, limitado à própria agência; nenhuma credencial padrão no código e nenhum atalho público de autenticação |
 | U25 | Continuar as alterações pendentes | Corrigir pendências verificadas e repetir a regressão |
 | U26 | Remover a troca de senha sem e-mail e retomar cadastro/e-mail após finalizar o restante do sistema | Remover a opção do perfil e sua operação no servidor; preservar o acesso ADM, suas credenciais e seus dados; manter cadastro, confirmação e recuperação por e-mail no roteiro posterior |
+| U27 | Reformular todo o design com cores pastéis, moderno e sem aparência rústica; pesquisar Awwwards, Design Spells desktop e o preview Monologue do Mobbin | Aplicar DESIGN.md versão 3 a navegação, dashboard, clientes, demandas, Kanban, CRM, financeiro, formulários e entrada; DM Sans sem serif, canvas frio, grafite e pastéis; verificar desktop/celular, teclado, estados e permissões; registrar referências efetivamente observadas e limitações de acesso, sem afirmar que a captura do Mobbin foi vista |
 
 ## Ordem de execução
 
@@ -45,7 +46,7 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 4. Conferir multiagência, convites, papéis, escopos e arquivos.
 5. Conferir a operação de clientes, pastas, demandas, pauta e revisão.
 6. Conferir CRM e financeiro, dados e permissões.
-7. Refinar UI/UX e documentar decisões de design.
+7. Reformular integralmente UI/UX conforme U27 e DESIGN.md versão 3: direção moderna pastel, substituindo papel e tons terrosos; verificar fluxos e registrar evidências em REDESIGN-2026-09-23.md.
 8. Após finalizar as demais funções do sistema, retomar cadastro, confirmação, recuperação de senha e envio de e-mails; executar regressão final, Preview e homologação hospedada.
 9. Conversa futura sobre planos, limites, preços e checkout.
 
@@ -53,6 +54,7 @@ A homologação de e-mail foi adiada pelo titular em 23/09/2026 para avançar na
 
 ## Sugestões e decisões de produto
 
+- Direção visual mais recente: DM Sans, fundo branco frio, grafite e superfícies azul/lilás/menta/rosa pastel. Dashboard com indicadores antes das listas, busca por atalho e teclado, limpeza da busca e ações rápidas reais, reutilizando diálogos com permissão. A reformulação não antecipa e-mail, cadastro ou monetização; sua verificação é registrada separadamente dos resultados de versões anteriores.
 - Implementado nesta rodada: detectar conflitos de pauta e avisar sobre rascunho não salvo; separar edição comercial e financeira; explicar o alcance integral do administrador.
 - Próximas sugestões: “Meu trabalho” entre agências, filtros salvos, modelos/checklists de demanda e notificações configuráveis. A visualização deve preservar a agência de origem e o acesso do usuário.
 - Depois da homologação: papel de cliente aprovador com aprovação/pedido de ajustes, diferente do leitor interno.
@@ -63,6 +65,8 @@ A homologação de e-mail foi adiada pelo titular em 23/09/2026 para avançar na
 
 Mensagem principal do usuário nesta sessão; plano de ação de 23/09; AGENTS.md; docs/DESIGN.md; docs/ARQUITETURA.md; docs/ENTREGA.md; docs/PROXIMAS-ETAPAS.md; PR nº 1 e seu registro até 22/09.
 
-Referências indicadas: https://designspells.com/?tag=desktop · https://www.awwwards.com/ · https://ui.shadcn.com/
+Referências indicadas: https://designspells.com/?tag=desktop · https://www.awwwards.com/ · https://ui.shadcn.com/ · https://mobbin.com/sites/monologue-dfd894e7-101b-4679-aa3e-d75a2db3bc3c/66238a42-7413-4b88-a880-f20e738a69d1/preview
+
+O preview específico do Mobbin não foi recuperado nesta pesquisa. O site oficial https://www.monologue.to/ foi confirmado e inspecionado como referência complementar; a versão atual é visualmente diferente da direção pastel solicitada e não foi confirmada como a mesma captura do Mobbin. Fontes observadas e adaptações estão em DESIGN.md e REDESIGN-2026-09-23.md.
 
 Esta memória registra decisões de projeto em arquivos persistentes. Não representa uma afirmação de acesso automático a todo o histórico de chats ou de memória pessoal universal entre conversas.
