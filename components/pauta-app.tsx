@@ -317,8 +317,8 @@ export function PautaApp({
     });
     const result = await readApiResponse(response);
     if (!response.ok)
-      throw new Error(result.error || "Não foi possível salvar.");
-    await reload();
+      throw Object.assign(new Error(result.error || "Não foi possível salvar."), { status: response.status });
+    try { await reload(); } catch { toast.info("Alteração salva. Atualize a página para conferir os dados recentes."); }
     if (success) toast.success(success);
     return result;
   }
@@ -383,7 +383,7 @@ export function PautaApp({
   return (
     <div className="postito-workspace min-h-screen bg-[#f5f4ee] text-[#15181d]">
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-[248px] bg-[#283c32] text-white transition-transform lg:translate-x-0 ${mobileMenu ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-40 w-[248px] bg-[#283c32] text-white transition-transform lg:visible lg:translate-x-0 ${mobileMenu ? "visible translate-x-0" : "invisible -translate-x-full"}`}
       >
         <div className="flex h-full flex-col p-4">
           <div className="flex h-14 items-center justify-between px-2">
@@ -402,6 +402,7 @@ export function PautaApp({
               variant="ghost"
               size="icon-sm"
               className="text-white/60 hover:bg-white/10 hover:text-white lg:hidden"
+              aria-label="Fechar menu"
               onClick={() => setMobileMenu(false)}
             >
               <X />
@@ -451,9 +452,10 @@ export function PautaApp({
                   variant="ghost"
                   size="icon-sm"
                   type="submit"
+                  aria-label="Sair"
                   className="text-white/50 hover:bg-white/10 hover:text-white"
                 >
-                  <LogOut aria-label="Sair" />
+                  <LogOut aria-hidden="true" />
                 </Button>
               </form>
             </div>
@@ -467,9 +469,10 @@ export function PautaApp({
             variant="ghost"
             size="icon-sm"
             className="-ml-2 lg:hidden"
+            aria-label="Abrir menu"
             onClick={() => setMobileMenu(true)}
           >
-            <Menu aria-label="Abrir menu" />
+            <Menu aria-hidden="true" />
           </Button>
           <GlobalSearch
             data={data}
@@ -481,6 +484,7 @@ export function PautaApp({
           />
           {urgent.length > 0 && (
             <button
+              aria-label={`${urgent.length} demandas com prazo próximo ou vencido`}
               onClick={() => navigate("dashboard")}
               className="relative grid size-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:text-slate-900"
             >
@@ -586,6 +590,7 @@ export function PautaApp({
         postAction={postAction}
       />
       <CreateClientDialog
+        canEditFinance={data.currentMember.permissions.includes("finance.access")}
         open={createClientOpen}
         onOpenChange={setCreateClientOpen}
         postAction={postAction}
@@ -1518,7 +1523,7 @@ function ClientBoard({
               ))}
             </SelectContent>
           </Select>
-          {canManageClient && (
+          {canPlanClient(data, client.id) && (
             <Button
               variant="outline"
               size="sm"
@@ -2040,6 +2045,10 @@ function AttachmentGallery({ item }: { item: Deliverable }) {
   );
 }
 
+function slideContent(rows: Deliverable["slides"]) {
+  return JSON.stringify(rows.map(({ copy, direction }) => ({ copy, direction })));
+}
+
 function TaskSheet({
   data,
   item,
@@ -2085,6 +2094,19 @@ function TaskSheet({
         )
       : [],
   );
+  const [expectedSlideIds, setExpectedSlideIds] = useState(() => item?.slides.map(slide => slide.id) ?? []);
+  const [savedContent, setSavedContent] = useState(() => slideContent(draftSlides));
+  const [conflict, setConflict] = useState(false);
+  const dirty = slideContent(draftSlides) !== savedContent;
+  useEffect(() => {
+    if (!open || !dirty) return;
+    function protectDraft(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+    window.addEventListener("beforeunload", protectDraft);
+    return () => window.removeEventListener("beforeunload", protectDraft);
+  }, [dirty, open]);
   useEffect(
     () => () => {
       previewUrls.current.forEach((url) => URL.revokeObjectURL(url));
@@ -2101,21 +2123,52 @@ function TaskSheet({
   const canExecute = canExecuteTask(data, item);
   const canDelete = canPlan;
 
+  function requestClose(nextOpen: boolean) {
+    if (!nextOpen && (saving || (dirty && !window.confirm("Há alterações não salvas na pauta. Descartar e fechar?")))) return;
+    onOpenChange(nextOpen);
+  }
+
+  async function loadLatestSlides() {
+    if (dirty && !window.confirm("Substituir seu rascunho pela pauta salva mais recente? Copie seu texto antes de continuar.")) return;
+    try {
+      setSaving(true);
+      const response = await fetch("/api/workspace", { cache: "no-store" });
+      if (!response.ok) throw new Error("Não foi possível carregar a pauta atual.");
+      const workspace: WorkspaceData = await response.json();
+      const latest = workspace.deliverables.find(row => row.id === item!.id);
+      if (!latest) throw new Error("Esta demanda não está mais disponível para sua conta.");
+      setDraftSlides(latest.slides);
+      setExpectedSlideIds(latest.slides.map(slide => slide.id));
+      setSavedContent(slideContent(latest.slides));
+      setConflict(false);
+      toast.success("Versão atual carregada");
+    } catch (error) {
+      notifyActionError(error);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function saveSlides() {
     try {
       setSaving(true);
-      await postAction(
+      const result = await postAction(
         {
           action: "saveSlides",
           deliverableId: item!.id,
+          expectedSlideIds,
           slides: draftSlides.map((slide, index) => ({
             ...slide,
             position: index + 1,
           })),
         },
         "Pauta salva",
-      );
+      ) as { slideIds: string[] };
+      setExpectedSlideIds(result.slideIds);
+      setSavedContent(slideContent(draftSlides));
+      setConflict(false);
     } catch (error) {
+      if ((error as { status?: number }).status === 409) setConflict(true);
       toast.error(error instanceof Error ? error.message : "Falha ao salvar");
     } finally {
       setSaving(false);
@@ -2238,7 +2291,7 @@ function TaskSheet({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={requestClose}>
       <DialogContent className="h-[96vh] w-[98vw] max-w-none gap-0 overflow-hidden rounded-[24px] border-0 bg-[#f4f5f7] p-0 sm:max-w-[98vw]">
         <DialogHeader className="border-b border-slate-200 bg-white px-5 py-4 pr-14 text-left sm:px-7">
           <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -2262,6 +2315,12 @@ function TaskSheet({
           <DialogDescription className="sr-only">
             Área visual da demanda, com fatias, anexos e revisão.
           </DialogDescription>
+          {canPlan && <div className="mt-2 text-sm" aria-live="polite">
+            {conflict ? <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-950">
+              <p>Outra edição atualizou esta pauta. Seu rascunho continua aqui.</p>
+              <Button variant="outline" size="sm" disabled={saving} onClick={loadLatestSlides}>Carregar versão atual</Button>
+            </div> : <p className="text-slate-600">{dirty ? "Alterações não salvas" : "Pauta salva nesta edição"}</p>}
+          </div>}
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
             <span
               className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-semibold ${dueClass(due.tone)}`}
@@ -2630,7 +2689,7 @@ function TaskSheet({
                         updateStatus(value as Deliverable["status"])
                       }
                     >
-                      <SelectTrigger className="w-[170px] rounded-xl bg-white">
+                      <SelectTrigger aria-label="Status da demanda" className="w-[170px] rounded-xl bg-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -2643,7 +2702,7 @@ function TaskSheet({
                     </Select>
                     <Button
                       onClick={saveSlides}
-                      disabled={saving}
+                      disabled={saving || conflict || !dirty}
                       className="rounded-xl bg-[#34483b]"
                     >
                       {saving ? "Salvando..." : "Salvar pauta"}
@@ -3596,10 +3655,12 @@ function CreateTaskDialog({
 
 function CreateClientDialog({
   open,
+  canEditFinance,
   onOpenChange,
   postAction,
 }: {
   open: boolean;
+  canEditFinance: boolean;
   onOpenChange(open: boolean): void;
   postAction(payload: object, success?: string): Promise<unknown>;
 }) {
@@ -3641,10 +3702,9 @@ function CreateClientDialog({
           handle,
           driveUrl,
           period,
-          revenue: revenue.trim() ? parseMoney(revenue) : 0,
-          dueDay: Number(dueDay),
+          ...(canEditFinance ? { revenue: revenue.trim() ? parseMoney(revenue) : 0, dueDay: Number(dueDay) } : {}),
         },
-        "Cliente criado e financeiro previsto",
+        "Cliente criado",
       );
       const clientId = (result as { clientId?: string }).clientId;
       if (clientId)
@@ -3677,8 +3737,7 @@ function CreateClientDialog({
         <DialogHeader>
           <DialogTitle>Novo cliente</DialogTitle>
           <DialogDescription>
-            Cadastre a identidade, a primeira pauta e a previsão financeira
-            mensal.
+            {canEditFinance ? "Cadastre a identidade, a primeira pauta e a previsão financeira mensal." : "Cadastre a identidade e a primeira pauta do cliente."}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -3715,6 +3774,7 @@ function CreateClientDialog({
               className="rounded-xl"
             />
           </div>
+{canEditFinance && <>
           <div>
             <label className="mb-1.5 block text-sm font-semibold">
               Mensalidade (R$)
@@ -3742,6 +3802,7 @@ function CreateClientDialog({
               className="rounded-xl"
             />
           </div>
+</>}
           <div className="sm:col-span-2">
             <label className="mb-1.5 block text-sm font-semibold">
               Pasta de fotos / Drive
@@ -4719,17 +4780,11 @@ function CrmView({
           action: "updateClientCrm",
           id: client.id,
           status: newStatus,
-          contactName: client.contactName,
-          phone: client.phone,
-          email: client.email,
-          revenue: client.revenue,
-          dueDay: client.dueDay,
-          notes: client.notes,
         },
         `Cliente movido para ${statuses.find((s) => s.key === newStatus)?.label}`,
       );
     } catch (e) {
-      toast.error("Falha ao mover cliente");
+      notifyActionError(e);
     } finally {
       setOverStatus(null);
     }
@@ -4797,6 +4852,7 @@ function CrmView({
                     <Button
                       variant="ghost"
                       size="icon-xs"
+                      aria-label={`Editar ${client.name}`}
                       onClick={() => setEditingClient(client.id)}
                     >
                       <Edit3 className="size-3" />
@@ -4823,6 +4879,7 @@ function CrmView({
       </div>
       {editingClient && (
         <CrmEditDialog
+          canEditFinance={data.currentMember.permissions.includes("finance.access")}
           open={!!editingClient}
           client={data.clients.find((c) => c.id === editingClient)!}
           onOpenChange={() => setEditingClient(null)}
@@ -4835,11 +4892,13 @@ function CrmView({
 
 function CrmEditDialog({
   open,
+  canEditFinance,
   client,
   onOpenChange,
   postAction,
 }: {
   open: boolean;
+  canEditFinance: boolean;
   client: WorkspaceData["clients"][0];
   onOpenChange(): void;
   postAction(p: object, s?: string): Promise<unknown>;
@@ -4863,15 +4922,14 @@ function CrmEditDialog({
           contactName,
           phone,
           email,
-          revenue: Number(revenue) * 100,
-          dueDay: Number(dueDay),
+          ...(canEditFinance ? { revenue: parseMoney(revenue), dueDay: Number(dueDay) } : {}),
           notes,
         },
-        "CRM e previsões atualizados",
+        "Dados do cliente atualizados",
       );
       onOpenChange();
     } catch (e) {
-      toast.error("Falha ao salvar");
+      notifyActionError(e);
     } finally {
       setSaving(false);
     }
@@ -4881,13 +4939,14 @@ function CrmEditDialog({
       <DialogContent className="rounded-2xl">
         <DialogHeader>
           <DialogTitle>Editar {client.name}</DialogTitle>
+          <DialogDescription>Atualize os dados do cliente disponíveis ao seu perfil.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
-          <div className="grid grid-cols-3 gap-3">
+          <div className={canEditFinance ? "grid grid-cols-3 gap-3" : "grid gap-3"}>
             <div>
               <label className="text-xs font-semibold">Status</label>
               <Select value={status} onValueChange={(v) => setStatus(v as "prospecting" | "active" | "inactive")}>
-                <SelectTrigger>
+                <SelectTrigger aria-label="Status do cliente">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -4897,6 +4956,7 @@ function CrmEditDialog({
                 </SelectContent>
               </Select>
             </div>
+{canEditFinance && <>
             <div>
               <label className="text-xs font-semibold">Mensalidade (R$)</label>
               <Input aria-label="Mensalidade (R$)"
@@ -4917,6 +4977,7 @@ function CrmEditDialog({
                 onChange={(e) => setDueDay(e.target.value)}
               />
             </div>
+</>}
           </div>
           <div>
             <label className="text-xs font-semibold">Nome do Contato</label>
@@ -4928,7 +4989,7 @@ function CrmEditDialog({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold">E-mail</label>
-              <Input aria-label="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input aria-label="E-mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div>
               <label className="text-xs font-semibold">Telefone</label>

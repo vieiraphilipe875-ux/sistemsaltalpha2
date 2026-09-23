@@ -1,6 +1,6 @@
 # Diretrizes permanentes do Postito
 
-Leia `docs/DESIGN.md`, `docs/ARQUITETURA.md` e `docs/ENTREGA.md` antes de alterar a aplicação. Estes arquivos registram decisões do projeto; instruções explícitas futuras do usuário têm prioridade.
+Leia `docs/REQUISITOS.md`, `docs/DESIGN.md`, `docs/ARQUITETURA.md` e `docs/ENTREGA.md` antes de alterar a aplicação. Estes arquivos registram decisões do projeto; instruções explícitas futuras do usuário têm prioridade.
 
 - Organize a execução: reproduzir falha, corrigir, testar o fluxo afetado, revisar regressões, só então avançar.
 - Não declare que todos os bugs possíveis foram eliminados. Registre exatamente o que foi testado e onde.
@@ -15,3 +15,5 @@ Leia `docs/DESIGN.md`, `docs/ARQUITETURA.md` e `docs/ENTREGA.md` antes de altera
 - Não introduza neon, gradientes automáticos, brilhos decorativos, ícones de estrelinha sem função ou grades de cartões iguais em todas as telas.
 - Preserve o RAR original. A migração lê uma cópia e só escreve em destino novo.
 - Planos, valores e checkout exigem decisão de produto posterior; não transforme previsões financeiras em cobranças reais.
+
+- A pauta deve detectar revisão desatualizada antes de gravar e preservar o rascunho em conflito. Mudanças de contato/status no CRM não podem reescrever dados financeiros omitidos.

@@ -1,5 +1,12 @@
 # Postito — entrega e verificação
 
+## Atualização de 23/09/2026
+
+As instruções principais enviadas pelo usuário foram consolidadas em `docs/REQUISITOS.md`. Esta rodada corrigiu o acesso à criação de pastas, separou edição de CRM e financeiro, protegeu pautas contra sobrescrita por outra edição e acrescentou avisos de rascunho. Também ajustou onboarding, permissões visuais, nomes acessíveis e menu móvel. A memória de design foi revisada.
+
+Validação local: **31 cenários de API/navegador e 19 testes unitários aprovados**, TypeScript e build aprovados; lint sem erros, com 42 avisos de manutenção. O alcance, as reproduções e as limitações estão em `docs/AUDITORIA-2026-09-23.md`. Entrega real de e-mails e homologação autenticada hospedada continuam pendentes. As contagens das seções seguintes são históricas e não devem substituir a rodada atual.
+
+
 Atualizado em 21 de setembro de 2026 · versão 0.2.0
 
 ## Resultado

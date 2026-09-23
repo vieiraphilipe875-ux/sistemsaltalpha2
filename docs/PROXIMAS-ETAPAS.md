@@ -11,7 +11,7 @@ Uma demanda tem um responsável principal; a equipe da pasta funciona como conju
 | Prioridade | Melhoria | Por que depois desta base |
 | --- | --- | --- |
 | Próxima | Filtros salvos e calendário de produção | Acelerar o uso diário com dados e permissões estáveis |
-| Próxima | Histórico e comparação de versões da pauta | Evitar perda em edição simultânea e facilitar revisão |
+| Próxima | Histórico e comparação de versões da pauta | Recuperar textos antigos e comparar mudanças; a detecção de conflito já impede sobrescrita silenciosa |
 | Próxima | Central de notificações e preferências de e-mail | Avisar atribuição, prazo e revisão sem gerar excesso de mensagens |
 | Próxima | Modelos de demanda e checklist por formato | Reduzir trabalho repetido do briefing |
 | Após validação | Papel de cliente aprovador | Diferenciar leitor interno de cliente que pode aprovar ou pedir ajustes |

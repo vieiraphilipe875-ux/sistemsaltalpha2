@@ -1,6 +1,6 @@
 # Postito — memória de design
 
-Versão 1 · 20 de setembro de 2026
+Versão 2 · 23 de setembro de 2026
 
 ## Intenção
 
@@ -63,3 +63,18 @@ Os tons de alerta continuam semânticos: erros em vermelho, confirmação em ver
 Antes de desenhar, escrever: quem usa, que decisão precisa tomar, qual ação principal, que informações são necessárias e quais estados podem ocorrer. Reutilizar o sistema visual, mas escolher a estrutura adequada ao conteúdo. Conferir vazio, carregamento, erro, acesso negado, texto longo, foco por teclado e tela estreita. Guardar capturas de referência junto aos resultados dos testes.
 
 Este documento e `AGENTS.md` são a memória durável do projeto. Eles devem acompanhar as próximas versões e ser usados como contexto em futuras alterações.
+
+
+## Refinamento de 23/09/2026
+
+As referências foram consultadas novamente. O seletor de responsável mantém a pesquisa em contexto e um responsável principal por demanda, compatível com o modelo descrito pelo Linear; liberar a equipe da pasta continua uma ação diferente. A documentação do [Combobox do shadcn](https://ui.shadcn.com/docs/components/combobox) orienta seleção pesquisável e estados de interação. A escolha de aplicar esses comportamentos ao Postito é uma decisão do projeto.
+
+As coleções Design Spells e Awwwards continuam referências de composição e movimento, sem transformar animações de vitrine em exigências do produto. A prioridade desta rodada foi tornar os estados confiáveis:
+
+- Pauta com indicação visível de alterações não salvas; conflito mantém o texto na tela e apresenta uma ação explícita de atualização.
+- Campos de mensalidade/vencimento aparecem somente a quem pode editá-los; dados de contato podem ser salvos sem acesso financeiro.
+- Escopo integral do administrador explicado no convite, em vez de oferecer uma restrição que não se aplica a esse papel.
+- Botões de menu, saída, edição de cliente e aviso de prazo com nomes acessíveis; fechamento de diálogos em português.
+- Confirmação real da gravação separada de uma falha posterior de atualização da tela, evitando induzir tentativas duplicadas.
+
+Não confundir personalidade visual com remover convenções conhecidas. Verde, papel, trigo, tipografia e logo existentes permanecem como base; a qualidade depende também de legibilidade, estados, permissões e preservação do trabalho.

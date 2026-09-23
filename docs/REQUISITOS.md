@@ -1,0 +1,65 @@
+# Requisitos do Postito
+
+Consolidação de 23/09/2026 da mensagem principal enviada pelo usuário nesta conversa, do plano anterior e das decisões recuperadas do chat “Aprimorar sistema CRM”. A mensagem principal está disponível integralmente; não se afirma ter uma transcrição integral de todas as demais mensagens antigas. Esta consolidação permite continuar o trabalho sem solicitar novamente as instruções já recebidas.
+
+## Objetivo e método
+
+Evoluir o sistema original de gerenciamento de agência para Postito: demandas, CRM e financeiro, com banco de dados e hospedagem Vercel. Preservar o trabalho existente. Antes da execução, organizar sessões, etapas e tarefas na ordem de dependência; corrigir a base antes de ampliar funções. Verificar elementos ausentes, navegação, cliques, todos os botões, persistência e erros. Para cada criação/correção: testar, corrigir falhas, repetir o cenário afetado e a regressão prevista em AGENTS.md. Registrar cobertura e pendências sem prometer ausência de todo bug possível.
+
+## Matriz de instruções
+
+| ID | Instrução do usuário | Critério de implementação/verificação |
+| --- | --- | --- |
+| U01 | Auditar todo o sistema, inclusive elementos e botões | Inventário por tela, operação, papel e resultado; API e navegador |
+| U02 | Corrigir erros antes dos aprimoramentos | Bugs de acesso, execução e dados têm prioridade |
+| U03 | Planejar por etapas e tarefas cronológicas | Dependências e critérios de conclusão no plano |
+| U04 | Testar cada alteração e repetir a regressão | Resultados por rodada, ambiente e versão; corrigir antes de avançar |
+| U05 | Sistema com database e Vercel | PostgreSQL, arquivos privados e Preview verificável; homologar antes de produção |
+| U06 | Nome Postito e logo própria | Aplicação consistente da marca inspirada em organização; não afirmar exclusividade jurídica |
+| U07 | UI/UX sofisticada e diferente | Legibilidade, hierarquia, fluxo, estados e adaptação a desktop/celular |
+| U08 | Evitar aparência genérica, simples e neon associada à IA | Restrições concretas em DESIGN.md; identidade própria sem alegar detector universal de autoria |
+| U09 | Pesquisar padrões e guardar documento/memória do que não fazer | DESIGN.md e AGENTS.md acompanham o código e orientam novas alterações |
+| U10 | Pesquisar funções e animações em plataformas evoluídas | Design Spells, Awwwards, shadcn e referências funcionais; propostas adequadas ao uso |
+| U11 | Login e cadastro funcionais | Nome, e-mail, senha, profissão; conta persistente e login válido |
+| U12 | Confirmar cadastro com código por e-mail | Envio, validade, tentativas e consumo único; simulação não comprova entrega real |
+| U13 | Recuperar senha com link por e-mail | Envio, token válido, redefinição e novo login; revogar sessões antigas |
+| U14 | Selecionar profissão na agência, como designer | Profissão no perfil, independente de papel/permissão |
+| U15 | Uma pessoa em três ou mais agências | Conta global, vínculos e seleção de agência, sem misturar dados |
+| U16 | Agência convida por e-mail ou link com permissões | Editor/leitor/administrador, escopo armazenado no servidor, aceite e revogação |
+| U17 | Mostrar clientes/demandas atribuídos ou liberados | Entrada no espaço autorizado; tarefa atribuída não libera outras tarefas da pasta |
+| U18 | Atribuir colaborador dentro da pasta do cliente | Seletor pesquisável no cartão/demanda; nomes elegíveis; persistência e movimentação no Kanban |
+| U19 | Manter e aprimorar CRM e financeiro | Clientes, contatos, funil, atividades, lançamentos, previsões e competências respeitam acesso |
+| U20 | Discutir planos e assinatura depois | Não implementar preço, compra ou cobrança antes das decisões solicitadas |
+| U21 | Considerar CRM/financeiro em plano médio/master | Hipótese de produto, sem bloqueios comerciais definitivos nesta fase |
+| U22 | Trabalhar no Work, com modelo citado pelo usuário | Sessão em Work; não afirmar mudança de modelo sem confirmação do ambiente |
+| U23 | Propor ideias melhores e poder executá-las | Melhorias pertinentes podem ser implementadas e testadas; contratação e decisões comerciais continuam dependentes do titular |
+
+## Ordem de execução
+
+1. Consolidar contexto, regras, repositório e serviços existentes.
+2. Reproduzir falhas da base e corrigir com testes.
+3. Homologar autenticação e envio de e-mails, respeitando o bloqueio real do provedor.
+4. Conferir multiagência, convites, papéis, escopos e arquivos.
+5. Conferir a operação de clientes, pastas, demandas, pauta e revisão.
+6. Conferir CRM e financeiro, dados e permissões.
+7. Refinar UI/UX e documentar decisões de design.
+8. Regressão final, Preview, homologação hospedada e recuperação.
+9. Conversa futura sobre planos, limites, preços e checkout.
+
+A homologação de e-mail está bloqueada externamente. Correções independentes de demandas, permissões e interface podem avançar com caixa local isolada, sem declarar que a entrega real de mensagens está resolvida.
+
+## Sugestões e decisões de produto
+
+- Implementado nesta rodada: detectar conflitos de pauta e avisar sobre rascunho não salvo; separar edição comercial e financeira; explicar o alcance integral do administrador.
+- Próximas sugestões: “Meu trabalho” entre agências, filtros salvos, modelos/checklists de demanda e notificações configuráveis. A visualização deve preservar a agência de origem e o acesso do usuário.
+- Depois da homologação: papel de cliente aprovador com aprovação/pedido de ajustes, diferente do leitor interno.
+- Na conversa de monetização: avaliar assinatura por agência, mantendo uma conta para colaboradores convidados. Faixas, valores, limites e checkout não foram decididos.
+- E-mail: resolver autenticação/ativação do serviço escolhido ou avaliar um domínio próprio verificado. Não comprar domínio, reenviar testes ou reativar credenciais desativadas automaticamente.
+
+## Fontes e memória
+
+Mensagem principal do usuário nesta sessão; plano de ação de 23/09; AGENTS.md; docs/DESIGN.md; docs/ARQUITETURA.md; docs/ENTREGA.md; docs/PROXIMAS-ETAPAS.md; PR nº 1 e seu registro até 22/09.
+
+Referências indicadas: https://designspells.com/?tag=desktop · https://www.awwwards.com/ · https://ui.shadcn.com/
+
+Esta memória registra decisões de projeto em arquivos persistentes. Não representa uma afirmação de acesso automático a todo o histórico de chats ou de memória pessoal universal entre conversas.

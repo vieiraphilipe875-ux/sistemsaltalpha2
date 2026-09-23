@@ -4,9 +4,9 @@ import {writeFile} from 'node:fs/promises';
 export async function runBrowser({base,state,check}){
  const browser=await chromium.launch({headless:true});
  const context=await browser.newContext({viewport:{width:1440,height:1000},locale:'pt-BR',timezoneId:'America/Sao_Paulo'});
- const page=await context.newPage();const errors=[];
+ const page=await context.newPage();const errors=[];let expectedConflict=false;
  page.on('pageerror',e=>errors.push(e.message));
- page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+ page.on('console',m=>{if(m.type()==='error'&&!(expectedConflict&&/409/.test(m.text())))errors.push(m.text());});
  async function snapshot(name){await page.screenshot({path:'evidence/'+name+'.png',fullPage:true});}
  async function closeDialog(){await page.keyboard.press('Escape');}
  try{
@@ -49,6 +49,29 @@ export async function runBrowser({base,state,check}){
    await snapshot('demanda-revisao');await closeDialog();
    const t=(await state.owner.workspace()).deliverables.find(t=>t.id===state.task);assert.equal(t.slides[0].copy,'Uma campanha feita com intenção.');
   });
+  await check('Navegador: rascunho preservado ao fechar e em conflito de edição',async()=>{
+   await page.getByRole('button',{name:/Carrossel.*Campanha de primavera/}).click();
+   await page.getByRole('tab',{name:'Pauta visual'}).click();
+   const copy=page.getByPlaceholder('Texto da fatia 1');await copy.fill('Meu rascunho preservado');
+   page.once('dialog',dialog=>dialog.dismiss());await closeDialog();
+   await expect(copy).toHaveValue('Meu rascunho preservado');
+   const task=(await state.owner.workspace()).deliverables.find(t=>t.id===state.task);
+   await state.owner.action('saveSlides',{deliverableId:state.task,expectedSlideIds:task.slides.map(s=>s.id),slides:task.slides.map(s=>({...s,copy:s.position===1?'Texto salvo pela outra edição':s.copy}))});
+   expectedConflict=true;
+   const conflictResponse=page.waitForResponse(r=>r.url().endsWith('/api/actions')&&r.request().postDataJSON()?.action==='saveSlides');
+   await page.getByRole('button',{name:'Salvar pauta',exact:true}).click();assert.equal((await conflictResponse).status(),409);
+   await expect(page.getByRole('alert').filter({hasText:'Outra edição atualizou esta pauta'})).toBeVisible();
+   await expect(copy).toHaveValue('Meu rascunho preservado');
+   await expect(page.getByRole('button',{name:'Salvar pauta',exact:true})).toBeDisabled();
+   await snapshot('pauta-conflito');expectedConflict=false;
+   page.once('dialog',dialog=>dialog.dismiss());await page.getByRole('button',{name:'Carregar versão atual'}).click();
+   await expect(copy).toHaveValue('Meu rascunho preservado');
+   page.once('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Carregar versão atual'}).click();
+   await expect(copy).toHaveValue('Texto salvo pela outra edição');
+   await copy.fill('Uma campanha feita com intenção.');await page.getByRole('button',{name:'Salvar pauta',exact:true}).click();
+   await expect(page.getByText('Pauta salva nesta edição',{exact:true})).toBeVisible();
+   await closeDialog();await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
   await check('Navegador: nova demanda na pasta escolhida, envio de anexo e arrastar',async()=>{
    await page.getByRole('combobox',{name:'Filtrar pasta'}).click();
    await page.getByRole('option',{name:/OUT • 2026/}).click();
@@ -86,11 +109,42 @@ export async function runBrowser({base,state,check}){
    await page.getByRole('button',{name:'Salvar permissões',exact:true}).click();
    await expect(page.getByText('Acesso atualizado',{exact:true})).toBeVisible();
   });
+  await check('Navegador: editor cria pasta e edita CRM sem campos financeiros',async()=>{
+   const member=(await state.editor.workspace()).currentMember;
+   const permissions=['clients.view','demands.create','demands.execute','crm.access'];
+   await state.owner.action('updateMember',{id:member.id,permissions});
+   const editorContext=await browser.newContext({viewport:{width:1440,height:1000},locale:'pt-BR'});
+   const [name,...cookieValue]=state.editor.cookie.split('=');
+   await editorContext.addCookies([{name,value:cookieValue.join('='),url:base}]);
+   const editorPage=await editorContext.newPage();editorPage.on('pageerror',e=>errors.push(e.message));
+   try {
+    await editorPage.goto(base);
+    await editorPage.getByRole('textbox',{name:'Buscar clientes ou demandas'}).fill('vanessa');
+    await editorPage.locator('.search-results').getByRole('button',{name:'Vanessa Lopes',exact:true}).click();
+    await editorPage.getByRole('button',{name:'Nova Pasta',exact:true}).click();
+    await editorPage.getByLabel('Período / Nome da Pasta',{exact:true}).fill('DEZ • 2026');
+    await editorPage.getByRole('button',{name:'Criar pasta',exact:true}).click();await expect(editorPage.getByText('Pasta criada',{exact:true})).toBeVisible();
+    await editorPage.getByRole('button',{name:'CRM comercial',exact:true}).click();await editorPage.getByRole('tab',{name:'Clientes',exact:true}).click();
+    await editorPage.getByRole('button',{name:'Editar Vanessa Lopes',exact:true}).click();
+    await expect(editorPage.getByLabel('Mensalidade (R$)',{exact:true})).toHaveCount(0);
+    await editorPage.getByLabel('Nome do Contato',{exact:true}).fill('Vanessa, contato comercial');
+    const saved=editorPage.waitForResponse(r=>r.url().endsWith('/api/actions')&&r.request().postDataJSON()?.action==='updateClientCrm');
+    await editorPage.getByRole('button',{name:'Salvar',exact:true}).click();const response=await saved;assert.equal(response.status(),200);
+    const payload=response.request().postDataJSON();assert(!('revenue' in payload));assert(!('dueDay' in payload));
+    await expect(editorPage.getByRole('dialog')).toHaveCount(0);await editorPage.screenshot({path:'evidence/crm-editor.png',fullPage:true});
+    await state.owner.action('updateMember',{id:member.id,permissions:[...permissions,'clients.manage']});
+    await editorPage.reload();await editorPage.getByRole('button',{name:'Clientes e pautas',exact:true}).click();
+    await editorPage.getByRole('button',{name:'Novo cliente',exact:true}).click();
+    await expect(editorPage.getByRole('dialog').getByLabel('Mensalidade (R$)',{exact:true})).toHaveCount(0);
+   } finally {
+    await editorContext.close();await state.owner.action('updateMember',{id:member.id,permissions:['clients.view','demands.create','demands.execute']});
+   }
+  });
   await check('Navegador: layout móvel, menu, foco e movimento reduzido',async()=>{
    await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});await page.reload();
    await page.getByRole('textbox',{name:'Buscar clientes ou demandas'}).waitFor();await snapshot('mobile-dashboard');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'Página transborda horizontalmente no celular');
-   const menu=page.getByRole('button',{name:/menu/i});await menu.first().click();
+   const menu=page.getByRole('button',{name:'Abrir menu',exact:true});await menu.click();
    await page.getByRole('button',{name:'Clientes e pautas',exact:true}).click();
    await snapshot('mobile-clientes');
    await page.getByRole('textbox',{name:'Buscar clientes ou demandas'}).fill('vanessa');
@@ -109,11 +163,15 @@ export async function runBrowser({base,state,check}){
    await form.getByRole('button',{name:'Criar minha conta',exact:true}).click();await form.getByLabel('Código de confirmação').waitFor();
    const html=await state.emailFor({email:'elisa@example.invalid'},'Confirme');await form.getByLabel('Código de confirmação').fill(html.match(/>(\d{6})<\/p>/)[1]);
    await form.getByRole('button',{name:'Confirmar e continuar'}).click();await form.getByLabel('Nome da agência').fill('Ateliê Prado');
+   const agencyResponse=form.waitForResponse(r=>r.url()===base+'/api/actions'&&r.request().method()==='POST');
    await form.getByRole('button',{name:'Criar agência',exact:true}).click();
+   const createdAgency=await agencyResponse;
+   assert.equal(createdAgency.request().postDataJSON().name,'Ateliê Prado');
+   assert.equal(createdAgency.status(),200,'Criar a primeira agência deve aceitar o nome preenchido');
    await form.getByRole('textbox',{name:'Buscar clientes ou demandas'}).waitFor({timeout:60000});
    const out=await newcomer.request.post(base+'/api/auth/logout',{data:{},headers:{Origin:base}});assert.equal(out.status(),200);await form.goto(base);
    await form.getByRole('button',{name:'Esqueci minha senha'}).click();await form.getByLabel('E-mail',{exact:true}).fill('elisa@example.invalid');await form.getByRole('button',{name:'Enviar link'}).click();
-   await expect(form.getByRole('status')).toContainText('instruções');
+   await expect(form.getByRole('status')).toContainText('link para recuperar o acesso');
    const reset=await state.emailFor({email:'elisa@example.invalid'},'Redefina');const link=reset.match(/href="([^"]+)"/)[1].replaceAll('&amp;','&');await form.goto(link);
    await form.locator('input[name=password]').fill('Outra-Senha-2026!');await form.getByLabel('Confirmar senha',{exact:true}).fill('Outra-Senha-2026!');await form.getByRole('button',{name:'Salvar nova senha'}).click();
    await expect(form.getByRole('status')).toContainText('Senha alterada');await newcomer.close();

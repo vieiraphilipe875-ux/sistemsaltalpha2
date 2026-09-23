@@ -108,13 +108,25 @@ export async function runFlows({base,mailDir,check}){
  });
  await check('Pastas, pauta, referências e validação de dados',async()=>{
   await owner.action('createBoard',{clientId:c1.clientId,period:'OUT • 2026'});
-  await owner.action('saveSlides',{deliverableId:task,slides:[{position:1,copy:'Um novo olhar',direction:'Foto editorial'},{position:2,copy:'Conheça a coleção',direction:'Detalhes'}]});
+  await owner.action('saveSlides',{deliverableId:task,expectedSlideIds:(await owner.workspace()).deliverables.find(t=>t.id===task).slides.map(s=>s.id),slides:[{position:1,copy:'Um novo olhar',direction:'Foto editorial'},{position:2,copy:'Conheça a coleção',direction:'Detalhes'}]});
   assert.equal((await owner.workspace()).deliverables.find(t=>t.id===task).slideCount,2);
   await owner.action('saveSlides',{deliverableId:task,slides:[]},400);
   await owner.action('createDeliverableReference',{deliverableId:task,url:'https://example.com/referencia',description:'Moodboard'});
   await owner.action('createDeliverableReference',{deliverableId:task,url:'javascript:alert(1)'},400);
   await owner.action('updateDeliverable',{id:task,dueAt:'impossível'},400);
   await owner.action('createDeliverable',{boardId:otherClient.boardId,title:'Invasão',kind:'static',slideCount:1,assigneeId:null,dueAt:'2026-10-01'},403);
+ });
+ await check('Pauta: duas edições da mesma versão não sobrescrevem o trabalho salvo',async()=>{
+  const original=(await owner.workspace()).deliverables.find(t=>t.id===task).slides;
+  const revision=original.map(s=>s.id);
+  const winner=original.map(s=>({...s,copy:s.position===1?'Primeira edição salva':s.copy}));
+  const saved=await owner.action('saveSlides',{deliverableId:task,expectedSlideIds:revision,slides:winner});
+  await owner.action('saveSlides',{deliverableId:task,expectedSlideIds:revision,slides:original},409);
+  assert.equal((await owner.workspace()).deliverables.find(t=>t.id===task).slides[0].copy,'Primeira edição salva');
+  const refreshed=(await owner.workspace()).deliverables.find(t=>t.id===task).slides;
+  assert.deepEqual(saved.slideIds,refreshed.map(s=>s.id));
+  await owner.action('saveSlides',{deliverableId:task,expectedSlideIds:saved.slideIds,slides:original});
+  await owner.action('saveSlides',{deliverableId:task,slides:original},400);
  });
  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a4QAAAABJRU5ErkJggg==','base64');
  async function upload(actor,purpose,targetId,bytes=png,mimeType='image/png'){
@@ -212,6 +224,40 @@ export async function runFlows({base,mailDir,check}){
   await editor.action('updateDeliverable',{id:task,status:'production'},403);
   await owner.req('/api/actions',{action:'createAgency',name:'CSRF'},403,'POST',{Origin:'https://outro.example.invalid'});
   await owner.action('updateMember',{id:editorId,permissions:['clients.view','demands.create','demands.execute'],clientIds:[c1.clientId]});
+ });
+ await check('Editor com pasta liberada cria pastas sem gerenciar clientes',async()=>{
+  await editor.action('createBoard',{clientId:c1.clientId,period:'NOV • 2026'});
+  await editor.action('createBoard',{clientId:c2.clientId,period:'NOV • 2026'},403);
+  await reader.action('createBoard',{clientId:c1.clientId,period:'NOV • 2026'},403);
+ });
+ await check('CRM sem financeiro edita contato e status sem alterar cobranças',async()=>{
+  const before=await owner.workspace();
+  const contact={id:c1.clientId,status:'active',contactName:'Vanessa Lopes',phone:'11900000000',email:'vanessa@example.invalid',notes:'Contato atualizado'};
+  await owner.action('updateMember',{id:editorId,permissions:['clients.view','demands.create','demands.execute','crm.access']});
+  await editor.action('updateClientCrm',contact);
+  await editor.action('updateClientCrm',{...contact,status:'inactive'});
+  await editor.action('updateClientCrm',{...contact,revenue:1},403);
+  await editor.action('updateClientCrm',{...contact,dueDay:1},403);
+  await editor.action('updateClientCrm',{...contact,id:c2.clientId},403);
+  await editor.action('updateClientCrm',contact);
+  const after=await owner.workspace(),client=after.clients.find(c=>c.id===c1.clientId),previous=before.clients.find(c=>c.id===c1.clientId);
+  assert.equal(client.contactName,contact.contactName);
+  assert.equal(client.revenue,previous.revenue);assert.equal(client.dueDay,previous.dueDay);
+  assert.deepEqual(after.transactions,before.transactions);
+  assert.equal((await editor.workspace()).clients.find(c=>c.id===c1.clientId).revenue,0);
+  await owner.action('updateMember',{id:editorId,permissions:['clients.view','demands.create','demands.execute']});
+ });
+ await check('Administrador atua na agência sem conceder administração ou alterar proprietário',async()=>{
+  const invitation=await owner.action('inviteMember',{role:'admin',clientAccessMode:'selected',clientIds:[]});
+  await outside.action('acceptInvite',{token:new URL(invitation.link).searchParams.get('invite')});
+  const ws=await outside.workspace();assert.equal(ws.currentMember.role,'admin');assert.equal(ws.clients.length,2);
+  await outside.action('inviteMember',{role:'admin'},403);
+  await outside.action('updateMember',{id:readerId,role:'admin'},403);
+  await outside.action('updateMember',{id:ownerId,role:'editor'},400);
+  await outside.action('updateClient',{id:otherClient.clientId,driveUrl:''},403);
+  await outside.action('switchAgency',{agencyId:otherAgency});
+  await owner.action('deactivateMember',{id:ws.currentMember.id});
+  assert.equal((await outside.workspace()).agency.id,otherAgency);
  });
  await check('Senha: link único, senha antiga recusada e sessões encerradas',async()=>{
   const previousCookie=reader.cookie;

@@ -1,8 +1,9 @@
 import {spawn} from 'node:child_process';
-import {mkdir,writeFile} from 'node:fs/promises';
-import {resolve} from 'node:path';
+import {mkdir,mkdtemp,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
 import {runFlows} from '../tests/flows.mjs';
-const dir=resolve('.data/qa/'+Date.now()),base='http://127.0.0.1:3100';
+const dir=await mkdtemp(join(tmpdir(),'postito-qa-')),base='http://127.0.0.1:3100';
 const env={...process.env,DATABASE_URL:'',MAIL_TRANSPORT:'local',APP_URL:base,POSTITO_LOCAL_DB:dir+'/postgres',POSTITO_MAIL_DIR:dir+'/mail',POSTITO_STORAGE_DIR:dir+'/files'};
 delete env.VERCEL;delete env.SUPABASE_URL;delete env.SUPABASE_SERVICE_ROLE_KEY;
 await mkdir(dir,{recursive:true});await mkdir('evidence',{recursive:true});

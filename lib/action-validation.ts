@@ -19,10 +19,10 @@ const schemas={
  createBoard:z.object({clientId:id,period:title}),
  createDeliverable:z.object({boardId:id,title,kind:z.enum(["carousel","reels","stories","static"]),slideCount:z.number().int().min(1).max(30),assigneeId:id.nullable(),dueAt:date,notes:stringDefault,hasStoriesVersion:z.boolean().default(false),slides:z.array(z.object({position:z.number().int().min(1).max(30),copy:text,direction:text})).max(30).optional()}),
  updateDeliverable:z.object({id,status:status.optional(),assigneeId:id.nullable().optional(),dueAt:date.optional(),title:title.optional(),notes:text.optional(),sortOrder:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).optional()}),deleteDeliverable:z.object({id}),
- saveSlides:z.object({deliverableId:id,slides:z.array(z.object({position:z.number().int().min(1).max(30),copy:text,direction:text})).min(1).max(30)}),
+ saveSlides:z.object({deliverableId:id,expectedSlideIds:z.array(id).max(30),slides:z.array(z.object({position:z.number().int().min(1).max(30),copy:text,direction:text})).min(1).max(30)}),
  addAnnotation:z.object({assetId:id,slideNumber:z.number().int().min(1).max(30),x:z.number().min(0).max(100),y:z.number().min(0).max(100),comment:title}),
  resolveAnnotation:z.object({id,status:z.enum(["open","resolved"])}),
- updateClientCrm:z.object({id,status:z.enum(["prospecting","active","inactive"]),contactName:stringDefault,phone:stringDefault,email:z.union([z.literal(""),z.string().email()]),revenue:money,dueDay:z.number().int().min(1).max(31).default(5),notes:stringDefault}),
+ updateClientCrm:z.object({id,status:z.enum(["prospecting","active","inactive"]).optional(),contactName:text.optional(),phone:text.optional(),email:z.union([z.literal(""),z.string().email()]).optional(),revenue:money.optional(),dueDay:z.number().int().min(1).max(31).optional(),notes:text.optional()}).refine(p=>Object.keys(p).length>1,"Informe uma alteração"),
  createTransaction:z.object({type:z.enum(["income","expense","transfer","contribution","withdrawal","reimbursement","reversal","fee","tax","adjustment"]),amount:money.refine(v=>v>0),paidAmount:money.optional(),category:title,costCenter:stringDefault,account:stringDefault,status:txStatus,competence:month,dueDate:date,paymentDate:date.nullable().optional(),clientId:id.nullable(),counterpart:stringDefault,paymentMethod:stringDefault,recurring:z.boolean(),recurrence:stringDefault,description:title,notes:stringDefault}),
  updateTransaction:z.object({id,status:txStatus.optional(),paidAmount:money.optional(),paymentDate:date.nullable().optional(),description:title.optional(),category:title.optional(),costCenter:text.optional(),account:title.optional(),dueDate:date.optional(),notes:text.optional()}),
  duplicateTransaction:z.object({id}),archiveTransaction:z.object({id}),
@@ -45,11 +45,12 @@ export function parseAction(raw:unknown):ActionPayload {
  if(!(action in schemas))throw new AppError("Ação inválida.");
  return {action,...schemas[action as keyof typeof schemas].parse(raw)} as ActionPayload;
 }
-type AuthorizationPayload={action:string;id?:string;clientId?:string|null;boardId?:string;deliverableId?:string;assigneeId?:string|null;ownerId?:string|null;status?:string;leadId?:string|null;dealId?:string|null;assetId?:string;revenue?:number};
+type AuthorizationPayload={action:string;id?:string;clientId?:string|null;boardId?:string;deliverableId?:string;assigneeId?:string|null;ownerId?:string|null;status?:string;leadId?:string|null;dealId?:string|null;assetId?:string;revenue?:number;dueDay?:number};
 export async function authorizeAction(me:Member,p:AuthorizationPayload) {
  const db=getDb(),a=p.action as string;
  let required:PermissionKey;
  if(a.includes("Crm"))required="crm.access";
+ else if(a==="createBoard")required="demands.create";
  else if(/Transaction|FinanceWorker|WorkerCompetency/.test(a))required="finance.access";
  else if(/Client|Board/.test(a))required="clients.manage";
  else if(a==="updateDeliverable" || a==="resolveAnnotation")required=me.permissions.includes("demands.create")?"demands.create":"demands.execute";
@@ -57,7 +58,7 @@ export async function authorizeAction(me:Member,p:AuthorizationPayload) {
  if(!me.permissions.includes(required))throw new AppError("Você não tem permissão para esta ação.",403);
  const clientId=p.clientId || (/^updateClient|deleteClient/.test(a)?p.id:null);
  if(clientId && !await canAccessClient(me,clientId,true))throw new AppError("Cliente não disponível.",403);
- if((a==="createClient" && (p.revenue??0)>0 || a==="updateClientCrm") && !me.permissions.includes("finance.access"))throw new AppError("Permissão financeira necessária para alterar cobranças.",403);
+ if((a==="createClient" && (p.revenue??0)>0 || (a==="updateClientCrm" && (p.revenue!==undefined || p.dueDay!==undefined))) && !me.permissions.includes("finance.access"))throw new AppError("Permissão financeira necessária para alterar cobranças.",403);
  if(p.boardId){const [board]=await db.select().from(boards).where(eq(boards.id,p.boardId)).limit(1);if(!board||!await canAccessClient(me,board.clientId,true))throw new AppError("Pauta não disponível.",403);}
  const taskId=p.deliverableId || (/^(update|delete)Deliverable$/.test(a)?p.id:null);
  if(taskId){

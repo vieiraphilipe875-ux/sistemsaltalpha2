@@ -1,9 +1,17 @@
 {
-  "date": "2026-09-20T23:44:12.507Z",
+  "date": "2026-09-23T08:28:40.355Z",
   "mode": "local PostgreSQL (PGlite), caixa de e-mail local",
   "results": [
     {
+      "name": "Saúde do banco sem exposição de dados ou cache",
+      "status": "passed"
+    },
+    {
       "name": "Cadastro, confirmação obrigatória, código de uso único",
+      "status": "passed"
+    },
+    {
+      "name": "Cadastro pendente: repetição não anuncia envio; reenvio permite concluir sem trocar a senha",
       "status": "passed"
     },
     {
@@ -24,6 +32,10 @@
     },
     {
       "name": "Pastas, pauta, referências e validação de dados",
+      "status": "passed"
+    },
+    {
+      "name": "Pauta: duas edições da mesma versão não sobrescrevem o trabalho salvo",
       "status": "passed"
     },
     {
@@ -51,6 +63,18 @@
       "status": "passed"
     },
     {
+      "name": "Editor com pasta liberada cria pastas sem gerenciar clientes",
+      "status": "passed"
+    },
+    {
+      "name": "CRM sem financeiro edita contato e status sem alterar cobranças",
+      "status": "passed"
+    },
+    {
+      "name": "Administrador atua na agência sem conceder administração ou alterar proprietário",
+      "status": "passed"
+    },
+    {
       "name": "Senha: link único, senha antiga recusada e sessões encerradas",
       "status": "passed"
     },
@@ -71,6 +95,10 @@
       "status": "passed"
     },
     {
+      "name": "Navegador: rascunho preservado ao fechar e em conflito de edição",
+      "status": "passed"
+    },
+    {
       "name": "Navegador: nova demanda na pasta escolhida, envio de anexo e arrastar",
       "status": "passed"
     },
@@ -80,6 +108,10 @@
     },
     {
       "name": "Navegador: convite por link e edição de acesso",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: editor cria pasta e edita CRM sem campos financeiros",
       "status": "passed"
     },
     {

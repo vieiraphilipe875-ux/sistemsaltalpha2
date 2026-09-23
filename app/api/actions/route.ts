@@ -4,7 +4,7 @@ import { bucket } from "@/lib/storage";
 import { assertSameOrigin, errorResponse, AppError } from "@/lib/http";
 import { parseAction, authorizeAction } from "@/lib/action-validation";
 import { agencyAction, agencyActionNames } from "@/lib/agency-actions";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import { annotations, assets, attachments, boards, clientMembers, clients, crmActivities, crmDeals, crmLeads, deliverables, financeWorkers, activityLog, members, slides, deliverableReferences, transactions, workerCompetencies } from "@/db/schema";
 import { canAccessAsset, canAccessDeliverable, canManageDeliverable, getCurrentMember } from "@/lib/server-workspace";
@@ -155,14 +155,19 @@ export async function POST(request: Request) {
     }
 
     if (payload.action === "saveSlides") {
-      const allowed = true;
-      if (!allowed) return Response.json({ error: "Você não pode editar esta pauta." }, { status: 403 });
+      // The task row serializes saves; changing slide IDs is the revision marker.
+      const [locked] = await db.select({ id: deliverables.id }).from(deliverables).where(eq(deliverables.id, payload.deliverableId)).limit(1).for("update");
+      if (!locked) throw new AppError("Demanda não disponível.", 404);
+      const currentSlides = await db.select({ id: slides.id }).from(slides).where(eq(slides.deliverableId, payload.deliverableId)).orderBy(asc(slides.position));
+      if (currentSlides.length !== payload.expectedSlideIds.length || currentSlides.some((slide, index) => slide.id !== payload.expectedSlideIds[index])) {
+        throw new AppError("Esta pauta foi atualizada em outra edição. Seu rascunho foi mantido. Carregue a versão atual antes de salvar novamente.", 409);
+      }
       const normalized = payload.slides.slice(0, 30).map((slide: {copy:string;direction:string}, index:number) => ({ id: crypto.randomUUID(), deliverableId: payload.deliverableId, position: index + 1, copy: slide.copy, direction: slide.direction }));
       if (!normalized.length) return Response.json({ error: "A pauta precisa ter pelo menos uma fatia." }, { status: 400 });
       await db.delete(slides).where(eq(slides.deliverableId, payload.deliverableId));
       await db.insert(slides).values(normalized);
       await db.update(deliverables).set({ slideCount: normalized.length, updatedAt: new Date().toISOString() }).where(eq(deliverables.id, payload.deliverableId));
-      return Response.json({ ok: true });
+      return Response.json({ ok: true, slideIds: normalized.map(slide => slide.id) });
     }
 
     if (payload.action === "addAnnotation") {
@@ -188,22 +193,18 @@ export async function POST(request: Request) {
 
     if (payload.action === "updateClientCrm") {
       if (!can("crm.access")) return Response.json({ error: "Você não tem acesso ao CRM." }, { status: 403 });
-      const dueDay = Math.max(1, Math.min(31, Math.round(Number(payload.dueDay) || 5)));
-      await db.update(clients).set({
-        status: payload.status,
-        contactName: payload.contactName.trim(),
-        phone: payload.phone.trim(),
-        email: payload.email.trim(),
-        revenue: payload.revenue,
-        dueDay,
-        notes: payload.notes.trim()
-      }).where(eq(clients.id, payload.id));
-      const futureForecasts = await db.select().from(transactions).where(and(eq(transactions.clientId, payload.id), eq(transactions.recurring, true)));
-      for (const transaction of futureForecasts.filter((row) => ["predicted", "open"].includes(row.status) && new Date(row.dueDate).getTime() >= new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime())) {
-        const currentDate = new Date(transaction.dueDate);
-        const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-        const nextDueDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), Math.min(dueDay, lastDay), 12).toISOString();
-        await db.update(transactions).set({ amount: Math.max(0, Math.round(payload.revenue)), dueDate: nextDueDate, updatedAt: new Date().toISOString() }).where(eq(transactions.id, transaction.id));
+      const clientId = payload.id;
+      const changes = { status: payload.status, contactName: payload.contactName, phone: payload.phone, email: payload.email, notes: payload.notes, revenue: payload.revenue, dueDay: payload.dueDay };
+      await db.update(clients).set(changes).where(eq(clients.id, clientId));
+      // Contact/status edits must never rewrite hidden financial values or forecasts.
+      if (payload.revenue !== undefined || payload.dueDay !== undefined) {
+        const futureForecasts = await db.select().from(transactions).where(and(eq(transactions.clientId, clientId), eq(transactions.recurring, true)));
+        for (const transaction of futureForecasts.filter((row) => ["predicted", "open"].includes(row.status) && new Date(row.dueDate).getTime() >= new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime())) {
+          const currentDate = new Date(transaction.dueDate);
+          const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+          const dueDate = payload.dueDay === undefined ? transaction.dueDate : new Date(currentDate.getFullYear(), currentDate.getMonth(), Math.min(payload.dueDay, lastDay), 12).toISOString();
+          await db.update(transactions).set({ amount: payload.revenue ?? transaction.amount, dueDate, updatedAt: new Date().toISOString() }).where(eq(transactions.id, transaction.id));
+        }
       }
       return Response.json({ ok: true });
     }
@@ -333,7 +334,7 @@ export async function POST(request: Request) {
     }
 
     if (payload.action === "createBoard") {
-      if (!can("clients.manage")) return Response.json({ error: "Acesso negado." }, { status: 403 });
+      if (!can("demands.create")) return Response.json({ error: "Acesso negado." }, { status: 403 });
       const boardId = crypto.randomUUID();
       await db.insert(boards).values({ id: boardId, clientId: payload.clientId, title: "Planejamento de Mídia Social", period: payload.period.trim() || "Pauta atual", status: "active", createdBy: member.id, createdAt: new Date().toISOString() });
       return Response.json({ ok: true, boardId });
