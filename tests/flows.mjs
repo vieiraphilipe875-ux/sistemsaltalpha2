@@ -259,22 +259,17 @@ export async function runFlows({base,mailDir,check}){
   await owner.action('deactivateMember',{id:ws.currentMember.id});
   assert.equal((await outside.workspace()).agency.id,otherAgency);
  });
- await check('Troca de senha no perfil exige senha atual e encerra sessões sem enviar e-mail',async()=>{
+ await check('Alteração direta de senha indisponível preserva credenciais e sessão',async()=>{
   const next='Nova-Senha-Perfil-2026!';
-  const outsider=new Actor('anonymous@example.invalid','Sem sessão');
-  await outsider.auth('change-password',{currentPassword:password,password:next,confirmation:next},401);
   const previousCookie=outside.cookie;
   const countBefore=(await readdir(mailDir)).length;
-  await outside.auth('change-password',{currentPassword:'Incorreta!',password:next,confirmation:next},400);
-  await outside.auth('change-password',{currentPassword:password,password:'1234',confirmation:'1234'},400);
-  await outside.auth('change-password',{currentPassword:password,password:next,confirmation:next+'x'},400);
-  await outside.auth('change-password',{currentPassword:password,password,confirmation:password},400);
-  await outside.workspace();
-  await outside.auth('change-password',{currentPassword:password,password:next,confirmation:next});
-  assert.equal((await readdir(mailDir)).length,countBefore);
-  outside.cookie=previousCookie;await outside.workspace(401);
-  await outside.auth('login',{password},401);await outside.auth('login',{password:next});
+  const rejected=await outside.auth('change-password',{currentPassword:password,password:next,confirmation:next},400);
+  assert.equal(rejected.error,'Ação inválida.');
+  assert.equal(outside.cookie,previousCookie);
   assert.equal((await outside.workspace()).agency.id,otherAgency);
+  assert.equal((await readdir(mailDir)).length,countBefore);
+  await outside.auth('login',{password:next},401);
+  await outside.auth('login',{password});
  });
  await check('Senha: link único, senha antiga recusada e sessões encerradas',async()=>{
   const previousCookie=reader.cookie;

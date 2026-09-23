@@ -34,21 +34,22 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 | U22 | Trabalhar no Work, com modelo citado pelo usuário | Sessão em Work; não afirmar mudança de modelo sem confirmação do ambiente |
 | U23 | Propor ideias melhores e poder executá-las | Melhorias pertinentes podem ser implementadas e testadas; contratação e decisões comerciais continuam dependentes do titular |
 | U24 | Adiar envio de e-mail e liberar uma conta administrativa indicada pelo titular | Provisionamento individual no banco, limitado à própria agência; nenhuma credencial padrão no código e nenhum atalho público de autenticação |
-| U25 | Continuar as alterações pendentes | Corrigir pendências verificadas, acrescentar troca de senha no perfil sem envio de e-mail e repetir a regressão |
+| U25 | Continuar as alterações pendentes | Corrigir pendências verificadas e repetir a regressão |
+| U26 | Remover a troca de senha sem e-mail e retomar cadastro/e-mail após finalizar o restante do sistema | Remover a opção do perfil e sua operação no servidor; preservar o acesso ADM, suas credenciais e seus dados; manter cadastro, confirmação e recuperação por e-mail no roteiro posterior |
 
 ## Ordem de execução
 
 1. Consolidar contexto, regras, repositório e serviços existentes.
 2. Reproduzir falhas da base e corrigir com testes.
-3. Liberar o acesso administrativo solicitado e a troca de senha no perfil; retomar envio de e-mails posteriormente, conforme a nova prioridade do titular.
+3. Preservar o acesso administrativo solicitado e remover a troca de senha pelo perfil sem e-mail, conforme a decisão mais recente do titular.
 4. Conferir multiagência, convites, papéis, escopos e arquivos.
 5. Conferir a operação de clientes, pastas, demandas, pauta e revisão.
 6. Conferir CRM e financeiro, dados e permissões.
 7. Refinar UI/UX e documentar decisões de design.
-8. Regressão final, Preview, homologação hospedada e recuperação.
+8. Após finalizar as demais funções do sistema, retomar cadastro, confirmação, recuperação de senha e envio de e-mails; executar regressão final, Preview e homologação hospedada.
 9. Conversa futura sobre planos, limites, preços e checkout.
 
-A homologação de e-mail foi adiada pelo titular em 23/09/2026 para avançar na operação. A ativação manual de uma conta indicada é uma ação administrativa individual; não comprova propriedade da caixa postal nem elimina a confirmação dos cadastros públicos. Testes isolados de mensagens continuam sem comprovar entrega real.
+A homologação de e-mail foi adiada pelo titular em 23/09/2026 para avançar na operação. Em seguida, ele decidiu remover a troca de senha pelo perfil sem e-mail e retomar cadastro, confirmação, recuperação e envio de e-mails somente após finalizar o restante do sistema. A ativação manual de uma conta indicada é uma ação administrativa individual; não comprova propriedade da caixa postal nem elimina a confirmação dos cadastros públicos. O acesso ADM, suas credenciais e seus dados permanecem preservados. Testes isolados de mensagens continuam sem comprovar entrega real.
 
 ## Sugestões e decisões de produto
 
@@ -56,7 +57,7 @@ A homologação de e-mail foi adiada pelo titular em 23/09/2026 para avançar na
 - Próximas sugestões: “Meu trabalho” entre agências, filtros salvos, modelos/checklists de demanda e notificações configuráveis. A visualização deve preservar a agência de origem e o acesso do usuário.
 - Depois da homologação: papel de cliente aprovador com aprovação/pedido de ajustes, diferente do leitor interno.
 - Na conversa de monetização: avaliar assinatura por agência, mantendo uma conta para colaboradores convidados. Faixas, valores, limites e checkout não foram decididos.
-- E-mail: resolver autenticação/ativação do serviço escolhido ou avaliar um domínio próprio verificado. Não comprar domínio, reenviar testes ou reativar credenciais desativadas automaticamente.
+- E-mail e cadastro, após finalizar o restante do sistema: resolver autenticação/ativação do serviço escolhido ou avaliar um domínio próprio verificado; homologar confirmação e recuperação. Não comprar domínio, reenviar testes ou reativar credenciais desativadas automaticamente.
 
 ## Fontes e memória
 

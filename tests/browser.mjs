@@ -94,6 +94,8 @@ export async function runBrowser({base,state,check}){
   await check('Navegador: CRM, financeiro, equipe e perfil respondem',async()=>{
    for(const [name,shot] of [['CRM comercial','crm'],['Financeiro','financeiro'],['Gerenciar acessos','equipe']]){await page.getByRole('button',{name,exact:true}).click();await snapshot(shot);}
    await page.getByRole('button',{name:'Editar meu perfil',exact:true}).click();
+   await expect(page.getByRole('button',{name:'Alterar senha',exact:true})).toHaveCount(0);
+   await expect(page.getByLabel('Senha atual',{exact:true})).toHaveCount(0);
    await page.getByRole('textbox',{name:'Nome',exact:true}).fill('Marina Costa');
    await page.getByRole('button',{name:'Salvar perfil'}).click();
    await expect(page.getByText('Perfil atualizado',{exact:true})).toBeVisible();
@@ -178,25 +180,6 @@ export async function runBrowser({base,state,check}){
    const reset=await state.emailFor({email:'elisa@example.invalid'},'Redefina');const link=reset.match(/href="([^"]+)"/)[1].replaceAll('&amp;','&');await form.goto(link);
    await form.locator('input[name=password]').fill('Outra-Senha-2026!');await form.getByLabel('Confirmar senha',{exact:true}).fill('Outra-Senha-2026!');await form.getByRole('button',{name:'Salvar nova senha'}).click();
    await expect(form.getByRole('status')).toContainText('Senha alterada');await newcomer.close();
-  });
-  await check('Navegador: perfil altera senha sem e-mail e permite novo login',async()=>{
-   await page.setViewportSize({width:1440,height:1000});await page.goto(base);
-   await page.getByRole('button',{name:'Editar meu perfil',exact:true}).click();
-   await page.getByRole('button',{name:'Alterar senha',exact:true}).click();
-   await page.getByLabel('Senha atual',{exact:true}).fill(state.password);
-   const password='Senha-Perfil-Browser-2026!';
-   await page.getByLabel('Nova senha',{exact:true}).fill(password);
-   await page.getByLabel('Confirmar nova senha',{exact:true}).fill(password+'X');
-   await page.getByRole('button',{name:'Alterar senha',exact:true}).click();
-   await expect(page.getByRole('alert')).toContainText('precisam ser iguais');
-   await page.getByLabel('Confirmar nova senha',{exact:true}).fill(password);
-   await page.getByRole('button',{name:'Alterar senha',exact:true}).click();
-   await expect(page.getByRole('status').filter({hasText:'Senha alterada'})).toBeVisible();
-   await state.owner.workspace(401);
-   await page.getByRole('textbox',{name:'E-mail',exact:true}).fill(state.owner.email);
-   await page.locator('input[name=password]').fill(password);await page.getByRole('button',{name:'Entrar',exact:true}).click();
-   await page.getByRole('button',{name:'Editar meu perfil',exact:true}).waitFor({timeout:60000});
-   await state.owner.auth('login',{password});assert.equal((await state.owner.workspace()).agency.id,state.agency);
   });
   await check('Navegador: sem erros de execução no fluxo percorrido',async()=>{assert.deepEqual(errors,[]);});
  }catch(e){await snapshot('failure').catch(()=>{});await writeFile('evidence/browser-errors.json',JSON.stringify(errors));await writeFile('evidence/browser-failure.txt',(await page.locator('body').innerText({timeout:5000}).catch(()=>'' )).slice(0,18000));throw e;}

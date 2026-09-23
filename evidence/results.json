@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-23T10:12:34.750Z",
+  "date": "2026-09-23T12:31:12.644Z",
   "mode": "local PostgreSQL (PGlite), caixa de e-mail local",
   "results": [
     {
@@ -75,7 +75,7 @@
       "status": "passed"
     },
     {
-      "name": "Troca de senha no perfil exige senha atual e encerra sessões sem enviar e-mail",
+      "name": "Alteração direta de senha indisponível preserva credenciais e sessão",
       "status": "passed"
     },
     {
@@ -132,10 +132,6 @@
     },
     {
       "name": "Navegador: cadastro, código, onboarding e recuperação por e-mail",
-      "status": "passed"
-    },
-    {
-      "name": "Navegador: perfil altera senha sem e-mail e permite novo login",
       "status": "passed"
     },
     {

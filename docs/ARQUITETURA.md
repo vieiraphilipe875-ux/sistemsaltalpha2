@@ -2,7 +2,7 @@
 
 ## Componentes
 
-Next.js 16 e React 19 na aplicação; Drizzle para acesso a PostgreSQL; PGlite somente para desenvolvimento e testes; `postgres` para a conexão de produção. Supabase é o destino proposto para PostgreSQL e arquivos privados. Resend envia confirmação, recuperação e convites. A autenticação desta versão é própria, implementada no servidor; ela **não usa Supabase Auth**.
+Next.js 16 e React 19 na aplicação; Drizzle para acesso a PostgreSQL; PGlite somente para desenvolvimento e testes; `postgres` para a conexão de produção. Supabase hospeda PostgreSQL e arquivos privados. Os adaptadores de e-mail foram preparados para confirmação, recuperação e convites; a entrega real permanece adiada. A autenticação desta versão é própria, implementada no servidor; ela **não usa Supabase Auth**.
 
 O banco fica no schema `postito`, fora da API pública de dados. A migração ativa RLS nas tabelas e revoga acesso público, `anon` e `authenticated`. Na Vercel, a conexão usa `postito_runtime`, um papel exclusivo do backend com leitura e escrita nas tabelas da aplicação. Ele não é proprietário, não pode criar tabelas/papéis e não possui `BYPASSRLS` nem acesso aos dados de `auth`/`storage`.
 
@@ -32,8 +32,9 @@ Trocar agência altera a agência ativa da sessão. Desativar uma associação i
 - Código aleatório de seis dígitos: validade de 15 minutos, cinco tentativas por desafio e limites adicionais por conta.
 - Recuperação usa token aleatório de 256 bits, expiração de 30 minutos e consumo único.
 - Redefinição de senha encerra todas as sessões da conta.
-- Troca de senha no perfil exige sessão e senha atual, valida uma nova senha de pelo menos dez caracteres e não envia e-mail. A gravação compara o hash anterior para rejeitar alteração concorrente, consome desafios pendentes e encerra todas as sessões. O usuário entra novamente com a nova senha.
+- A troca de senha pelo perfil sem e-mail foi removida por decisão do titular em 23/09/2026. Não manter interface ou operação de servidor para esse fluxo. Cadastro, confirmação, recuperação de senha e envio de e-mails serão retomados após finalizar o restante do sistema; os fluxos existentes por e-mail continuam preparados, sem afirmar entrega real homologada.
 - O provisionamento manual de uma conta pelo titular não instala credenciais padrão nem concede administração global. A ativação individual permite operar enquanto a entrega de e-mails estiver adiada; os fluxos públicos mantêm a confirmação obrigatória.
+- A remoção da troca de senha pelo perfil preserva o acesso ADM já provisionado, suas credenciais e seus dados.
 - Sessão opaca guardada em cookie HttpOnly, SameSite=Lax, Secure em produção. No banco é guardado somente o hash do token, com validade de sete dias.
 - Código e token de recuperação são armazenados como hashes; não constam no payload da área de trabalho.
 - Limites persistidos em banco reduzem abuso de login, cadastro, convites e envio de e-mails. Na Vercel há também limite de envio por IP informado pela plataforma.

@@ -15,5 +15,6 @@ Leia `docs/REQUISITOS.md`, `docs/DESIGN.md`, `docs/ARQUITETURA.md` e `docs/ENTRE
 - Não introduza neon, gradientes automáticos, brilhos decorativos, ícones de estrelinha sem função ou grades de cartões iguais em todas as telas.
 - Preserve o RAR original. A migração lê uma cópia e só escreve em destino novo.
 - Planos, valores e checkout exigem decisão de produto posterior; não transforme previsões financeiras em cobranças reais.
+- Decisão do titular de 23/09/2026: remover a troca de senha pelo perfil sem e-mail. Retomar cadastro, confirmação, recuperação de senha e envio de e-mails após finalizar o restante do sistema. Preservar o acesso ADM já provisionado, suas credenciais e seus dados.
 
 - A pauta deve detectar revisão desatualizada antes de gravar e preservar o rascunho em conflito. Mudanças de contato/status no CRM não podem reescrever dados financeiros omitidos.

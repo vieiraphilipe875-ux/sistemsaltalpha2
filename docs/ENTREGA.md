@@ -1,20 +1,28 @@
 # Postito — entrega e verificação
 
-## Continuidade de 23/09/2026: acesso administrativo
+## Decisão atual de 23/09/2026: autenticação e e-mail
+
+Por solicitação explícita do titular, a opção **Seu perfil → Alterar senha** sem e-mail foi removida, junto com sua operação no servidor. O acesso ADM já provisionado, suas credenciais e seus dados permanecem preservados. Cadastro, confirmação, recuperação de senha e envio de e-mails serão retomados após finalizar o restante do sistema.
+
+A remoção foi validada por **34 cenários de API/navegador e 19 testes unitários aprovados**, com build de produção e TypeScript também aprovados. A chamada à antiga operação retorna HTTP 400 sem alterar a senha ou encerrar a sessão; no navegador, o perfil não oferece o controle removido e continua salvando nome e profissão.
+
+A rodada de 35 cenários abaixo é um registro histórico da versão que ainda incluía a troca de senha pelo perfil e foi substituída, para o estado atual, pela regressão descrita acima.
+
+## Histórico de 23/09/2026: acesso administrativo
 
 O titular adiou a configuração de envio de e-mails para avançar na operação. Foi provisionada uma conta indicada por ele, ativada individualmente e vinculada como proprietária a uma agência nova e vazia. A consulta posterior confirmou a credencial gravada e a associação ativa. Nenhuma credencial foi incluída no código, nenhum cadastro público deixou de exigir confirmação e nenhuma conta preexistente foi alterada. Essa ativação manual não comprova propriedade da caixa postal. O primeiro acesso hospedado ainda precisa ser conferido pelo titular.
 
-A atualização acrescenta **Seu perfil → Alterar senha**, sem e-mail, com senha atual obrigatória, confirmação da nova senha, revogação de sessões e novo login. A senha temporária solicitada deve ser substituída antes de inserir dados reais.
+A atualização anterior acrescentou **Seu perfil → Alterar senha**, sem e-mail, com senha atual obrigatória, confirmação da nova senha, revogação de sessões e novo login. Essa função foi removida pela decisão posterior registrada acima e não integra o estado atual do produto.
 
 Também foram corrigidas duas pendências: o financeiro agora permite abrir cada comprovante/NF anexado; a nova demanda oferece somente responsáveis ativos com as permissões necessárias. Os filtros financeiros de ano e mês receberam nomes acessíveis.
 
-Validação desta rodada: **35 cenários de API/navegador e 19 testes unitários aprovados**, TypeScript e build aprovados, lint com zero erros e 42 avisos preexistentes. Os testes percorrem senha atual incorreta, nova senha inválida, confirmação divergente, encerramento de sessões, rejeição da senha antiga, novo login, ausência de envio de e-mail, múltiplos documentos e responsáveis inelegíveis. A caixa de e-mail, os arquivos e o banco usados na regressão são locais e isolados. A entrega real de e-mails permanece adiada; a publicação continua em Preview.
+Validação histórica dessa rodada: **35 cenários de API/navegador e 19 testes unitários aprovados**, TypeScript e build aprovados, lint com zero erros e 42 avisos preexistentes. Os testes percorreram senha atual incorreta, nova senha inválida, confirmação divergente, encerramento de sessões, rejeição da senha antiga, novo login, ausência de envio de e-mail, múltiplos documentos e responsáveis inelegíveis. A caixa de e-mail, os arquivos e o banco usados na regressão são locais e isolados. A entrega real de e-mails permanece adiada; a publicação continua em Preview.
 
 ## Atualização de 23/09/2026
 
 As instruções principais enviadas pelo usuário foram consolidadas em `docs/REQUISITOS.md`. Esta rodada corrigiu o acesso à criação de pastas, separou edição de CRM e financeiro, protegeu pautas contra sobrescrita por outra edição e acrescentou avisos de rascunho. Também ajustou onboarding, permissões visuais, nomes acessíveis e menu móvel. A memória de design foi revisada.
 
-Validação local: **31 cenários de API/navegador e 19 testes unitários aprovados**, TypeScript e build aprovados; lint sem erros, com 42 avisos de manutenção. O alcance, as reproduções e as limitações estão em `docs/AUDITORIA-2026-09-23.md`. Entrega real de e-mails e homologação autenticada hospedada continuam pendentes. As contagens das seções seguintes são históricas e não devem substituir a rodada atual.
+Validação histórica local: **31 cenários de API/navegador e 19 testes unitários aprovados**, TypeScript e build aprovados; lint sem erros, com 42 avisos de manutenção. O alcance, as reproduções e as limitações estão em `docs/AUDITORIA-2026-09-23.md`. Entrega real de e-mails e homologação autenticada hospedada continuam pendentes. Esta contagem e as das seções seguintes registram versões anteriores.
 
 
 Atualizado em 21 de setembro de 2026 · versão 0.2.0
@@ -107,11 +115,12 @@ Isso é uma auditoria com escopo e evidências, não uma garantia de inexistênc
 
 ## O que falta para operação real
 
-1. Ativar e validar a alternativa Brevo solicitada pelo usuário, conforme `docs/EMAIL.md`; preparar domínio autenticado para o envio definitivo.
-2. Homologar cadastro, confirmação, recuperação, convites, upload direto grande, persistência e isolamento com os serviços reais.
-3. Configurar o ambiente de produção, sua URL definitiva e credenciais próprias antes da promoção.
-4. Promover somente a versão homologada.
-5. Revisar o plano de migração dos administradores/gerentes legados antes de importar dados reais.
+1. Finalizar as demais funções do sistema e suas correções, preservando o acesso ADM temporário e a remoção da troca de senha pelo perfil.
+2. Depois, retomar cadastro, confirmação, recuperação de senha e envio de e-mails; ativar e validar o serviço escolhido, conforme `docs/EMAIL.md`, e preparar domínio autenticado para o envio definitivo.
+3. Homologar esses fluxos, convites, upload direto grande, persistência e isolamento com os serviços reais.
+4. Configurar o ambiente de produção, sua URL definitiva e credenciais próprias antes da promoção.
+5. Promover somente a versão homologada.
+6. Revisar o plano de migração dos administradores/gerentes legados antes de importar dados reais.
 
 O link de pasta Google Drive foi mantido. Cópia automática de objetos para o Google Drive depende de uma integração própria e não está ativa. Arquivos finais possuem versões; desde 23/09/2026 a pauta rejeita versões desatualizadas e preserva o rascunho. Limpeza de objetos órfãos e paginação para bases grandes estão no roteiro posterior.
 
