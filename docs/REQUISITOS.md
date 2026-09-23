@@ -33,12 +33,14 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 | U21 | Considerar CRM/financeiro em plano médio/master | Hipótese de produto, sem bloqueios comerciais definitivos nesta fase |
 | U22 | Trabalhar no Work, com modelo citado pelo usuário | Sessão em Work; não afirmar mudança de modelo sem confirmação do ambiente |
 | U23 | Propor ideias melhores e poder executá-las | Melhorias pertinentes podem ser implementadas e testadas; contratação e decisões comerciais continuam dependentes do titular |
+| U24 | Adiar envio de e-mail e liberar uma conta administrativa indicada pelo titular | Provisionamento individual no banco, limitado à própria agência; nenhuma credencial padrão no código e nenhum atalho público de autenticação |
+| U25 | Continuar as alterações pendentes | Corrigir pendências verificadas, acrescentar troca de senha no perfil sem envio de e-mail e repetir a regressão |
 
 ## Ordem de execução
 
 1. Consolidar contexto, regras, repositório e serviços existentes.
 2. Reproduzir falhas da base e corrigir com testes.
-3. Homologar autenticação e envio de e-mails, respeitando o bloqueio real do provedor.
+3. Liberar o acesso administrativo solicitado e a troca de senha no perfil; retomar envio de e-mails posteriormente, conforme a nova prioridade do titular.
 4. Conferir multiagência, convites, papéis, escopos e arquivos.
 5. Conferir a operação de clientes, pastas, demandas, pauta e revisão.
 6. Conferir CRM e financeiro, dados e permissões.
@@ -46,7 +48,7 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 8. Regressão final, Preview, homologação hospedada e recuperação.
 9. Conversa futura sobre planos, limites, preços e checkout.
 
-A homologação de e-mail está bloqueada externamente. Correções independentes de demandas, permissões e interface podem avançar com caixa local isolada, sem declarar que a entrega real de mensagens está resolvida.
+A homologação de e-mail foi adiada pelo titular em 23/09/2026 para avançar na operação. A ativação manual de uma conta indicada é uma ação administrativa individual; não comprova propriedade da caixa postal nem elimina a confirmação dos cadastros públicos. Testes isolados de mensagens continuam sem comprovar entrega real.
 
 ## Sugestões e decisões de produto
 

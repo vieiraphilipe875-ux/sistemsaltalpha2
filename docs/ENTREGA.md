@@ -1,5 +1,15 @@
 # Postito — entrega e verificação
 
+## Continuidade de 23/09/2026: acesso administrativo
+
+O titular adiou a configuração de envio de e-mails para avançar na operação. Foi provisionada uma conta indicada por ele, ativada individualmente e vinculada como proprietária a uma agência nova e vazia. A consulta posterior confirmou a credencial gravada e a associação ativa. Nenhuma credencial foi incluída no código, nenhum cadastro público deixou de exigir confirmação e nenhuma conta preexistente foi alterada. Essa ativação manual não comprova propriedade da caixa postal. O primeiro acesso hospedado ainda precisa ser conferido pelo titular.
+
+A atualização acrescenta **Seu perfil → Alterar senha**, sem e-mail, com senha atual obrigatória, confirmação da nova senha, revogação de sessões e novo login. A senha temporária solicitada deve ser substituída antes de inserir dados reais.
+
+Também foram corrigidas duas pendências: o financeiro agora permite abrir cada comprovante/NF anexado; a nova demanda oferece somente responsáveis ativos com as permissões necessárias. Os filtros financeiros de ano e mês receberam nomes acessíveis.
+
+Validação desta rodada: **35 cenários de API/navegador e 19 testes unitários aprovados**, TypeScript e build aprovados, lint com zero erros e 42 avisos preexistentes. Os testes percorrem senha atual incorreta, nova senha inválida, confirmação divergente, encerramento de sessões, rejeição da senha antiga, novo login, ausência de envio de e-mail, múltiplos documentos e responsáveis inelegíveis. A caixa de e-mail, os arquivos e o banco usados na regressão são locais e isolados. A entrega real de e-mails permanece adiada; a publicação continua em Preview.
+
 ## Atualização de 23/09/2026
 
 As instruções principais enviadas pelo usuário foram consolidadas em `docs/REQUISITOS.md`. Esta rodada corrigiu o acesso à criação de pastas, separou edição de CRM e financeiro, protegeu pautas contra sobrescrita por outra edição e acrescentou avisos de rascunho. Também ajustou onboarding, permissões visuais, nomes acessíveis e menu móvel. A memória de design foi revisada.
@@ -103,6 +113,6 @@ Isso é uma auditoria com escopo e evidências, não uma garantia de inexistênc
 4. Promover somente a versão homologada.
 5. Revisar o plano de migração dos administradores/gerentes legados antes de importar dados reais.
 
-O link de pasta Google Drive foi mantido. Cópia automática de objetos para o Google Drive depende de uma integração própria e não está ativa. Arquivos finais possuem versões; edição simultânea da pauta ainda pode prevalecer pela última gravação. Limpeza de objetos órfãos e paginação para bases grandes estão no roteiro posterior.
+O link de pasta Google Drive foi mantido. Cópia automática de objetos para o Google Drive depende de uma integração própria e não está ativa. Arquivos finais possuem versões; desde 23/09/2026 a pauta rejeita versões desatualizadas e preserva o rascunho. Limpeza de objetos órfãos e paginação para bases grandes estão no roteiro posterior.
 
 Assinaturas, preços, checkout e liberação de módulos por pagamento não foram implementados nesta etapa. A proposta de discussão está em `docs/PROXIMAS-ETAPAS.md`.

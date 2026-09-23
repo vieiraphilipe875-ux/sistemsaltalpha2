@@ -114,6 +114,7 @@ import {
 import { uploadRequest } from "@/lib/upload-client";
 import { TeamPanel as Team, InviteDialog } from "@/components/team-panel";
 import { MemberPicker, ClientPeople } from "@/components/member-picker";
+import { FinancialDocuments } from "@/components/financial-documents";
 import {
   AgencySwitcher,
   ProfileDialog,
@@ -3154,9 +3155,7 @@ function CreateTaskDialog({
     })),
   );
   const [assigneeId, setAssigneeId] = useState(
-    data.members.find((member) =>
-      permissionsFor(data, member).includes("demands.execute"),
-    )?.id ?? "",
+    () => assignableMembers(data)[0]?.id ?? "",
   );
   const [dueAt, setDueAt] = useState("");
   const [notes, setNotes] = useState("");
@@ -3397,9 +3396,7 @@ function CreateTaskDialog({
                 Responsável
               </label>
               <MemberPicker
-                members={data.members.filter((m) =>
-                  permissionsFor(data, m).includes("demands.execute"),
-                )}
+                members={assignableMembers(data)}
                 value={assigneeId}
                 onSelect={(id) => setAssigneeId(id || "")}
                 label="Selecionar responsável"
@@ -5149,7 +5146,7 @@ function FinanceView({
       <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
           <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger className="rounded-xl">
+            <SelectTrigger className="rounded-xl" aria-label="Filtrar ano financeiro">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -5162,7 +5159,7 @@ function FinanceView({
             </SelectContent>
           </Select>
           <Select value={filterMonth} onValueChange={setFilterMonth}>
-            <SelectTrigger className="rounded-xl">
+            <SelectTrigger className="rounded-xl" aria-label="Filtrar mês financeiro">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -5621,16 +5618,10 @@ function FinanceTransactionTable({
                           {client?.name || t.counterpart || "Sem contraparte"} ·{" "}
                           {t.account}
                         </p>
-                        {documents.length > 0 && (
-                          <a
-                            href={documents[0].url}
-                            target="_blank"
-                            className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-[#526949]"
-                          >
-                            <Paperclip className="size-3" />
-                            {documents.length} anexo(s)
-                          </a>
-                        )}
+                        <FinancialDocuments
+                          documents={documents}
+                          context={t.description}
+                        />
                       </div>
                     </div>
                   </td>
@@ -5900,6 +5891,10 @@ function FinanceWorkerCard({
                         : "anexada"}
                   {docs.length ? ` · ${docs.length} arquivo(s)` : ""}
                 </p>
+                <FinancialDocuments
+                  documents={docs}
+                  context={`${worker.name} · ${c.competence}`}
+                />
               </div>
               <div className="flex items-center gap-1">
                 <Badge

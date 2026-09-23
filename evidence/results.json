@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-23T08:28:40.355Z",
+  "date": "2026-09-23T10:12:34.750Z",
   "mode": "local PostgreSQL (PGlite), caixa de e-mail local",
   "results": [
     {
@@ -75,6 +75,10 @@
       "status": "passed"
     },
     {
+      "name": "Troca de senha no perfil exige senha atual e encerra sessões sem enviar e-mail",
+      "status": "passed"
+    },
+    {
       "name": "Senha: link único, senha antiga recusada e sessões encerradas",
       "status": "passed"
     },
@@ -115,11 +119,23 @@
       "status": "passed"
     },
     {
+      "name": "Navegador: todos os comprovantes e notas fiscais podem ser abertos",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: nova demanda oferece somente responsáveis ativos e com acesso",
+      "status": "passed"
+    },
+    {
       "name": "Navegador: layout móvel, menu, foco e movimento reduzido",
       "status": "passed"
     },
     {
       "name": "Navegador: cadastro, código, onboarding e recuperação por e-mail",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: perfil altera senha sem e-mail e permite novo login",
       "status": "passed"
     },
     {

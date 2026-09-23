@@ -176,7 +176,7 @@ export async function runFlows({base,mailDir,check}){
   await owner.action('createTransaction',{...input,status:'partial',paidAmount:200000},400);
   await editor.action('createTransaction',input,403);
   await outside.action('updateTransaction',{id:txId,status:'paid'},404);
-  await upload(owner,'transaction',txId);
+  await upload(owner,'transaction',txId);await upload(owner,'transaction',txId);
  });
  await check('Equipe financeira: competência idempotente, notas e ajustes',async()=>{
   await owner.action('createFinanceWorker',{name:'Fornecedor Criativo',employmentType:'pj',monthlyAmount:200000,paymentDay:31,invoiceRequired:true});
@@ -257,6 +257,23 @@ export async function runFlows({base,mailDir,check}){
   await outside.action('updateClient',{id:otherClient.clientId,driveUrl:''},403);
   await outside.action('switchAgency',{agencyId:otherAgency});
   await owner.action('deactivateMember',{id:ws.currentMember.id});
+  assert.equal((await outside.workspace()).agency.id,otherAgency);
+ });
+ await check('Troca de senha no perfil exige senha atual e encerra sessões sem enviar e-mail',async()=>{
+  const next='Nova-Senha-Perfil-2026!';
+  const outsider=new Actor('anonymous@example.invalid','Sem sessão');
+  await outsider.auth('change-password',{currentPassword:password,password:next,confirmation:next},401);
+  const previousCookie=outside.cookie;
+  const countBefore=(await readdir(mailDir)).length;
+  await outside.auth('change-password',{currentPassword:'Incorreta!',password:next,confirmation:next},400);
+  await outside.auth('change-password',{currentPassword:password,password:'1234',confirmation:'1234'},400);
+  await outside.auth('change-password',{currentPassword:password,password:next,confirmation:next+'x'},400);
+  await outside.auth('change-password',{currentPassword:password,password,confirmation:password},400);
+  await outside.workspace();
+  await outside.auth('change-password',{currentPassword:password,password:next,confirmation:next});
+  assert.equal((await readdir(mailDir)).length,countBefore);
+  outside.cookie=previousCookie;await outside.workspace(401);
+  await outside.auth('login',{password},401);await outside.auth('login',{password:next});
   assert.equal((await outside.workspace()).agency.id,otherAgency);
  });
  await check('Senha: link único, senha antiga recusada e sessões encerradas',async()=>{

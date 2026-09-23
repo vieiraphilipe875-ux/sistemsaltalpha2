@@ -100,6 +100,25 @@ export async function POST(request:Request,{params}:{params:Promise<{action:stri
     const p=z.object({name:z.string().trim().min(2).max(120),profession:z.string().refine(v=>v in professionLabels)}).parse(raw);
     await db.update(members).set(p).where(eq(members.id,session.userId));return Response.json({ok:true});
   }
+  if(action==="change-password") {
+    const session=await verifySession();if(!session)throw new AppError("Entre na sua conta.",401);
+    await rateLimit(`password-change:${session.userId}`,6,15);
+    const p=z.object({currentPassword:z.string().min(1).max(128),password:passwordSchema,confirmation:passwordSchema})
+      .refine(v=>v.password===v.confirmation,"As senhas precisam ser iguais.")
+      .refine(v=>v.password!==v.currentPassword,"Escolha uma senha diferente da atual.").parse(raw);
+    if(!session.user.passwordHash || !await verifyPassword(p.currentPassword,session.user.passwordHash))throw new AppError("A senha atual está incorreta.",400);
+    const passwordHash=await hashPassword(p.password);
+    await db.transaction(async tx=>{
+      // A concurrent password change must invalidate this older credential.
+      const changed=await tx.update(members).set({passwordHash})
+        .where(and(eq(members.id,session.userId),eq(members.passwordHash,session.user.passwordHash!)))
+        .returning({id:members.id});
+      if(!changed.length)throw new AppError("Sua senha foi alterada em outra sessão. Entre novamente.",409);
+      await tx.update(authChallenges).set({consumedAt:now()}).where(eq(authChallenges.memberId,session.userId));
+      await tx.delete(sessions).where(eq(sessions.memberId,session.userId));
+    });
+    await deleteSession();return Response.json({ok:true,reauthenticate:true});
+  }
   throw new AppError("Ação inválida.");
  }catch(error){return errorResponse(error);}
 }
