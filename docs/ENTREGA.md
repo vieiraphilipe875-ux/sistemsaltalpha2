@@ -1,10 +1,12 @@
 # Postito — entrega e verificação
 
-## Landing v5 e ajustes pendentes: QA concluído, publicação em andamento
+## Landing v5 e ajustes pendentes: publicada no Preview
 
 Reformulação da landing com abertura centralizada, colagem de telas em expansão, leitura progressiva e três capítulos horizontais ligados ao scroll. Movimento restrito à LP, com leitura vertical/toque nativo no celular e fallback estático. Inclui omissão das mensalidades/vencimentos sem finance.access, abas financeiras responsivas, foco integral na busca de colaboradores e orientação de localização do convite.
 
 91 testes unitários e 78 cenários de API/navegador passaram (29 API e 49 navegador), além de TypeScript e build. Lint dos arquivos revisados: zero erros e cinco avisos preexistentes. Detalhes e limitações em docs/REDESIGN-2026-09-24.md; evidências motion-v5-*. Publicação apenas no Preview existente; produção, banco e credenciais preservados.
+
+Publicação do commit 235e0aa8b46a3b2258897c00df48e1d1773b911f concluída com status Vercel–Postito success (GGbGaQqTkSVzidjwuLxkRiuaMW7g). No alias estável, foram conferidos design motion-5, GSAP ativo, dois pins, scroll suave e escala da imagem de 0,69 até alinhamento/escala final. Captura hospedada: evidence/motion-v5-hosted.jpg. A revisão final acrescenta nomes acessíveis completos aos títulos segmentados, sem mudança visual.
 
 ## Landing e reformulação visual v4 em 24/09/2026: publicada no Preview
 

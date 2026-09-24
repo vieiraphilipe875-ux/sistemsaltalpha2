@@ -18,7 +18,19 @@
     "preexistingWarnings": 5
   },
   "environment": "Local PGlite, local mail, Chromium; synthetic fixtures only",
-  "hosting": "Preview publication pending",
+  "hosting": {
+    "status": "success",
+    "commit": "235e0aa8b46a3b2258897c00df48e1d1773b911f",
+    "tree": "23a9735e59a3c475727340d60ee1e1c957037f73",
+    "deployment": "GGbGaQqTkSVzidjwuLxkRiuaMW7g",
+    "alias": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/",
+    "observed": [
+      "motion-5",
+      "two pins",
+      "smooth scroll",
+      "hero scale expands to identity"
+    ]
+  },
   "limitations": [
     "No real email sent",
     "No hosted authenticated QA",
