@@ -80,7 +80,7 @@ export async function runPasswordRecoveryBrowser({browser,state,check,base}) {
    const login=authResponse(page,'login');
    await page.getByRole('button',{name:'Entrar',exact:true}).click();
    assert.equal((await login).status(),401);
-   await expect(page.getByRole('alert')).toBeVisible();
+   await expect(page.locator('.auth-form').getByRole('alert')).toBeVisible();
    await requestFromForgot(page,email);
    const stillPending=await context.request.post(base+'/api/auth/login',{headers:{Origin:base},data:{email,password:state.password}});
    assert.equal(stillPending.status(),401,'Solicitar recuperação não pode confirmar cadastro pendente');
@@ -94,13 +94,10 @@ export async function runPasswordRecoveryBrowser({browser,state,check,base}) {
    const repeated=authResponse(page,'signup');
    await page.getByRole('button',{name:'Criar minha conta',exact:true}).click();
    const repeatedResponse=await repeated;assert.equal(repeatedResponse.status(),200);
-   assert.equal((await repeatedResponse.json()).emailStatus,'not_requested');
+   assert.equal((await repeatedResponse.json()).emailStatus,'accepted');
    await expect(page.getByLabel('Código de confirmação')).toBeVisible();
-   await expect(page.getByRole('status')).toContainText('não gerou um novo código');
-   const resend=authResponse(page,'resend');
-   await page.getByRole('button',{name:'Solicitar código',exact:true}).click();
-   assert.equal((await resend).status(),200);
-   await expect(page.getByRole('status')).toContainText(/código/);
+   await expect(page.getByRole('status')).toContainText('Código encaminhado');
+   await expect(page.getByRole('button',{name:'Reenviar código',exact:true})).toBeEnabled();
    await confirmFromMailbox(page,email);
    await expect(page.getByRole('heading',{name:'Olá, Pedro.',exact:true})).toBeVisible();
    const unchangedPassword=await context.request.post(base+'/api/auth/login',{headers:{Origin:base},data:{email,password:'Nao-Trocar-Pelo-Cadastro-2026!'}});

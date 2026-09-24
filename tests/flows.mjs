@@ -36,16 +36,13 @@ export async function runFlows({base,mailDir,check}){
  }
  const owner=new Actor('owner@example.invalid','Marina Costa'),editor=new Actor('editor@example.invalid','Bruno Nunes'),reader=new Actor('reader@example.invalid','Clara Alves'),outside=new Actor('outside@example.invalid','Daniel Reis');
  await check('Cadastro, confirmação obrigatória, código de uso único',async()=>{for(const actor of [owner,editor,reader,outside])await register(actor);});
- await check('Cadastro pendente: repetição não anuncia envio; reenvio permite concluir sem trocar a senha',async()=>{
+ await check('Cadastro pendente: criar conta envia código automaticamente sem duplicar ou trocar credenciais',async()=>{
   const pending=new Actor('pending@example.invalid','Paula Teste');
   const first=await pending.auth('signup',{name:pending.name,password,profession:'designer'});
   assert.equal(first.emailStatus,'accepted');
   const before=(await readdir(mailDir)).length;
   const duplicate=await pending.auth('signup',{name:'Nome alterado',password:'Different-Fixture-Password!',profession:'designer'});
-  assert.equal(duplicate.emailStatus,'not_requested');
-  assert.match(duplicate.message,/não gerou um novo código/);
-  assert.equal((await readdir(mailDir)).length,before);
-  await pending.auth('resend');
+  assert.equal(duplicate.emailStatus,'accepted');
   assert.equal((await readdir(mailDir)).length,before+1);
   const html=await emailFor(pending,'Confirme');
   const code=html.match(/>(\d{6})<\/p>/)?.[1];assert(code);
@@ -54,6 +51,21 @@ export async function runFlows({base,mailDir,check}){
   await pending.auth('login',{password});
   await pending.action('createAgency',{name:'Agência de teste de confirmação'});
   assert.equal((await pending.workspace()).currentMember.name,'Paula Teste');
+  const afterConfirmation=(await readdir(mailDir)).length;
+  const confirmed=await pending.auth('signup',{name:'Não alterar',password:'Different-Fixture-Password!',profession:'designer'});
+  assert.equal(confirmed.emailStatus,'not_requested');
+  assert.equal((await readdir(mailDir)).length,afterConfirmation,'Conta confirmada não deve receber outro código de cadastro');
+ });
+ await check('Cadastro pendente: envio automático compartilha o limite de reenvio manual',async()=>{
+  const limited=new Actor('signup-mail-limit@example.invalid','Limite de reenvio');
+  await limited.auth('signup',{name:limited.name,password,profession:'designer'});
+  for(let attempt=0;attempt<3;attempt++)await limited.auth('resend');
+  const accepted=await limited.auth('signup',{name:limited.name,password,profession:'designer'});
+  assert.equal(accepted.emailStatus,'accepted');
+  const before=(await readdir(mailDir)).length;
+  await limited.auth('signup',{name:limited.name,password,profession:'designer'},429);
+  await limited.auth('resend',{},429);
+  assert.equal((await readdir(mailDir)).length,before,'Repetir cadastro não deve contornar o limite de reenvios');
  });
  let agency,otherAgency,c1,c2,otherClient,task,hiddenTask;
  await check('Confirmação: reenvio não invalida código ainda válido; sucesso consome todos',async()=>{
@@ -77,6 +89,8 @@ export async function runFlows({base,mailDir,check}){
   const code=html.match(/>(\d{6})<\/p>/)?.[1];assert(code);
   const wrongCode=String((Number(code)+1)%1000000).padStart(6,'0');
   for(let attempt=0;attempt<5;attempt++) await limited.auth('verify',{code:wrongCode},400);
+  const repeated=await limited.auth('signup',{name:limited.name,password,profession:'designer'});
+  assert.equal(repeated.emailStatus,'accepted');
   await limited.auth('resend');
   const resent=(await emailFor(limited,'Confirme')).match(/>(\d{6})<\/p>/)?.[1];assert(resent);
   await limited.auth('verify',{code:resent},400);

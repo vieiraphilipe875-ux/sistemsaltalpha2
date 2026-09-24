@@ -2,6 +2,12 @@
 
 Atualizado em 24/09/2026.
 
+## Código automático ao criar ou retomar cadastro
+
+Decisão posterior à correção da recuperação: Criar minha conta envia automaticamente o código de confirmação também quando o endereço já possui um cadastro pendente. O primeiro cadastro já enviava; o passo manual adicional da retomada foi removido. A conta continua pendente até a confirmação, sem duplicação ou alteração de senha/nome/profissão. A interface mostra Reenviar código e mantém a validade de cinco minutos.
+
+Cadastro repetido compartilha o limite de quatro reenvios por quinze minutos com a ação manual, além do limite de cadastro. Reenvio automático não zera as cinco tentativas agregadas de confirmação. Contas já confirmadas/inativas não recebem um novo código. A mensagem de encaminhamento só aparece após aceite do transporte; falhas continuam visíveis. Evidências desta rodada: `evidence/signup-auto-code-20260924.json` e `evidence/signup-auto-code-regression-20260924.json`.
+
 ## Recuperação e cadastro incompleto em 24/09/2026
 
 O caso relatado foi identificado por consulta somente de metadados: endereço cadastrado com status `pending`, sem confirmação do e-mail, sem desafio de recuperação e com uma tentativa registrada. Os logs Brevo consultados não mostravam recuperação. A aplicação antiga só enviava para `active`, mas devolvia uma mensagem condicional que não oferecia saída para a pendência. Não houve falha de entrega identificada nesse caso, porque nenhum envio foi iniciado.
@@ -65,8 +71,8 @@ A integração faz `POST https://api.brevo.com/v3/smtp/email`, com a chave no ca
 ## Cadastro e mensagens da interface
 
 - Um cadastro novo só retorna `emailStatus=accepted` após o aceite do transporte.
-- Repetir cadastro existente retorna `emailStatus=not_requested` e informa que esse pedido não gerou código. Isso não altera senha, profissão ou nome armazenados.
-- A confirmação usa texto neutro, botão Solicitar código e atalho para criar uma conta, sem afirmar que um envio ocorreu apenas porque a tela abriu.
+- Repetir cadastro pendente envia automaticamente e retorna `emailStatus=accepted` após aceite do transporte. Conta já confirmada/inativa continua com `emailStatus=not_requested`. Nenhum desses caminhos altera senha, profissão ou nome armazenados.
+- A confirmação usa texto neutro, botão Reenviar código e atalho para criar uma conta, sem afirmar que um envio ocorreu apenas porque a tela abriu.
 - A solicitação de código mantém mensagem condicional. Na recuperação, a decisão posterior descrita acima direciona inexistente/pendente ao cadastro; não afirmar resposta indistinguível de conta ativa.
 - Falha ao enviar remove o desafio recém-criado; a conta continua pendente. Não ativar pessoas diretamente no banco para contornar a confirmação.
 - Política da correção validada localmente: códigos válidos por cinco minutos; reenvio não invalida antecipadamente outro código ainda válido nem reinicia as cinco tentativas agregadas. Após confirmar, os desafios de confirmação são consumidos juntos.
@@ -75,6 +81,6 @@ A integração faz `POST https://api.brevo.com/v3/smtp/email`, com a chave no ca
 
 O adaptador possui testes com respostas simuladas da API. Os cenários locais usam caixa de e-mail isolada. Esses testes não comprovam entrega por Brevo.
 
-Para completar a homologação: usar o cadastro normal com uma conta de teste controlada pelo usuário. Se ela já estiver pendente, usar **Confirmar meu e-mail → Solicitar código**; repetir o cadastro não gera novo envio. Conferir o aceite e o evento de entrega no provedor e confirmar o recebimento com o usuário. Então validar código, recuperação, senha anterior recusada, sessões revogadas e convite em contexto de teste. Senhas e códigos reais devem ser informados pelo usuário na interface segura. Não usar a conta ADM para esses testes.
+Para completar a homologação: usar o cadastro normal com uma conta de teste controlada pelo usuário. Criar minha conta gera envio no cadastro novo e na retomada pendente; também é possível usar **Confirmar meu e-mail → Reenviar código**. Conferir o aceite e o evento de entrega no provedor e confirmar o recebimento com o usuário. Então validar código, recuperação, senha anterior recusada, sessões revogadas e convite em contexto de teste. Senhas e códigos reais devem ser informados pelo usuário na interface segura. Não usar a conta ADM para esses testes.
 
 As credenciais anteriores do Resend permanecem preservadas; sua recusa conhecida de destinatário não foi contornada. Não houve envio transacional durante a configuração inicial; o recebimento posterior foi relatado pelo usuário. Não houve compra, contratação paga ou promoção para produção.

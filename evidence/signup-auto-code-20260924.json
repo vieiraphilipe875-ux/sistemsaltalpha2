@@ -1,0 +1,42 @@
+{
+  "date": "2026-09-24",
+  "scope": "Automatic confirmation email on new signup and pending signup resume; Resend code label",
+  "branch": "postito/release-0.2.0",
+  "base_commit": "7e2f15b19243b7af828a68641940f92de7e46c90",
+  "changes": [
+    "Pending signup automatically sends verification code",
+    "Confirmation button says Reenviar código",
+    "Resumed signup shares manual resend limits",
+    "Pending account data and password preserved",
+    "Active/inactive signup does not issue new verification code",
+    "Five-minute expiry and aggregate attempt budget preserved"
+  ],
+  "validation": {
+    "unit_passed": 86,
+    "e2e_passed": 65,
+    "api_passed": 27,
+    "browser_passed": 38,
+    "typecheck": "passed after dev route generation completed",
+    "lint_changed_files": "0 errors, 0 warnings",
+    "build": "passed",
+    "build_compilation_seconds": 3.2,
+    "build_typescript_seconds": 8.3,
+    "build_warning": "Existing file-tracing warning next.config.ts -> lib/storage.ts -> finance documents route",
+    "new_and_pending_signup_send_automatically": true,
+    "manual_resend_works": true,
+    "shared_send_limit_verified": true,
+    "signup_does_not_reset_confirmation_attempts": true,
+    "confirmed_signup_does_not_send": true,
+    "confirmation_and_login_verified": true,
+    "initial_e2e_failure": "Ambiguous alert locator also matched Next route announcer. Scoped to auth form and reran full suite."
+  },
+  "deployment": {
+    "status": "pending"
+  },
+  "real_email_sent_this_turn": false,
+  "real_delivery_verified_this_turn": false,
+  "remote_data_mutated": false,
+  "schema_or_env_changed": false,
+  "production_promoted": false,
+  "regression_evidence": "evidence/signup-auto-code-regression-20260924.json"
+}

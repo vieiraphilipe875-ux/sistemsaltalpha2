@@ -1,6 +1,15 @@
 # Postito — entrega e verificação
 
 
+## Confirmação automática no cadastro em 24/09/2026
+
+Criar minha conta agora envia automaticamente o código também ao retomar um cadastro pendente; o primeiro cadastro já possuía o envio. O botão da confirmação foi renomeado para Reenviar código, com instrução correspondente e validade preservada em cinco minutos. O cadastro existente conserva nome, profissão e senha; não há duplicação de conta nem ativação antes da confirmação. Conta confirmada/inativa não recebe outro código de cadastro. A resposta de encaminhamento depende do aceite do transporte.
+
+O envio pela repetição pendente compartilha o limite de reenvio manual. Testes verificam que alternar os botões não contorna esse limite nem reinicia as cinco tentativas de confirmação. A primeira execução da regressão encontrou ambiguidade no seletor de alerta do teste, que também encontrava o anunciador de navegação do Next.js; o seletor passou a ficar restrito ao formulário. TypeScript deve rodar após os tipos do servidor de teste terminarem de ser gerados, evitando leitura concorrente de artefatos intermediários.
+
+**Validação local: 86 testes unitários e 65 cenários de API/navegador aprovados (27 API e 38 navegador).** TypeScript, lint dos arquivos alterados (zero erros/avisos) e build passaram. O build manteve somente o aviso conhecido de file tracing. Evidências desta rodada: `evidence/signup-auto-code-20260924.json` e `evidence/signup-auto-code-regression-20260924.json`. Não há mudança em schema, configuração de envio, conta ADM ou dados de usuários. Entrega real por Brevo permanece uma verificação separada da caixa local de testes.
+
+
 ## Recuperação direciona cadastro incompleto ao cadastro em 24/09/2026: publicado no Preview
 
 O diagnóstico do endereço informado encontrou um cadastro `pending`, sem confirmação e sem desafio de recuperação, embora a tentativa estivesse registrada. O comportamento anterior não enviava nessa condição e retornava uma mensagem genérica. Por decisão explícita posterior do titular, o formulário agora volta ao cadastro com o e-mail preenchido tanto para cadastro pendente quanto para endereço inexistente, sem envio de recuperação. Conta ativa continua no fluxo de link por e-mail. A conclusão de cadastro pendente continua pelo código de cinco minutos; repetir cadastro não sobrescreve nome, profissão ou senha nem duplica a conta.

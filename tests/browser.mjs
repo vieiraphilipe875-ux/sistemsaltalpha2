@@ -181,6 +181,12 @@ export async function runBrowser({base,state,check}){
    await form.getByLabel('Sua profissão').selectOption('copywriter');
    await form.locator('input[name=password]').fill(state.password);await form.getByLabel('Confirmar senha',{exact:true}).fill(state.password);
    await form.getByRole('button',{name:'Criar minha conta',exact:true}).click();await form.getByLabel('Código de confirmação').waitFor();
+   await expect(form.getByRole('status')).toContainText('Código encaminhado');
+   await expect(form.getByRole('button',{name:'Reenviar código',exact:true})).toBeEnabled();
+   assert.match(await state.emailFor({email:'elisa@example.invalid'},'Confirme'),/>\d{6}<\/p>/);
+   const resendResponse=form.waitForResponse(r=>r.url()===base+'/api/auth/resend'&&r.request().method()==='POST');
+   await form.getByRole('button',{name:'Reenviar código',exact:true}).click();
+   assert.equal((await resendResponse).status(),200);
    await expect(form.locator('.auth-intro')).toContainText('5 minutos após o envio');
    const html=await state.emailFor({email:'elisa@example.invalid'},'Confirme');
    const fixtureCode=html.match(/>(\d{6})<\/p>/)[1];
@@ -207,7 +213,7 @@ export async function runBrowser({base,state,check}){
    await form.getByLabel('E-mail',{exact:true}).fill('elisa@example.invalid');await form.locator('input[name=password]').fill(state.password);
    const oldLogin=form.waitForResponse(r=>r.url()===base+'/api/auth/login');
    await form.getByRole('button',{name:'Entrar',exact:true}).click();assert.equal((await oldLogin).status(),401);
-   await expect(form.getByRole('alert')).toBeVisible();await form.locator('input[name=password]').fill('Outra-Senha-2026!');
+   await expect(form.locator('.auth-form').getByRole('alert')).toBeVisible();await form.locator('input[name=password]').fill('Outra-Senha-2026!');
    const newLogin=form.waitForResponse(r=>r.url()===base+'/api/auth/login');
    await form.getByRole('button',{name:'Entrar',exact:true}).click();assert.equal((await newLogin).status(),200);
    await form.getByRole('textbox',{name:'Buscar clientes ou demandas'}).waitFor({timeout:60000});

@@ -49,7 +49,13 @@ export async function POST(request:Request,{params}:{params:Promise<{action:stri
     const p=z.object({email:emailSchema,name:z.string().trim().min(2).max(120),password:passwordSchema,profession:z.string().refine(v=>v in professionLabels)}).parse(raw);
     await rateLimit(`signup:${p.email}`,5,60);assertMailConfigured();
     const [existing]=await db.select().from(members).where(eq(members.email,p.email)).limit(1);
-    if(existing) return Response.json({ok:true,email:p.email,emailStatus:"not_requested",message:"Este pedido não gerou um novo código. Se já começou o cadastro, clique em Solicitar código. Se já confirmou o e-mail, entre com sua senha."});
+    if(existing) {
+      if(existing.status==="pending") {
+        await rateLimit(`resend:${p.email}`,4,15);
+        if(await challenge(existing,"verify")) return Response.json({ok:true,email:p.email,emailStatus:"accepted"});
+      }
+      return Response.json({ok:true,email:p.email,emailStatus:"not_requested",message:"Este pedido não gerou um novo código. Se já confirmou o e-mail, entre com sua senha. Se seu cadastro continua pendente, tente reenviar o código."});
+    }
     const [user]=await db.insert(members).values({id:randomUUID(),email:p.email,name:p.name,profession:p.profession,passwordHash:await hashPassword(p.password),status:"pending",createdAt:now()}).returning();
     await challenge(user,"verify");
     return Response.json({ok:true,email:p.email,emailStatus:"accepted"});

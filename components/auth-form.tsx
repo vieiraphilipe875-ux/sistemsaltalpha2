@@ -76,7 +76,7 @@ export function AuthForm({
           result.emailStatus === "accepted"
             ? "Código encaminhado para o seu e-mail. Confira sua caixa de entrada."
             : result.message ||
-                "Solicite um código abaixo para continuar a confirmação.",
+                "Use Reenviar código para continuar a confirmação.",
         );
       } else if (view === "reset") {
         change("login");
@@ -102,7 +102,7 @@ export function AuthForm({
     ],
     verify: [
       "Confirme seu e-mail.",
-      `Use o código de 6 dígitos recebido por e-mail. Ele vale por ${VERIFICATION_CODE_TTL_MINUTES} minutos após o envio. Ainda não recebeu? Solicite um código abaixo.`,
+      `Use o código de 6 dígitos recebido por e-mail. Ele vale por ${VERIFICATION_CODE_TTL_MINUTES} minutos após o envio. Ainda não recebeu? Confira o spam ou clique em Reenviar código.`,
     ],
     forgot: [
       "Vamos recuperar seu acesso.",
@@ -315,7 +315,7 @@ export function AuthForm({
             }
           }}
         >
-          Solicitar código
+          Reenviar código
         </button>
       )}
       {view === "verify" && (
