@@ -2,7 +2,7 @@
 
 ## Componentes
 
-Next.js 16 e React 19 na aplicação; Drizzle para acesso a PostgreSQL; PGlite somente para desenvolvimento e testes; `postgres` para a conexão de produção. Supabase hospeda PostgreSQL e arquivos privados. Os adaptadores de e-mail atendem confirmação, recuperação e convites; a configuração Brevo foi salva no Preview em 24/09/2026 e o usuário relatou recebimento. A confirmação apresentou falha após reenvio; sua correção ainda depende de nova publicação e validação real; a regressão local foi aprovada. A autenticação desta versão é própria, implementada no servidor; ela **não usa Supabase Auth**.
+Next.js 16 e React 19 na aplicação; Drizzle para acesso a PostgreSQL; PGlite somente para desenvolvimento e testes; `postgres` para a conexão de produção. Supabase hospeda PostgreSQL e arquivos privados. Os adaptadores de e-mail atendem confirmação, recuperação e convites; a configuração Brevo foi salva no Preview em 24/09/2026 e o usuário relatou recebimento. A confirmação apresentou falha após reenvio; sua correção passou na regressão local, foi publicada no Preview e a nova tela foi conferida. A confirmação real depende de novo código do usuário. A autenticação desta versão é própria, implementada no servidor; ela **não usa Supabase Auth**.
 
 O banco fica no schema `postito`, fora da API pública de dados. A migração ativa RLS nas tabelas e revoga acesso público, `anon` e `authenticated`. Na Vercel, a conexão usa `postito_runtime`, um papel exclusivo do backend com leitura e escrita nas tabelas da aplicação. Ele não é proprietário, não pode criar tabelas/papéis e não possui `BYPASSRLS` nem acesso aos dados de `auth`/`storage`.
 
@@ -29,7 +29,7 @@ Trocar agência altera a agência ativa da sessão. Desativar uma associação i
 
 - Senha nova protegida por scrypt com salt individual. Hashes PBKDF2/SHA-256 legados são aceitos na importação e atualizados no login.
 - Conta pendente não autentica com senha antes da confirmação do e-mail.
-- Política de confirmação solicitada em 24/09, com correção validada localmente: código aleatório de seis dígitos, validade de cinco minutos desde a criação, inclusive para desafios legados. Qualquer código ainda válido da conta pode confirmar; no sucesso, consumir os desafios de confirmação juntos. Limitar a cinco tentativas agregadas, sem reiniciar esse limite por reenvio, além dos limites adicionais por conta.
+- Política de confirmação solicitada em 24/09, com correção validada localmente e publicada no Preview: código aleatório de seis dígitos, validade de cinco minutos desde a criação, inclusive para desafios legados. Qualquer código ainda válido da conta pode confirmar; no sucesso, consumir os desafios de confirmação juntos. Limitar a cinco tentativas agregadas, sem reiniciar esse limite por reenvio, além dos limites adicionais por conta.
 - Recuperação usa token aleatório de 256 bits, expiração de 30 minutos e consumo único.
 - Redefinição de senha encerra todas as sessões da conta.
 - A troca de senha pelo perfil sem e-mail foi removida por decisão do titular em 23/09/2026. Não manter interface ou operação de servidor para esse fluxo. O titular retomou cadastro, confirmação, recuperação de senha e envio de e-mails; os fluxos existentes devem ser homologados com conta de teste controlada, sem afirmar entrega antes da evidência real.

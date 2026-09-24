@@ -65,8 +65,19 @@
       "status": "passed",
       "known_warning": "File tracing warning in next.config.ts/lib/storage.ts"
     },
-    "new_deployment": "pending",
-    "real_confirmation_after_fix": "pending"
+    "new_deployment": {
+      "status": "READY",
+      "duration_seconds": 33,
+      "id": "dpl_8gyzLivZBn7eVUsGh51coVYqLMDJ",
+      "url": "https://postito-doa9kxpev-vieiraphilipe875-7609s-projects.vercel.app",
+      "stable_alias": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/"
+    },
+    "real_confirmation_after_fix": "pending new code received by the user",
+    "hosted_confirmation_screen": {
+      "status": "verified_in_browser",
+      "surface": "Stable Preview alias, Confirmar meu e-mail screen",
+      "observed_text": "Ele vale por 5 minutos após o envio"
+    }
   },
   "manual_remote_database_writes": false,
   "admin_account_changed": false,
@@ -77,5 +88,11 @@
     "No recipient, authentication code, hash, token or credential is recorded here.",
     "Metadata inspection does not identify which code the user entered.",
     "Concurrency was tested in isolated PGlite, not across multiple hosted PostgreSQL connections."
-  ]
+  ],
+  "code_commit": "ad64eade9adfca7d31e1b0d62d9e3d6d71b0ea09",
+  "code_tree": "3d9bb57545318d65bfeca84aedc7f6286a7ff0b0",
+  "manual_account_activation": false,
+  "password_changed": false,
+  "database_schema_changed": false,
+  "environment_variables_changed_this_fix": false
 }

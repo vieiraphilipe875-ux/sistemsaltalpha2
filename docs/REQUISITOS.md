@@ -2,7 +2,7 @@
 
 Consolidação de 23/09/2026 da mensagem principal enviada pelo usuário nesta conversa, do plano anterior e das decisões recuperadas do chat “Aprimorar sistema CRM”. A mensagem principal está disponível integralmente; não se afirma ter uma transcrição integral de todas as demais mensagens antigas. Esta consolidação permite continuar o trabalho sem solicitar novamente as instruções já recebidas.
 
-Atualização de 24/09/2026: o titular retomou e-mail/cadastro para viabilizar testes e autorizou a chave Brevo **Postito Preview**, com validade de três meses, salva como segredo na Vercel. A configuração está salva apenas no Preview da branch `postito/release-0.2.0`, com redeploy READY. Depois, relatou recebimento do e-mail e rejeição do código, e pediu expiração em cinco minutos. A correção da confirmação depende de nova publicação e validação real; a regressão local foi aprovada. Detalhes em `docs/EMAIL.md` e nas evidências de ativação/correção de 24/09.
+Atualização de 24/09/2026: o titular retomou e-mail/cadastro para viabilizar testes e autorizou a chave Brevo **Postito Preview**, com validade de três meses, salva como segredo na Vercel. A configuração está salva apenas no Preview da branch `postito/release-0.2.0`, com redeploy READY. Depois, relatou recebimento do e-mail e rejeição do código, e pediu expiração em cinco minutos. A correção da confirmação passou na regressão local, foi publicada no Preview e a nova tela foi conferida; a confirmação real permanece pendente de novo código do usuário. Detalhes em `docs/EMAIL.md` e nas evidências de ativação/correção de 24/09.
 
 ## Objetivo e método
 
