@@ -10,6 +10,8 @@ O titular determinou que o usuário volte ao cadastro nesse estado. A recuperaç
 
 Nenhum e-mail real ou alteração manual de conta foi necessário para identificar o problema. A validação local passou em 86 testes unitários e 64 cenários de API/navegador, além de TypeScript, lint e build. Evidência em `evidence/password-recovery-20260924.json`, separando testes locais de navegação hospedada e de entrega real.
 
+Correção publicada no Preview em READY, commit `bab6360877beed2616a764055cb2983c19879c2b`, deployment `dpl_D1yjkDVUtJxsJvaVcpUYih9Rdn2Y`. O alias estável foi testado com endereço de diagnóstico sem cadastro: abriu a tela de cadastro com a orientação esperada, sem submissão de cadastro ou envio de e-mail real. Fluxos completos de confirmação e recuperação foram testados somente em fixtures locais nesta rodada.
+
 ## Confirmação após reenvio: correção publicada no Preview
 
 O usuário relatou recebimento do e-mail e recusa do código. A auditoria reproduziu o defeito: a confirmação consultava somente o desafio mais recente e podia recusar um código anterior ainda válido. Uma consulta somente leitura encontrou dois desafios criados com **3,488 segundos** de diferença, ambos válidos na inspeção, conta pendente e duas tentativas no mais recente. Nenhum código ou hash foi lido; não se afirma qual deles foi digitado pelo usuário.

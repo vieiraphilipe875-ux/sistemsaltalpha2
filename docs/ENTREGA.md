@@ -1,13 +1,15 @@
 # Postito — entrega e verificação
 
 
-## Recuperação direciona cadastro incompleto ao cadastro em 24/09/2026
+## Recuperação direciona cadastro incompleto ao cadastro em 24/09/2026: publicado no Preview
 
 O diagnóstico do endereço informado encontrou um cadastro `pending`, sem confirmação e sem desafio de recuperação, embora a tentativa estivesse registrada. O comportamento anterior não enviava nessa condição e retornava uma mensagem genérica. Por decisão explícita posterior do titular, o formulário agora volta ao cadastro com o e-mail preenchido tanto para cadastro pendente quanto para endereço inexistente, sem envio de recuperação. Conta ativa continua no fluxo de link por e-mail. A conclusão de cadastro pendente continua pelo código de cinco minutos; repetir cadastro não sobrescreve nome, profissão ou senha nem duplica a conta.
 
 A regressão inicial revelou também submissão nativa antes da hidratação na criação da primeira agência, observada como GET com o campo `agency` na URL. Os formulários de autenticação e onboarding agora ficam desabilitados até React assumir as ações e usam método POST como fallback. Os testes verificam controles no HTML sem JavaScript e requisição real após carregamento, sem espera arbitrária.
 
 **Validação local concluída: 86 testes unitários e 64 cenários de API/navegador aprovados (26 API e 38 navegador).** TypeScript e lint dos arquivos alterados passaram sem erros ou avisos. Build aprovado (compilação 3,3 s, TypeScript 8,3 s), com o aviso de file tracing já existente. Evidências em `evidence/password-recovery-20260924.json` e `evidence/password-recovery-regression-20260924.json`. Não houve ativação manual de conta, mudança no ADM, alteração de schema/variáveis nem envio real de recuperação durante o diagnóstico. O estado dos testes anteriores abaixo não substitui esta rodada.
+
+Publicação confirmada: commit `bab6360877beed2616a764055cb2983c19879c2b`, árvore `bcfdf9097cc904d52fc46224dfc2e6fa5b1c6756`, deployment `dpl_D1yjkDVUtJxsJvaVcpUYih9Rdn2Y` em **READY**, build de 64 segundos após a fila da conta. [Implantação](https://postito-69leslzfw-vieiraphilipe875-7609s-projects.vercel.app) e [alias estável](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/). No alias publicado, uma solicitação para endereço de diagnóstico inexistente abriu o cadastro e mostrou a orientação de conclusão. Não foi submetido cadastro nem enviado e-mail real. A retenção do endereço e a confirmação/recuperação completa foram verificadas nos testes locais.
 
 ## Navegação pelo caminho e recorte de imagens em 24/09/2026: publicado no Preview
 
