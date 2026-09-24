@@ -1,6 +1,6 @@
 "use client";
 import {useId,useState} from "react";
-import {UserPlus,Search,Copy,Check,Link2,Mail} from "lucide-react";
+import {UserPlus,Search,Copy,Check,Link2} from "lucide-react";
 import {toast} from "sonner";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
@@ -40,7 +40,8 @@ export function AccessFields({data,role,setRole,scope,setScope,clientIds,setClie
 type PropsWithoutAction={data:WorkspaceData};
 type InviteResult={link:string;delivery:"link"|"email";emailStatus:"accepted"|"not_requested";recipient?:string};
 export function InviteDialog({open,onOpenChange,data,postAction}:Props&{open:boolean;onOpenChange:(v:boolean)=>void}){
- const [email,setEmail]=useState(""),[delivery,setDelivery]=useState<"link"|"email">("email"),[role,setRole]=useState<Member["role"]>("editor"),[scope,setScope]=useState<"all"|"selected">("selected"),[clientIds,setClientIds]=useState<string[]>([]),[permissions,setPermissions]=useState<PermissionKey[]>(rolePermissionDefaults.editor),[busy,setBusy]=useState(false),[invitation,setInvitation]=useState<InviteResult|null>(null);
+ const [email,setEmail]=useState(""),[role,setRole]=useState<Member["role"]>("editor"),[scope,setScope]=useState<"all"|"selected">("selected"),[clientIds,setClientIds]=useState<string[]>([]),[permissions,setPermissions]=useState<PermissionKey[]>(rolePermissionDefaults.editor),[busy,setBusy]=useState(false),[invitation,setInvitation]=useState<InviteResult|null>(null);
+ const delivery=email.trim()?"email":"link";
  async function submit(){
   if(busy)return;
   setBusy(true);
@@ -60,12 +61,8 @@ export function InviteDialog({open,onOpenChange,data,postAction}:Props&{open:boo
     <Button onClick={async()=>{try{await navigator.clipboard.writeText(invitation.link);toast.success("Link copiado");}catch{toast.info("Selecione e copie o link acima.");}}}><Copy size={16}/>Copiar link</Button>
     <Button variant="outline" onClick={()=>{setInvitation(null);setEmail("");}}>Criar outro convite</Button>
    </div>:<>
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Como enviar o convite">
-     <Button aria-pressed={delivery==="email"} variant={delivery==="email"?"default":"outline"} onClick={()=>setDelivery("email")}><Mail size={16}/>Enviar por e-mail</Button>
-     <Button aria-pressed={delivery==="link"} variant={delivery==="link"?"default":"outline"} onClick={()=>setDelivery("link")}><Link2 size={16}/>Gerar link</Button>
-    </div>
-    <p className="text-sm text-muted-foreground">{delivery==="email"?"O convite será enviado para o e-mail informado abaixo.":"Gerar um link não envia e-mail. Preencher o e-mail abaixo apenas restringe quem pode aceitar o convite."}</p>
-    <label>E-mail {delivery==="link"?"(opcional, restringe quem pode aceitar)":""}<Input value={email} type="email" onChange={e=>setEmail(e.target.value)} placeholder="pessoa@agencia.com"/></label>
+    <p className="text-sm text-muted-foreground">Com e-mail, o convite é enviado automaticamente e só essa conta pode aceitá-lo. Para compartilhar somente o link, deixe o campo vazio.</p>
+    <label>E-mail (opcional)<Input value={email} type="email" disabled={busy} onChange={e=>setEmail(e.target.value)} placeholder="pessoa@agencia.com"/></label>
     <AccessFields data={data} role={role} setRole={setRole} scope={scope} setScope={setScope} clientIds={clientIds} setClientIds={setClientIds} permissions={permissions} setPermissions={setPermissions}/>
     <DialogFooter><Button variant="ghost" onClick={()=>onOpenChange(false)}>Cancelar</Button><Button disabled={busy||(delivery==="email"&&!email.includes("@"))} onClick={submit}>{busy?"Criando...":delivery==="email"?"Enviar convite":"Gerar link de convite"}</Button></DialogFooter>
    </>}

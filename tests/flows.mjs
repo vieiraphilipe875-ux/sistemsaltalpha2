@@ -109,7 +109,10 @@ export async function runFlows({base,mailDir,check}){
   await owner.action('createClient',{name:'Invalido',revenue:-1},400);
  });
  await check('Convite restrito ao e-mail, agência e uso único',async()=>{
-  const link=(await owner.action('inviteMember',{email:editor.email,role:'editor',clientIds:[],clientAccessMode:'selected',delivery:'email'})).link;
+  const invitation=await owner.action('inviteMember',{email:`  ${editor.email.toUpperCase()}  `,role:'editor',clientIds:[],clientAccessMode:'selected',delivery:'link'});
+  assert.equal(invitation.delivery,'email');
+  assert.equal(invitation.emailStatus,'accepted');
+  const link=invitation.link;
   const token=new URL(link).searchParams.get('invite');
   assert((await emailFor(editor,'Convite')).includes(token));
   await outside.action('acceptInvite',{token},403);
@@ -118,6 +121,17 @@ export async function runFlows({base,mailDir,check}){
   const inv=await owner.action('inviteMember',{role:'viewer',clientIds:[c1.clientId],clientAccessMode:'selected'});
   await reader.action('acceptInvite',{token:new URL(inv.link).searchParams.get('invite')});
   assert.equal((await reader.workspace()).clients.length,1);
+ });
+ await check('Convite com e-mail envia automaticamente sem escolher canal; endereço inválido não cria convite',async()=>{
+  const recipient={email:'automatic-invite@example.invalid'};
+  const invitation=await owner.action('inviteMember',{email:recipient.email,role:'viewer',clientIds:[c1.clientId],clientAccessMode:'selected'});
+  assert.equal(invitation.delivery,'email');assert.equal(invitation.emailStatus,'accepted');
+  assert((await emailFor(recipient,'Convite')).includes(new URL(invitation.link).searchParams.get('invite')));
+  const before=await owner.workspace();
+  const saved=before.invites.find(invite=>invite.email===recipient.email);
+  assert(saved);assert.deepEqual(saved.clientIds,[c1.clientId]);assert.equal(saved.role,'viewer');
+  await owner.action('inviteMember',{email:'endereco-invalido',role:'viewer',delivery:'link'},400);
+  assert.equal((await owner.workspace()).invites.length,before.invites.length);
  });
  let ownerId,editorId,readerId;
  await check('Atribuição: apenas a demanda recebida e sua pasta aparecem',async()=>{

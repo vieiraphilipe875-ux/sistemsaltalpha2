@@ -113,12 +113,17 @@ export async function runBrowser({base,state,check}){
   });
   await check('Navegador: convite por link e edição de acesso',async()=>{
    await page.getByRole('button',{name:'Convidar pessoa',exact:true}).click();
-   await page.getByRole('button',{name:'Gerar link',exact:true}).click();
    await page.getByLabel('Permissão',{exact:true}).selectOption('viewer');
    await page.getByLabel('Escopo de clientes',{exact:true}).selectOption('selected');
    await page.getByRole('checkbox',{name:'Vanessa Lopes',exact:true}).check();
+   const inviteResponse=page.waitForResponse(response=>response.url()===base+'/api/actions'&&response.request().postDataJSON()?.action==='inviteMember');
    await page.getByRole('button',{name:'Gerar link de convite',exact:true}).click();
+   const response=await inviteResponse;
+   assert.equal(response.status(),200);
+   assert.equal(response.request().postDataJSON().email,undefined);
+   assert.equal((await response.json()).emailStatus,'not_requested');
    await expect(page.getByLabel('Link do convite',{exact:true})).toHaveValue(/invite=/);
+   await expect(page.getByRole('dialog').getByRole('status')).toContainText('Nenhum e-mail foi enviado');
    await closeDialog();
    const row=page.locator('.team-row').filter({hasText:'Bruno Nunes'});await row.getByRole('button',{name:'Editar acesso'}).click();
    await page.getByRole('button',{name:'Salvar permissões',exact:true}).click();

@@ -1,0 +1,274 @@
+{
+  "date": "2026-09-24T13:02:44.541Z",
+  "mode": "local PostgreSQL (PGlite), caixa de e-mail local",
+  "results": [
+    {
+      "name": "Saúde do banco sem exposição de dados ou cache",
+      "status": "passed"
+    },
+    {
+      "name": "Cadastro, confirmação obrigatória, código de uso único",
+      "status": "passed"
+    },
+    {
+      "name": "Cadastro pendente: criar conta envia código automaticamente sem duplicar ou trocar credenciais",
+      "status": "passed"
+    },
+    {
+      "name": "Cadastro pendente: envio automático compartilha o limite de reenvio manual",
+      "status": "passed"
+    },
+    {
+      "name": "Confirmação: reenvio não invalida código ainda válido; sucesso consome todos",
+      "status": "passed"
+    },
+    {
+      "name": "Confirmação: reenvio não reinicia o limite de cinco tentativas",
+      "status": "passed"
+    },
+    {
+      "name": "Agências independentes e autorização de criação",
+      "status": "passed"
+    },
+    {
+      "name": "Convite restrito ao e-mail, agência e uso único",
+      "status": "passed"
+    },
+    {
+      "name": "Convite com e-mail envia automaticamente sem escolher canal; endereço inválido não cria convite",
+      "status": "passed"
+    },
+    {
+      "name": "Atribuição: apenas a demanda recebida e sua pasta aparecem",
+      "status": "passed"
+    },
+    {
+      "name": "Acesso explícito à pasta, pesquisa de equipe e reassociação",
+      "status": "passed"
+    },
+    {
+      "name": "Pastas, pauta, referências e validação de dados",
+      "status": "passed"
+    },
+    {
+      "name": "Pauta: duas edições da mesma versão não sobrescrevem o trabalho salvo",
+      "status": "passed"
+    },
+    {
+      "name": "Arquivos privados: envio, versão, leitura, revisão e exclusão",
+      "status": "passed"
+    },
+    {
+      "name": "Financeiro: previsão, parcial, quitação, reabertura e arquivo",
+      "status": "passed"
+    },
+    {
+      "name": "Equipe financeira: competência idempotente, notas e ajustes",
+      "status": "passed"
+    },
+    {
+      "name": "CRM: lead, conversão idempotente, negócio e atividades",
+      "status": "passed"
+    },
+    {
+      "name": "Múltiplas agências na mesma conta, troca e desativação local",
+      "status": "passed"
+    },
+    {
+      "name": "Permissões vazias não concedem acesso; origem externa bloqueada",
+      "status": "passed"
+    },
+    {
+      "name": "Editor com pasta liberada cria pastas sem gerenciar clientes",
+      "status": "passed"
+    },
+    {
+      "name": "CRM sem financeiro edita contato e status sem alterar cobranças",
+      "status": "passed"
+    },
+    {
+      "name": "Administrador atua na agência sem conceder administração ou alterar proprietário",
+      "status": "passed"
+    },
+    {
+      "name": "Alteração direta de senha indisponível preserva credenciais e sessão",
+      "status": "passed"
+    },
+    {
+      "name": "Senha: e-mail inexistente ou cadastro pendente volta ao cadastro sem receber recuperação",
+      "status": "passed"
+    },
+    {
+      "name": "Senha: e-mail cadastrado normalizado recebe um link único; senha antiga e sessões são revogadas",
+      "status": "passed"
+    },
+    {
+      "name": "Exclusões verificadas e dados persistidos após recarregar",
+      "status": "passed"
+    },
+    {
+      "name": "Cliente: retries simultâneos criam um cadastro, uma pauta e uma previsão por mês",
+      "status": "passed"
+    },
+    {
+      "name": "Imagem do cliente: limite de 20 MB, vínculo, leitura privada e troca com URL nova",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: login, logo, navegação e busca de clientes",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: atribuir na pasta, filtrar pelo nome e persistir",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: editar demanda, alternar abas e salvar pauta",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: rascunho preservado ao fechar e em conflito de edição",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: nova demanda na pasta escolhida, envio de anexo e arrastar",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: CRM, financeiro, equipe e perfil respondem",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: convite por link e edição de acesso",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: editor cria pasta e edita CRM sem campos financeiros",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: todos os comprovantes e notas fiscais podem ser abertos",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: nova demanda oferece somente responsáveis ativos e com acesso",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: busca por atalho, teclado e limpeza; ações rápidas de criação",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: layout móvel, menu, foco e movimento reduzido",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: CRM, financeiro e equipe no celular; leitura ampliada",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: cadastro, código, onboarding e recuperação por e-mail",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: recuperação sem cadastro volta ao cadastro, preserva e-mail e não envia recuperação",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: recuperação pendente volta ao cadastro e exige confirmação explícita por código",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: imagens inválidas bloqueiam cadastro; imagens válidas persistem sem duplicar no clique repetido",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: falha parcial no banner retoma apenas a imagem pendente e mantém cliente, pauta e previsões únicos",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: resposta de criação perdida após commit é recuperada com a mesma chave sem duplicar previsões",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: concluir cadastro com imagem pendente abre um novo formulário sem reutilizar cliente ou arquivos",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: personalizar troca e remove foto e banner com persistência após recarregar",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: convite de leitor seleciona todos, respeita busca e envia e-mail local",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: convite de editor desmarca todos e envia ao preencher e-mail",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: botão do e-mail abre o quadro após login e aceite, restrito ao destinatário",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: selecionar clientes atuais persiste e acesso futuro exige escopo próprio",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: carga da equipe respeita clientes autorizados, profissão, busca e demandas concluídas",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: nova demanda pela equipe pesquisa cliente, mantém responsável e atualiza carga e Kanban",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: leitor e execução sem planejamento não recebem carga da equipe nem criação",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: trocar agência mantém carga, responsáveis e clientes isolados",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: carga no celular e cliente sem pauta simulada permitem criar pasta e demanda reais sem perder briefing",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: trilha do cliente volta à lista por teclado e distingue a página atual",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: trilha da demanda usa o cliente real e protege o rascunho antes de voltar",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: trilha de cliente e demanda permanece acionável no celular sem transbordar",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: trilha de execução mantém Minhas demandas e não libera outras tarefas do cliente",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: cancelar recorte e arquivo que não decodifica não criam cliente nem enviam imagem",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: foto quadrada e banner de retrato respeitam zoom, recorte e pixels após recarregar",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: cancelar personalização conserva imagem; arrastar e escolher a base do banner salva somente após aplicar",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: editor de imagem cabe em 390 e 320 px e arraste por toque persiste o recorte exibido",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: sem erros de execução no fluxo percorrido",
+      "status": "passed"
+    }
+  ]
+}

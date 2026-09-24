@@ -1,5 +1,15 @@
 # Postito — entrega e verificação
 
+## Convites automáticos com botão de acesso em 24/09/2026: validado para Preview
+
+Todo convite novo com e-mail agora envia automaticamente a mensagem para o endereço preenchido. A regra é aplicada pelo servidor inclusive para interfaces antigas que enviam canal link ou omitem o canal. O e-mail continua restringindo o aceite à conta correspondente; permissões, clientes selecionados, validade de sete dias, uso único e revogação permanecem. O formulário dispensa escolher o canal: com destinatário mostra Enviar convite; sem destinatário, Gerar link de convite.
+
+A mensagem inclui o botão **Acessar quadro**, que conserva o convite pelo login/cadastro e leva ao cliente autorizado após o aceite. A validação do botão percorreu e-mail renderizado, clique, login, aceite e cliente, verificando que a conta leitora recebe somente o cliente selecionado e nenhum dado de CRM/financeiro. Outra conta é recusada e repetir o aceite também. Configuração ausente não cria convite; recusa, timeout ou resposta incompleta do provedor revogam o registro e não anunciam envio.
+
+**QA local: 91 testes unitários e 67 cenários E2E aprovados (28 API e 39 navegador).** TypeScript, lint dos arquivos de código/teste alterados (zero erros/avisos), verificação de diff e build passaram. Build: compilação 3,3 s, TypeScript 8,4 s; permanece o aviso conhecido de file tracing. A primeira execução E2E retornou 404 na leitura de uma imagem local, sem reprodução nas duas execuções seguintes e sem alteração desse fluxo. A segunda parou numa asserção do novo teste que procurava a navegação desktop em viewport estreito; a asserção passou a verificar o título do cliente. A terceira suíte completa passou. Isso não atribui causa definitiva ao 404 inicial.
+
+Evidências: `evidence/invite-auto-email-20260924.json`, `evidence/invite-auto-email-regression-20260924.json` e capturas `invite-auto-email-button.png`, `invite-auto-email-confirmed.png`, `invite-auto-email-form.png`. Mensagens e contas são fixtures locais; não houve envio de convite real, reenvio em massa, alteração do banco hospedado, schema, variáveis ou acesso ADM. Entrega na caixa postal e aceite hospedado são verificações separadas.
+
 
 ## Confirmação automática no cadastro em 24/09/2026: publicado no Preview
 

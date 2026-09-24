@@ -1,5 +1,11 @@
 # Envio de e-mails do Postito
 
+## Convites com envio automático em 24/09/2026
+
+Todo convite novo com destinatário preenchido envia automaticamente a mensagem para esse endereço, inclusive quando uma interface antiga envia `delivery=link` ou omite o canal. O endereço continua restringindo o aceite à conta correspondente. A mensagem inclui o botão **Acessar quadro**, com o token do convite persistido; login ou cadastro preservam esse token até o aceite e o acesso aos clientes autorizados.
+
+Sem e-mail, o convite gera somente o link. Se o provedor rejeitar ou não confirmar o envio, o convite é revogado e a interface exibe falha; ausência de configuração impede a criação. O sucesso significa aceite pelo transporte, não confirmação de entrega na caixa postal. Não foram disparados convites reais nem reenviados convites antigos nesta alteração. A validação usa contas, banco e caixa de e-mail locais isolados.
+
 Atualizado em 24/09/2026.
 
 ## Código automático ao criar ou retomar cadastro

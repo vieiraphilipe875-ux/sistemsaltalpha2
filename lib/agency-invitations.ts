@@ -23,26 +23,30 @@ type InvitationInput = {
 // The action authorizes the inviter and every client before calling this helper.
 // Keep provider acceptance distinct from delivery to the recipient's inbox.
 export async function createAgencyInvitation(db: InvitationDatabase, input: InvitationInput) {
-  if (input.delivery === "email") {
-    if (!input.email) throw new AppError("Informe o e-mail do convite.");
-    assertMailConfigured();
-  }
+  const email = input.email?.trim().toLowerCase();
+  if (input.delivery === "email" && !email)
+    throw new AppError("Informe o e-mail do convite.");
+  // A recipient always requests email, including older clients sending delivery=link.
+  if (email) assertMailConfigured();
   const id = randomUUID();
   const token = randomToken();
   const createdAt = new Date().toISOString();
   const expiresAt = new Date(Date.parse(createdAt) + 7 * 86_400_000).toISOString();
   const link = `${(process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "")}/?invite=${encodeURIComponent(token)}`;
   await db.insert(schema.agencyInvites).values({
-    id, agencyId: input.agencyId, tokenHash: digest(token), email: input.email || null,
+    id, agencyId: input.agencyId, tokenHash: digest(token), email: email || null,
     role: input.role, permissions: input.permissions, clientIds: [...new Set(input.clientIds)],
     clientAccessMode: input.clientAccessMode, createdBy: input.createdBy, createdAt, expiresAt,
   });
-  if (input.delivery === "email") {
+  if (email) {
     try {
       await sendMail(
-        input.email!,
+        email,
         `Convite para ${input.agencyName} no Postito`,
-        `<p>${escapeHtml(input.inviterName)} convidou você para trabalhar com ${escapeHtml(input.agencyName)}.</p><p><a href="${escapeHtml(link)}">Aceitar convite</a></p><p>Entre na sua conta ou crie uma. O convite expira em 7 dias.</p>`,
+        `<p>${escapeHtml(input.inviterName)} convidou você para trabalhar com ${escapeHtml(input.agencyName)}.</p>
+        <p>Entre ou crie sua conta com <strong>${escapeHtml(email)}</strong> e aceite o convite para acessar os clientes e demandas liberados para você.</p>
+        <p style="margin:28px 0"><a href="${escapeHtml(link)}" style="display:inline-block;background-color:#25283d;color:#ffffff;border:1px solid #25283d;border-radius:8px;padding:14px 24px;font-size:16px;font-weight:600;line-height:24px;text-align:center;text-decoration:none">Acessar quadro</a></p>
+        <p>Este convite é exclusivo para este e-mail e expira em 7 dias. As permissões são definidas pela agência.</p>`,
         id,
       );
     } catch (error) {

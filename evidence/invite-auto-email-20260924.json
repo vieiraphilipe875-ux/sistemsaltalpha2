@@ -1,0 +1,46 @@
+{
+  "date": "2026-09-24",
+  "scope": "Automatic invitation email with Acessar quadro button, restricted to recipient and existing scope",
+  "branch": "postito/release-0.2.0",
+  "base_commit": "9d46dff1d896ebd529da79d45ca4f9852c63e499",
+  "changes": [
+    "Email recipient always triggers delivery, even with legacy delivery=link or omitted channel",
+    "Email remains bound to invitation acceptance",
+    "Email includes styled Acessar quadro link",
+    "UI derives delivery from filled email; no conflicting channel selector",
+    "No-email invitation remains shareable by link",
+    "Configuration failures do not create records; provider failures revoke invitation"
+  ],
+  "validation": {
+    "unit_passed": 91,
+    "e2e_passed": 67,
+    "api_passed": 28,
+    "browser_passed": 39,
+    "typecheck": "passed",
+    "lint_changed_files": "0 errors, 0 warnings",
+    "build": "passed",
+    "build_compilation_seconds": 3.3,
+    "build_typescript_seconds": 8.4,
+    "build_warning": "Existing file-tracing warning next.config.ts -> lib/storage.ts -> finance documents route",
+    "email_button_login_accept_client_verified": true,
+    "wrong_recipient_rejected": true,
+    "selected_client_scope_and_viewer_permissions_verified": true,
+    "single_use_verified": true,
+    "no_email_link_only_verified": true,
+    "provider_errors_revoke_invite_verified": true,
+    "initial_e2e_failures": [
+      "404 reading local client image, not reproduced in subsequent two runs; no definitive cause assigned",
+      "New test expected desktop navigation in narrow viewport; changed assertion to authorized client heading; full suite rerun passed"
+    ]
+  },
+  "deployment": {
+    "status": "awaiting publication",
+    "environment": "Preview"
+  },
+  "real_email_sent_this_turn": false,
+  "real_delivery_verified_this_turn": false,
+  "remote_data_mutated": false,
+  "schema_or_env_changed": false,
+  "production_promoted": false,
+  "regression_evidence": "evidence/invite-auto-email-regression-20260924.json"
+}

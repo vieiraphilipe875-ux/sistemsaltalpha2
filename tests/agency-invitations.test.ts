@@ -64,6 +64,8 @@ test("Convite: e-mail chama Brevo com o link persistido e distingue aceite de en
     assert.match(payload.htmlContent, /Pessoa &amp; Fixture/);
     assert.match(payload.htmlContent, /Agência &lt;Fixture&gt;/);
     assert.match(payload.htmlContent, /expira em 7 dias/);
+    assert.match(payload.htmlContent, /<a href="[^"]+" style="[^"]+">Acessar quadro<\/a>/);
+    assert.match(payload.htmlContent, /exclusivo para este e-mail/);
     emailedLink = payload.htmlContent.match(/href="([^"]+)"/)[1];
     const [stored] = await db.select().from(schema.agencyInvites);
     assert.equal(payload.headers["Idempotency-Key"], stored.id);
@@ -85,17 +87,41 @@ test("Convite: e-mail chama Brevo com o link persistido e distingue aceite de en
   assert.equal(stored.usedAt, null);
 });
 
-test("Convite: link com e-mail restringe destinatário e informa que não houve envio", async t => {
+test("Convite: e-mail preenchido envia automaticamente mesmo com delivery=link", async t => {
+  configure(t);
+  let calls = 0;
+  let emailedLink = "";
+  t.mock.method(globalThis, "fetch", async (_input: unknown, init?: RequestInit) => {
+    calls++;
+    const payload = JSON.parse(String(init?.body));
+    assert.deepEqual(payload.to, [{ email: invitation.email }]);
+    emailedLink = payload.htmlContent.match(/href="([^"]+)"/)[1];
+    return Response.json({ messageId: "<fixture@brevo.example.invalid>" }, { status: 201 });
+  });
+  const result = await createAgencyInvitation(db, {
+    ...invitation, email: "  RECIPIENT@example.invalid  ", delivery: "link",
+  });
+  assert.equal(calls, 1);
+  assert.equal(result.delivery, "email");
+  assert.equal(result.emailStatus, "accepted");
+  assert.equal(result.link, emailedLink);
+  const [stored] = await db.select().from(schema.agencyInvites);
+  assert.equal(stored.email, invitation.email);
+  assert.equal(stored.tokenHash, digest(new URL(emailedLink).searchParams.get("invite")!));
+  assert.equal(stored.revokedAt, null);
+});
+
+test("Convite: sem e-mail gera somente link e não exige provedor configurado", async t => {
   configure(t);
   delete process.env.BREVO_API_KEY;
   let calls = 0;
   t.mock.method(globalThis, "fetch", async () => { calls++; throw new Error("Unexpected network"); });
-  const result = await createAgencyInvitation(db, { ...invitation, delivery: "link" });
+  const result = await createAgencyInvitation(db, { ...invitation, email: undefined, delivery: "link" });
   assert.equal(result.delivery, "link");
   assert.equal(result.emailStatus, "not_requested");
   assert.equal(calls, 0);
   const [stored] = await db.select().from(schema.agencyInvites);
-  assert.equal(stored.email, invitation.email);
+  assert.equal(stored.email, null);
   assert.equal(stored.revokedAt, null);
 });
 
@@ -107,15 +133,16 @@ test("Convite: envio sem destinatário falha antes de criar registro", async t =
   assert.equal((await db.select().from(schema.agencyInvites)).length, 0);
 });
 
-test("Convite: configuração ausente falha antes de criar registro", async t => {
+for (const delivery of ["email", "link"] as const) {
+test(`Convite: e-mail com delivery=${delivery} e configuração ausente não cria registro`, async t => {
   configure(t);
   delete process.env.BREVO_API_KEY;
-  await assert.rejects(createAgencyInvitation(db, invitation), { status: 503 });
+  await assert.rejects(createAgencyInvitation(db, { ...invitation, delivery }), { status: 503 });
   assert.equal((await db.select().from(schema.agencyInvites)).length, 0);
 });
 
 for (const failure of ["refused", "timeout", "unconfirmed"] as const) {
-  test(`Convite: falha ${failure} revoga o link e não anuncia envio nem repete`, async t => {
+  test(`Convite: delivery=${delivery}, falha ${failure} revoga o link sem anunciar envio nem repetir`, async t => {
     const logs = configure(t);
     let calls = 0;
     t.mock.method(globalThis, "fetch", async () => {
@@ -124,7 +151,7 @@ for (const failure of ["refused", "timeout", "unconfirmed"] as const) {
       if (failure === "unconfirmed") return Response.json({}, { status: 201 });
       return Response.json({ message: "Fixture rejected recipient@example.invalid" }, { status: 403 });
     });
-    await assert.rejects(createAgencyInvitation(db, invitation), error => {
+    await assert.rejects(createAgencyInvitation(db, { ...invitation, delivery }), error => {
       assert(error instanceof AppError);
       assert.equal(error.status, 502);
       assert.doesNotMatch(error.message, /recipient|example.invalid/);
@@ -137,4 +164,5 @@ for (const failure of ["refused", "timeout", "unconfirmed"] as const) {
     assert.equal(logs.length, 1);
     assert.doesNotMatch(JSON.stringify(logs), /recipient|brevo-fixture|token_hash/);
   });
+}
 }

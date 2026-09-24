@@ -274,7 +274,7 @@ export async function agencyAction(raw: unknown) {
       );
     if (p.delivery === "email" && !p.email)
       throw new AppError("Informe o e-mail do convite.");
-    if (p.delivery === "email") assertMailConfigured();
+    if (p.email) assertMailConfigured();
     await rateLimit(`invite:${agencyId}`, 40, 60);
     const clientIds = await authorizeAgencyClientIds(db, me, p.clientIds);
     const permissions =
