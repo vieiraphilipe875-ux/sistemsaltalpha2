@@ -31,12 +31,26 @@
     "initial_e2e_failure": "Ambiguous alert locator also matched Next route announcer. Scoped to auth form and reran full suite."
   },
   "deployment": {
-    "status": "pending"
+    "status": "READY",
+    "id": "dpl_C3m4vXKqsXuhkfmhC34YDoAQRt8w",
+    "commit": "e1a007958f51032448ff0e45c9cc5e4d3a11347b",
+    "tree": "d44bb865cf4f79ea244f5fe03c4e59e0b7b50f7e",
+    "duration_seconds": 54,
+    "environment": "Preview",
+    "url": "https://postito-j72noculc-vieiraphilipe875-7609s-projects.vercel.app",
+    "stable_alias": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app"
   },
   "real_email_sent_this_turn": false,
   "real_delivery_verified_this_turn": false,
   "remote_data_mutated": false,
   "schema_or_env_changed": false,
   "production_promoted": false,
-  "regression_evidence": "evidence/signup-auto-code-regression-20260924.json"
+  "regression_evidence": "evidence/signup-auto-code-regression-20260924.json",
+  "hosted_verification": {
+    "login_loaded": true,
+    "verification_view_loaded": true,
+    "resend_code_label_visible": true,
+    "five_minute_expiry_visible": true,
+    "no_form_submitted_no_real_email_sent": true
+  }
 }

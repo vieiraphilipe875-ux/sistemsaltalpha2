@@ -1,7 +1,7 @@
 # Postito — entrega e verificação
 
 
-## Confirmação automática no cadastro em 24/09/2026
+## Confirmação automática no cadastro em 24/09/2026: publicado no Preview
 
 Criar minha conta agora envia automaticamente o código também ao retomar um cadastro pendente; o primeiro cadastro já possuía o envio. O botão da confirmação foi renomeado para Reenviar código, com instrução correspondente e validade preservada em cinco minutos. O cadastro existente conserva nome, profissão e senha; não há duplicação de conta nem ativação antes da confirmação. Conta confirmada/inativa não recebe outro código de cadastro. A resposta de encaminhamento depende do aceite do transporte.
 
@@ -9,6 +9,8 @@ O envio pela repetição pendente compartilha o limite de reenvio manual. Testes
 
 **Validação local: 86 testes unitários e 65 cenários de API/navegador aprovados (27 API e 38 navegador).** TypeScript, lint dos arquivos alterados (zero erros/avisos) e build passaram. O build manteve somente o aviso conhecido de file tracing. Evidências desta rodada: `evidence/signup-auto-code-20260924.json` e `evidence/signup-auto-code-regression-20260924.json`. Não há mudança em schema, configuração de envio, conta ADM ou dados de usuários. Entrega real por Brevo permanece uma verificação separada da caixa local de testes.
 
+
+Publicação confirmada: commit `e1a007958f51032448ff0e45c9cc5e4d3a11347b`, árvore `d44bb865cf4f79ea244f5fe03c4e59e0b7b50f7e`, deployment `dpl_C3m4vXKqsXuhkfmhC34YDoAQRt8w` em **READY**, build de 54 segundos. [Implantação](https://postito-j72noculc-vieiraphilipe875-7609s-projects.vercel.app) e [alias estável](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/). No alias, a tela de confirmação exibiu Reenviar código e validade de cinco minutos. Não houve submissão de cadastro ou envio real nesta conferência; envio e confirmação completos foram verificados em fixtures locais.
 
 ## Recuperação direciona cadastro incompleto ao cadastro em 24/09/2026: publicado no Preview
 
