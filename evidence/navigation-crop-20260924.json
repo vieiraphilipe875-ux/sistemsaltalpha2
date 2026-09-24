@@ -2,7 +2,7 @@
   "date": "2026-09-24",
   "scope": "Clickable breadcrumbs and client avatar/banner crop preview",
   "branch": "postito/release-0.2.0",
-  "status": "verified_locally_awaiting_preview",
+  "status": "published_preview",
   "requirements": [
     "U34",
     "U35"
@@ -67,7 +67,7 @@
       "typescript_seconds": 8.7,
       "warning": "Existing NFT/file tracing next.config.ts → lib/storage.ts → financial documents route"
     },
-    "hosted_public_page": "pending",
+    "hosted_public_page": "Login page loaded on stable Preview alias after READY",
     "authenticated_hosted_flow": "not_run",
     "typecheck": "passed",
     "lint": {
@@ -118,5 +118,16 @@
     "Tests use isolated local accounts, database and images.",
     "No Safari/Firefox or authenticated hosted crop verification claimed.",
     "Existing remote client image objects are not rewritten by this feature."
-  ]
+  ],
+  "deployment": {
+    "commit": "3a404e73a51eac6883ce4c2f9c3ead2806322d95",
+    "tree": "773ab3df6f9b2fd3011232a8635a4b3e8155fc5c",
+    "id": "dpl_7mu6ziF3Lr2kBZuBReE21qGuexpM",
+    "status": "READY",
+    "environment": "Preview",
+    "duration_seconds": 34,
+    "queued_before_build": true,
+    "url": "https://postito-qjf6t81ff-vieiraphilipe875-7609s-projects.vercel.app",
+    "stable_alias": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/"
+  }
 }

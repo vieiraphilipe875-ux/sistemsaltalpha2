@@ -8,7 +8,7 @@ Rodada de clientes/convites de 24/09/2026: o titular relatou duplicação de cli
 
 Nova rodada solicitada em áudio em 24/09/2026: tabela de colaboradores no dashboard para distribuir demandas, filtro por profissão, contagem atribuída e criação central com cliente pesquisável, pauta e responsável. O exemplo de seis demandas frente a uma referência de doze orienta a decisão humana; não solicita quota automática ou bloqueio. Implementação concluída e QA próprio aprovado em 80 testes unitários e 53 cenários de API/navegador; Preview publicado em READY e tela pública de login conferida; verificação autenticada hospedada permanece pendente. A reparação dos registros reais foi autorizada posteriormente e concluída em uma ação separada da implementação do dashboard; sua verificação não substitui o QA da nova função. Evidência própria: `evidence/team-workload-20260924.json`.
 
-Rodada de navegação e imagens de 24/09: o titular pediu navegação clicável no caminho “Clientes e pautas > Cliente”, semelhante ao uso de pastas, e dimensões recomendadas com prévia de recorte para foto e banner. Implementação concluída e QA próprio aprovado em 86 testes unitários e 61 cenários de API/navegador; publicação no Preview em andamento.
+Rodada de navegação e imagens de 24/09: o titular pediu navegação clicável no caminho “Clientes e pautas > Cliente”, semelhante ao uso de pastas, e dimensões recomendadas com prévia de recorte para foto e banner. Implementação concluída e QA próprio aprovado em 86 testes unitários e 61 cenários de API/navegador; Preview publicado em READY.
 
 ## Objetivo e método
 
