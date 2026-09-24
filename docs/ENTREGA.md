@@ -1,5 +1,9 @@
 # Postito — entrega e verificação
 
+## Rodapé sem recorte da marca em 24/09/2026
+
+Corrigida a máscara que cortava a borda direita do último “o” de Postito. Uma folga de 0,1 em preserva o desenho inteiro da letra e a animação. Conferência visual e de pixels em 1920, 1440, 820, 390 e 320 px, mais movimento reduzido, sem corte, transbordamento ou erro de execução; Voltar ao início passou nos seis casos. Fallback sem JavaScript inspecionado visualmente. Detalhes e limites do diagnóstico em `docs/REDESIGN-2026-09-24.md`; capturas e medições em `evidence/footer-clipping-*`. Publicação direcionada ao Preview existente.
+
 ## Continuidade do scroll da landing em 24/09/2026: QA aprovado
 
 Corrigidos os saltos entre Nosso propósito e os três capítulos horizontais. Lenis e GSAP agora avançam no mesmo frame; os trechos fixados acompanham diretamente a rolagem suavizada, e carregar uma imagem não reinicia o cálculo da animação. Mudanças reais de tamanho são recalculadas após a rolagem parar. Toque, movimento reduzido, leitura sem JavaScript e desmontagem ao entrar no sistema permanecem cobertos.
