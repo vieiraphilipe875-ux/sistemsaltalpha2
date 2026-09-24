@@ -13,17 +13,24 @@ export function MarketingMotion() {
       gsap.registerPlugin(ScrollTrigger);
       const media = gsap.matchMedia(root);
       let refreshFrame = 0;
-      const refresh = () => {
-        cancelAnimationFrame(refreshFrame);
-        refreshFrame = requestAnimationFrame(() => { if (!disposed) ScrollTrigger.refresh(); });
+      let refreshPending = false;
+      const flushRefresh = () => {
+        if (disposed || !refreshPending || ScrollTrigger.isScrolling()) return;
+        refreshPending = false;
+        ScrollTrigger.refresh(true);
       };
-      const images = [...root.querySelectorAll("img")];
+      const refresh = () => {
+        refreshPending = true;
+        cancelAnimationFrame(refreshFrame);
+        refreshFrame = requestAnimationFrame(flushRefresh);
+      };
       const details = [...root.querySelectorAll("details")];
       const observer = new ResizeObserver(refresh);
+      ScrollTrigger.addEventListener("scrollEnd", flushRefresh);
       cleanup = () => {
         cancelAnimationFrame(refreshFrame);
         observer.disconnect();
-        images.forEach(img => img.removeEventListener("load", refresh));
+        ScrollTrigger.removeEventListener("scrollEnd", flushRefresh);
         details.forEach(detail => detail.removeEventListener("toggle", refresh));
         media.revert();
         delete root.dataset.motion;
@@ -53,7 +60,7 @@ export function MarketingMotion() {
         if (desktop) {
           const hero = gsap.timeline({ scrollTrigger: {
             id: "landing-product", trigger: ".hero-product-stage", start: "top 104px", end: () => "+=" + window.innerHeight * 0.95,
-            pin: true, scrub: 0.65, anticipatePin: 1, invalidateOnRefresh: true,
+            pin: true, scrub: true, invalidateOnRefresh: true,
           } });
           hero.fromTo(".hero-product", { scale: 0.69, rotationX: 14, rotation: -4, y: 20 }, { scale: 1, rotationX: 0, rotation: 0, y: 0, duration: 1, ease: "power1.inOut" }, 0)
             .fromTo(".hero-satellite-left", { xPercent: 35, rotation: -14 }, { xPercent: -70, rotation: -28, opacity: 0, duration: 0.85 }, 0)
@@ -66,7 +73,7 @@ export function MarketingMotion() {
           const distance = () => Math.max(0, rail.scrollWidth - window.innerWidth);
           const journey = gsap.timeline({ scrollTrigger: {
             id: "landing-journey", trigger: ".flow-scene", start: "top 92px", end: () => "+=" + distance(),
-            pin: true, scrub: 0.65, anticipatePin: 1, invalidateOnRefresh: true,
+            pin: true, scrub: true, invalidateOnRefresh: true,
           } });
           journey.to(rail, { x: () => -distance(), ease: "none", duration: 1 }, 0)
             .fromTo(".flow-progress>span", { scaleX: 0 }, { scaleX: 1, ease: "none", duration: 1 }, 0);
@@ -106,10 +113,10 @@ export function MarketingMotion() {
         }
         return () => { delete flow.dataset.rail; listeners.forEach(remove => remove()); };
       });
-      images.forEach(img => img.addEventListener("load", refresh));
       details.forEach(detail => detail.addEventListener("toggle", refresh));
-      const tour = root.querySelector(".product-tour");
-      if (tour) observer.observe(tour);
+      // Images reserve their aspect ratio: decoding alone does not change layout.
+      // Only actual document size changes need a refresh, after scrolling settles.
+      observer.observe(root);
       void document.fonts.ready.then(() => { if (!disposed) refresh(); });
       refresh();
     }

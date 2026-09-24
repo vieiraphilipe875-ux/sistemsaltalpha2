@@ -1,6 +1,12 @@
 # Postito — entrega e verificação
 
-## Kanbans personalizáveis em 24/09/2026: QA local aprovado, publicação pendente
+## Continuidade do scroll da landing em 24/09/2026: QA aprovado
+
+Corrigidos os saltos entre Nosso propósito e os três capítulos horizontais. Lenis e GSAP agora avançam no mesmo frame; os trechos fixados acompanham diretamente a rolagem suavizada, e carregar uma imagem não reinicia o cálculo da animação. Mudanças reais de tamanho são recalculadas após a rolagem parar. Toque, movimento reduzido, leitura sem JavaScript e desmontagem ao entrar no sistema permanecem cobertos.
+
+**95 cenários de API/navegador aprovados (38 API e 57 navegador)**, incluindo medição quadro a quadro ao descer/subir com rolagem normal e rápida. Erro máximo entre posição esperada e observada: 0,126 px, com altura da página constante. TypeScript, lint dos três arquivos de código/teste (zero erros/avisos) e build passaram; compilação 3,5 s e TypeScript 8,8 s, com o aviso preexistente de file tracing. Evidências: `evidence/motion-scroll-continuity-20260924.json` e `evidence/motion-scroll-regression-20260924.json`. Detalhes em `docs/REDESIGN-2026-09-24.md`. Publicação direcionada ao Preview existente; validação local em Chromium não substitui homologação em Safari/Firefox.
+
+## Kanbans personalizáveis em 24/09/2026: publicado no Preview
 
 Demandas dentro do cliente e quadros de leads, oportunidades e clientes do CRM agora oferecem Personalizar listas: adicionar, renomear, colorir, ordenar e remover inclusive todas as listas padrão. As configurações persistem por cliente ou agência. Remoções realocam os cartões para o destino escolhido ou Sem lista, preservando conteúdos, histórico, aprovações e resultados comerciais. Permissões continuam verificadas no servidor; conflitos conservam o rascunho e impedem sobrescrita silenciosa.
 
@@ -9,6 +15,8 @@ Demandas dentro do cliente e quadros de leads, oportunidades e clientes do CRM a
 A primeira tentativa parou por campos obrigatórios omitidos na fixture de API; a segunda, por falta da seleção de responsável na nova fixture de interface. Ambos os testes foram corrigidos e a terceira regressão completa passou. Não foi necessário alterar o produto por essas falhas de teste. Detalhes em `docs/KANBAN-2026-09-24.md`; execução em `evidence/kanban-regression-20260924.json`.
 
 Validação com contas/agências, banco, arquivos e e-mails locais isolados. Não comprova entrega real do convite nem uso autenticado hospedado. O relato de convite ausente continua separado desta função; não houve novo envio real na regressão.
+
+Publicação confirmada: commit `a145aae5d043118f47cae1e74bddc8c231286467`, árvore `78dfa3b40e3d2b65d8777f981780a7f7e1533316`, status Vercel–Postito success, deployment `29Tos4n7xnzvzGmeFX4PGeb7DTVg`.
 
 ## Landing v5 e ajustes pendentes: publicada no Preview
 

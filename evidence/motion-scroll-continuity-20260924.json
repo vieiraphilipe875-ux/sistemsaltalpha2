@@ -1,0 +1,43 @@
+{
+  "date": "2026-09-24T20:00:09.812Z",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "geometry": {
+    "top": 3341.875,
+    "start": 3249.875,
+    "travel": 2794,
+    "x": 43.1875
+  },
+  "summary": [
+    {
+      "phase": "down",
+      "frames": 401,
+      "pinnedFrames": 172,
+      "maxHorizontalError": 0.1251220703125,
+      "maxVerticalError": 0.125
+    },
+    {
+      "phase": "up",
+      "frames": 240,
+      "pinnedFrames": 171,
+      "maxHorizontalError": 0.1251220703125,
+      "maxVerticalError": 0.125
+    },
+    {
+      "phase": "fast-down",
+      "frames": 56,
+      "pinnedFrames": 39,
+      "maxHorizontalError": 0.1251220703125,
+      "maxVerticalError": 0.125
+    },
+    {
+      "phase": "fast-up",
+      "frames": 64,
+      "pinnedFrames": 40,
+      "maxHorizontalError": 0.1251220703125,
+      "maxVerticalError": 0.125
+    }
+  ]
+}

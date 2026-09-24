@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {expect} from '@playwright/test';
+import {writeFile} from 'node:fs/promises';
 
 export async function runMarketingBrowser({browser,base,state,check}) {
  const errors=[];
@@ -84,6 +85,58 @@ export async function runMarketingBrowser({browser,base,state,check}) {
    await page.setViewportSize({width:820,height:740});await expect(page.locator('.pin-spacer')).toHaveCount(0);
    await page.setViewportSize({width:390,height:844});await expect(page.locator('.pin-spacer')).toHaveCount(0);
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1));
+  });
+ });
+ await check('Navegador: propósito e carrossel mantêm continuidade ao rolar e inverter a direção',async()=>{
+  await withPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'},async page=>{
+   await page.goto(base);
+   await expect(page.locator('.landing-flow')).toHaveAttribute('data-rail','active');
+   await expect(page.locator('.landing')).toHaveAttribute('data-intro','ready');
+   const geometry=await page.evaluate(()=>{
+    const scene=document.querySelector('.flow-scene');
+    const card=document.querySelector('.landing-flow-item');
+    const rail=document.querySelector('.landing-flow-grid');
+    const top=scene.getBoundingClientRect().top+scrollY;
+    window.motionSamples=[];
+    window.motionSampling=true;
+    window.motionPhase='down';
+    const sample=()=>{
+     window.motionSamples.push({phase:window.motionPhase,y:scrollY,top:scene.getBoundingClientRect().top,x:card.getBoundingClientRect().left,height:document.documentElement.scrollHeight});
+     if(window.motionSampling)requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+    return {top,start:top-92,travel:rail.scrollWidth-innerWidth,x:card.getBoundingClientRect().left};
+   });
+   const frames=()=>page.evaluate(()=>new Promise(resolve=>{let count=0;const tick=()=>++count===6?resolve():requestAnimationFrame(tick);requestAnimationFrame(tick);}));
+   await page.mouse.move(1150,750);
+   for(const [phase,delta] of [['down',130],['up',-130],['fast-down',600],['fast-up',-600]]){
+    await page.evaluate(value=>{window.motionPhase=value;},phase);
+    const target=delta>0?geometry.start+geometry.travel+300:geometry.start-500;
+    let reached=false;
+    for(let i=0;i<100;i++){
+     await page.mouse.wheel(0,delta);await frames();
+     const y=await page.evaluate(()=>scrollY);
+     if(delta>0?y>=target:y<=target){reached=true;break;}
+    }
+    assert(reached,`A rolagem ${phase} precisa atravessar a entrada e a saída do carrossel`);
+   }
+   const samples=await page.evaluate(()=>{window.motionSampling=false;return window.motionSamples;});
+   const summary=[];
+   for(const phase of ['down','up','fast-down','fast-up']){
+    const values=samples.filter(sample=>sample.phase===phase);
+    const pinned=values.filter(sample=>sample.y>geometry.start+2&&sample.y<geometry.start+geometry.travel-2);
+    assert(pinned.length>5,`Frames insuficientes no carrossel durante ${phase}`);
+    const deltas=values.map(sample=>{
+     const progress=Math.min(geometry.travel,Math.max(0,sample.y-geometry.start));
+     return {x:Math.abs(sample.x-(geometry.x-progress)),top:Math.abs(sample.top-(geometry.top-sample.y+progress))};
+    });
+    const result={phase,frames:values.length,pinnedFrames:pinned.length,maxHorizontalError:Math.max(...deltas.map(delta=>delta.x)),maxVerticalError:Math.max(...deltas.map(delta=>delta.top))};
+    summary.push(result);
+    assert(result.maxHorizontalError<3,`Salto horizontal em ${phase}: ${result.maxHorizontalError}px`);
+    assert(result.maxVerticalError<3,`Salto na entrada/saída em ${phase}: ${result.maxVerticalError}px`);
+   }
+   assert.equal(new Set(samples.map(sample=>sample.height)).size,1,'A altura da página não pode mudar durante o percurso');
+   await writeFile('evidence/motion-scroll-continuity-20260924.json',JSON.stringify({date:new Date().toISOString(),viewport:{width:1440,height:900},geometry,summary},null,2));
   });
  });
  await check('Navegador: motion por toque preserva o scroll nativo e o acesso a todas as seções',async()=>{
