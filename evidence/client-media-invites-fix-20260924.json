@@ -2,7 +2,7 @@
   "date": "2026-09-24",
   "scope": "Client creation retries, avatar/banner persistence, email invites and current-client bulk selection",
   "branch": "postito/release-0.2.0",
-  "status": "validated_locally_ready_for_preview",
+  "status": "published_preview_real_data_recovery_requires_approval",
   "client_creation": {
     "user_report": "A file warning after creation suggested failure; resubmitting created a second client and images were not shown.",
     "confirmed_code_causes": [
@@ -62,10 +62,13 @@
       "trust_uploader_custom_metadata_for_size_or_mime": false
     },
     "real_data_recovery": {
-      "image_recovery": "pending_precondition_review",
-      "duplicate_reconciliation": "pending_precondition_review",
+      "image_recovery": "blocked_with_combined_repair_pending_explicit_approval",
+      "duplicate_reconciliation": "blocked_pending_explicit_approval",
       "remote_repairs_performed": false,
-      "remote_data_deleted": false
+      "remote_data_deleted": false,
+      "proposal": "Keep original client and invites, link the two existing verified images, inactivate duplicate, archive its 12 untouched forecasts, preserve reversible audit.",
+      "proposal_tested": "Recovery and rollback passed against synthetic PGlite fixtures.",
+      "approval_review": "Rejected combined SQL mutation because specific real client and financial changes were not explicitly authorized. No indirect retry attempted."
     }
   },
   "invites": {
@@ -156,7 +159,17 @@
       "status": "passed",
       "known_warning": "file tracing in next.config.ts/lib/storage.ts"
     },
-    "new_deployment": "pending",
+    "new_deployment": {
+      "status": "READY",
+      "deployment_id": "dpl_CqGcLGUU5gBJSn4GZTeSXpLUfkfx",
+      "commit": "20b625a4099bfa40b8cc0252d006aa9a79597e18",
+      "tree": "cbc122efa1fccb981fbe087c57a1d7214b565921",
+      "duration_seconds": 43,
+      "url": "https://postito-4z261p23f-vieiraphilipe875-7609s-projects.vercel.app",
+      "stable_alias": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/",
+      "stable_alias_login_rendered": true,
+      "hosted_health_navigation": "Browser client blocked direct JSON endpoint navigation; no hosted health result claimed."
+    },
     "hosted_avatar_banner_after_reload": "pending",
     "previous_round_results_reused_as_current_qa": false,
     "lint": {
@@ -172,9 +185,9 @@
   "historical_evidence_rewritten": false,
   "limits": [
     "Concurrency tests use isolated PGlite rather than multiple hosted PostgreSQL connections.",
-    "Local browser and API regression passed; hosted media rendering and real invite acceptance after this deployment still require confirmation.",
+    "Local browser/API regression passed and Preview is READY. Hosted media rendering and real invite acceptance after this deployment require confirmation.",
     "Provider acceptance is distinct from mailbox delivery and invitation acceptance.",
-    "Existing client duplicates and uploaded objects have only been inspected; no repair is claimed.",
+    "Existing client data remains unchanged: automatic approval review blocked the combined repair pending explicit consent.",
     "No real client name, identifier, recipient, token, credential or commercial amount is included."
   ]
 }
