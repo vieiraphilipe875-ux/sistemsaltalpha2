@@ -1,12 +1,12 @@
 # Postito — entrega e verificação
 
-## Landing e reformulação visual v4 em 24/09/2026: verificada localmente
+## Landing e reformulação visual v4 em 24/09/2026: publicada no Preview
 
 A raiz pública agora apresenta o Postito antes do login, com Entrar e Criar conta no canto superior direito. Propósito, funcionalidades, quatro capturas reais com dados fictícios, sequência de trabalho, diferenciais e FAQ compõem a landing. `/login` e `/cadastro` têm rotas próprias; sessões válidas e convites continuam chegando ao fluxo autorizado.
 
 A direção v4 aplica navegação grafite, áreas claras e cores pastéis ao dashboard, clientes, demandas, CRM, financeiro, equipe, diálogos e entrada. Made With GSAP e referências públicas de sua galeria, incluindo LxL Creative e Studio Namma, orientam tipografia, composição e movimento. GSAP anima a apresentação e Lenis suaviza a roda do mouse; toque e movimento reduzido usam scroll nativo, preservando áreas internas e modais.
 
-Passaram **91 testes unitários e 72 cenários de API/navegador (28 API e 44 navegador)**, TypeScript, lint dos arquivos novos/alterados verificados e build. A regressão inclui os fluxos de conta, convites, permissões, clientes/imagens, produção, CRM e financeiro. As capturas foram geradas com fixtures locais, sem dados de clientes reais. Detalhes em `docs/REDESIGN-2026-09-24.md` e `evidence/redesign-v4-20260924.json`. Publicação no Preview e conferência hospedada aguardam registro; não há promoção a produção.
+Passaram **91 testes unitários e 72 cenários de API/navegador (28 API e 44 navegador)**, TypeScript, lint dos arquivos novos/alterados verificados e build. A regressão inclui os fluxos de conta, convites, permissões, clientes/imagens, produção, CRM e financeiro. As capturas foram geradas com fixtures locais, sem dados de clientes reais. Detalhes em `docs/REDESIGN-2026-09-24.md` e `evidence/redesign-v4-20260924.json`. Publicação no Preview confirmada em **READY**, commit `a4ce4bcdd6f9ecb38973c0ae84649408c8beb584`, deployment `dpl_G8g7cu1EjYchPf6ohEGPqKTeZ14E`, duração de 51 s. O [alias estável](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/) abriu a nova landing; captura principal, troca para Financeiro, login, retorno e cadastro foram conferidos sem submeter contas ou e-mails reais. Não há promoção a produção.
 
 ## Convites automáticos com botão de acesso em 24/09/2026: publicado no Preview
 

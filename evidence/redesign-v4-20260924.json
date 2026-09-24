@@ -41,13 +41,29 @@
     "screenshots_reviewed": true
   },
   "deployment": {
-    "status": "pending",
+    "status": "READY",
     "environment": "Preview",
-    "stable_alias": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app"
+    "stable_alias": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app",
+    "id": "dpl_G8g7cu1EjYchPf6ohEGPqKTeZ14E",
+    "commit": "a4ce4bcdd6f9ecb38973c0ae84649408c8beb584",
+    "tree": "79e368c78267a814d7df4a2487f7fb2b6ff3f35f",
+    "duration_seconds": 51,
+    "url": "https://postito-3z4qxmrb4-vieiraphilipe875-7609s-projects.vercel.app"
   },
   "regression_evidence": "evidence/redesign-v4-regression-20260924.json",
   "real_email_sent_this_turn": false,
   "remote_data_mutated": false,
   "schema_or_env_changed": false,
-  "production_promoted": false
+  "production_promoted": false,
+  "hosted_verification": {
+    "stable_alias_landing_loaded": true,
+    "hero_image_loaded": true,
+    "product_tour_finance_selected_and_image_loaded": true,
+    "smooth_scroll_initialized": true,
+    "login_from_landing_loaded": true,
+    "return_to_landing_verified": true,
+    "signup_from_landing_loaded": true,
+    "real_account_submitted": false,
+    "authenticated_workspace_checked": false
+  }
 }
