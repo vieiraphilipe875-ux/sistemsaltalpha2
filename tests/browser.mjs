@@ -1,4 +1,5 @@
 import {chromium,expect} from '@playwright/test';
+import {runFinanceVisibilityBrowser} from './finance-visibility-browser.mjs';
 import {runMarketingBrowser} from './marketing-browser.mjs';
 import {runFinancialDocumentsBrowser,runAssigneeEligibilityBrowser} from './financial-documents-browser.mjs';
 import assert from 'node:assert/strict';
@@ -20,6 +21,7 @@ export async function runBrowser({base,state,check}){
  async function closeDialog(){await page.keyboard.press('Escape');}
  try{
   await runMarketingBrowser({browser,base,state,check});
+  await runFinanceVisibilityBrowser({browser,base,state,check});
   await check('Navegador: login, logo, navegação e busca de clientes',async()=>{
    await page.goto(base+'/login');await page.getByRole('button',{name:'Confirmar meu e-mail'}).click();await expect(page.getByRole('heading',{name:'Confirme seu e-mail.'})).toBeVisible();await page.getByRole('button',{name:'Voltar para entrar'}).click();await snapshot('login-desktop');await page.getByRole('textbox',{name:'E-mail',exact:true}).fill(state.owner.email);
    await page.locator('input[name=password]').fill(state.password);
@@ -41,8 +43,18 @@ export async function runBrowser({base,state,check}){
    assert.equal((await state.owner.workspace()).deliverables.find(t=>t.id===state.task).assigneeId,(await state.owner.workspace()).currentMember.id);
    await snapshot('cliente-kanban');
    await page.getByRole('button',{name:'Gerenciar colaboradores',exact:true}).click();
-   await page.getByPlaceholder('Buscar colaborador do cliente...').fill('bruno');
-   await expect(page.locator('[cmdk-item]')).toHaveCount(1);await closeDialog();
+   const picker=page.getByRole('combobox',{name:'Buscar colaborador do cliente',exact:true});
+   await picker.fill('bruno');
+   await expect(page.locator('[cmdk-item]')).toHaveCount(1);
+   await expect(picker).toHaveCSS('outline-style','none');
+   const field=page.locator('.member-picker-popover [data-slot="command-input-wrapper"]');
+   await expect(field).toHaveCSS('border-top-color','rgb(116, 137, 119)');
+   const inputBox=await picker.boundingBox(),fieldBox=await field.boundingBox();
+   assert(inputBox.x>=fieldBox.x&&inputBox.x+inputBox.width<=fieldBox.x+fieldBox.width);
+   await page.locator('.member-picker-popover').screenshot({path:'evidence/member-picker-focus.png',animations:'disabled'});
+   await picker.fill('');await picker.press('Home');await picker.press('ArrowDown');
+   await expect(page.locator('.member-picker-popover [cmdk-item][aria-selected="true"]')).toHaveCount(1);
+   await closeDialog();
   });
   await check('Navegador: editar demanda, alternar abas e salvar pauta',async()=>{
    await page.getByRole('button',{name:/Carrossel.*Campanha de primavera/}).click();

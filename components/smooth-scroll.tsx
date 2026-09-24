@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
 
 export function SmoothScroll() {
-  const pathname = usePathname();
   useEffect(() => {
     let disposed = false;
     let generation = 0;
@@ -30,14 +28,15 @@ export function SmoothScroll() {
       document.documentElement.dataset.scrollMode = "smooth";
       destroy = () => lenis.destroy();
     }
-    void configure();
-    preference.addEventListener("change", configure);
+    const reconfigure = () => { void configure().catch(() => { if (!disposed) document.documentElement.dataset.scrollMode = "native"; }); };
+    reconfigure();
+    preference.addEventListener("change", reconfigure);
     return () => {
       disposed = true;
-      preference.removeEventListener("change", configure);
+      preference.removeEventListener("change", reconfigure);
       destroy?.();
       delete document.documentElement.dataset.scrollMode;
     };
-  }, [pathname]);
+  }, []);
   return null;
 }

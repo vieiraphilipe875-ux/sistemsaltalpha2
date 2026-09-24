@@ -56,7 +56,7 @@ export function InviteDialog({open,onOpenChange,data,postAction}:Props&{open:boo
   <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
    <DialogHeader><DialogTitle>Convidar para {data.agency.name}</DialogTitle><DialogDescription>Uma conta pode participar de várias agências. Este convite vale por 7 dias e aceita uma pessoa.</DialogDescription></DialogHeader>
    {invitation?<div className="space-y-4">
-    <p className="notice" role="status"><Check size={16}/>{invitation.delivery==="email"&&invitation.emailStatus==="accepted"?`Convite encaminhado para ${invitation.recipient}. Se não chegar, confira a pasta de spam ou compartilhe o link abaixo.`:"Link criado. Nenhum e-mail foi enviado. Compartilhe o link com a pessoa convidada."}</p>
+    <p className="notice" role="status"><Check size={16}/>{invitation.delivery==="email"&&invitation.emailStatus==="accepted"?`Convite encaminhado para ${invitation.recipient}. Procure por “Convite para” no e-mail e confira Promoções, Atualizações e Spam. Você também pode compartilhar o link abaixo; só a conta convidada poderá aceitar.`:"Link criado. Nenhum e-mail foi enviado. Compartilhe o link com a pessoa convidada."}</p>
     <label>Link do convite<Input value={invitation.link} readOnly onFocus={e=>e.target.select()}/></label>
     <Button onClick={async()=>{try{await navigator.clipboard.writeText(invitation.link);toast.success("Link copiado");}catch{toast.info("Selecione e copie o link acima.");}}}><Copy size={16}/>Copiar link</Button>
     <Button variant="outline" onClick={()=>{setInvitation(null);setEmail("");}}>Criar outro convite</Button>

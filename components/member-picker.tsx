@@ -130,9 +130,9 @@ export function ClientPeople({
               Gerenciar colaboradores
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-80 p-0">
+          <PopoverContent align="start" className="member-picker-popover w-[min(360px,calc(100vw-32px))] p-0">
             <Command>
-              <CommandInput placeholder="Buscar colaborador do cliente..." />
+              <CommandInput aria-label="Buscar colaborador do cliente" placeholder="Buscar colaborador do cliente..." />
               <CommandList>
                 <CommandEmpty>Nenhum colaborador encontrado.</CommandEmpty>
                 <CommandGroup>

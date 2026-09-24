@@ -1120,7 +1120,7 @@ function Clients({
                   </div>
                   <h2 className="mt-5 truncate text-lg font-bold tracking-tight">{client.name}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">{client.handle || "Sem @ cadastrado"}</p>
-                  {client.revenue > 0 && <p className="mt-3 text-sm font-semibold text-foreground">{money(client.revenue)} <span className="font-normal text-muted-foreground">· vence dia {client.dueDay}</span></p>}
+                  {data.currentMember.permissions.includes("finance.access") && typeof client.revenue === "number" && client.revenue > 0 && <p data-client-finance className="mt-3 text-sm font-semibold text-foreground">{money(client.revenue)} <span className="font-normal text-muted-foreground">· vence dia {client.dueDay}</span></p>}
                   <div className="client-card-summary">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><FolderOpen className="size-3.5" aria-hidden="true" />{tasks.length} demandas</span>
@@ -4951,8 +4951,8 @@ function CrmView({
                       <Edit3 className="size-3" />
                     </Button>
                   </div>
-                  {client.revenue > 0 && (
-                    <span className="mt-1 block pl-5 text-sm font-medium text-green-600">
+                  {data.currentMember.permissions.includes("finance.access") && typeof client.revenue === "number" && client.revenue > 0 && (
+                    <span data-client-finance className="mt-1 block pl-5 text-sm font-medium text-green-600">
                       R$ {(client.revenue / 100).toFixed(2)}
                     </span>
                   )}
@@ -5000,7 +5000,7 @@ function CrmEditDialog({
   const [contactName, setContactName] = useState(client.contactName);
   const [email, setEmail] = useState(client.email);
   const [phone, setPhone] = useState(client.phone);
-  const [revenue, setRevenue] = useState(String(client.revenue / 100));
+  const [revenue, setRevenue] = useState(client.revenue === undefined ? "" : String(client.revenue / 100));
   const [dueDay, setDueDay] = useState(String(client.dueDay || 5));
   const [notes, setNotes] = useState(client.notes);
   const [saving, setSaving] = useState(false);
@@ -5349,7 +5349,7 @@ function FinanceView({
       </div>
 
       <Tabs defaultValue="overview" className="space-y-5">
-        <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-xl bg-slate-100 p-1">
+        <TabsList aria-label="Seções do financeiro" className="finance-section-tabs h-auto w-full justify-start rounded-xl bg-slate-100 p-1">
           <TabsTrigger value="overview">Visão geral</TabsTrigger>
           <TabsTrigger value="moves">Movimentações</TabsTrigger>
           <TabsTrigger value="payable">Contas a pagar</TabsTrigger>

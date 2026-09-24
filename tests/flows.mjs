@@ -138,7 +138,7 @@ export async function runFlows({base,mailDir,check}){
   ownerId=(await owner.workspace()).currentMember.id;editorId=(await editor.workspace()).currentMember.id;readerId=(await reader.workspace()).currentMember.id;
   task=(await owner.action('createDeliverable',{boardId:c1.boardId,title:'Campanha de primavera',kind:'carousel',slideCount:3,assigneeId:editorId,dueAt:'2026-10-01T15:00:00Z',notes:'Composição orgânica e luz natural.'})).id;
   hiddenTask=(await owner.action('createDeliverable',{boardId:c1.boardId,title:'Planejamento interno',kind:'static',slideCount:1,assigneeId:ownerId,dueAt:'2026-10-02T15:00:00Z'})).id;
-  const workspace=await editor.workspace();assert.equal(workspace.clients.length,1);assert.deepEqual(workspace.deliverables.map(t=>t.id),[task]);assert.equal(workspace.transactions.length,0);assert.equal(workspace.crmLeads.length,0);assert.equal(workspace.clients[0].revenue,0);
+  const workspace=await editor.workspace();assert.equal(workspace.clients.length,1);assert.deepEqual(workspace.deliverables.map(t=>t.id),[task]);assert.equal(workspace.transactions.length,0);assert.equal(workspace.crmLeads.length,0);assert(!("revenue" in workspace.clients[0]));assert(!("dueDay" in workspace.clients[0]));
   assert(!/passwordHash|tokenHash|setupToken/.test(JSON.stringify(workspace)));
   await editor.action('updateDeliverable',{id:hiddenTask,status:'production'},403);
   await editor.action('updateDeliverable',{id:task,title:'Escalando permissão'},403);
@@ -298,8 +298,28 @@ export async function runFlows({base,mailDir,check}){
   assert.equal(client.contactName,contact.contactName);
   assert.equal(client.revenue,previous.revenue);assert.equal(client.dueDay,previous.dueDay);
   assert.deepEqual(after.transactions,before.transactions);
-  assert.equal((await editor.workspace()).clients.find(c=>c.id===c1.clientId).revenue,0);
+  assert(!("revenue" in (await editor.workspace()).clients.find(c=>c.id===c1.clientId)));
   await owner.action('updateMember',{id:editorId,permissions:['clients.view','demands.create','demands.execute']});
+ });
+ await check('Mensalidades: servidor omite valores e vencimentos por permissão, inclusive após revogação',async()=>{
+  const expected=(await owner.workspace()).clients.find(c=>c.id===c1.clientId);
+  assert(expected.revenue>0);assert.equal(expected.dueDay,10);
+  for(const permissions of [['clients.view'],['clients.view','crm.access'],['clients.view','clients.manage','demands.execute']]){
+   await owner.action('updateMember',{id:editorId,permissions,clientAccessMode:'all'});
+   const ws=await editor.workspace();assert.equal(ws.clients.length,2);
+   for(const client of ws.clients){assert(!('revenue' in client));assert(!('dueDay' in client));}
+   assert.deepEqual(ws.transactions,[]);assert.deepEqual(ws.financialDocuments,[]);
+  }
+  await owner.action('updateMember',{id:readerId,permissions:['clients.view'],clientIds:[c1.clientId]});
+  const readOnly=await reader.workspace();assert.equal(readOnly.clients.length,1);
+  assert(!('revenue' in readOnly.clients[0]));assert(!('dueDay' in readOnly.clients[0]));
+  await owner.action('updateMember',{id:editorId,permissions:['clients.view','crm.access','finance.access'],clientAccessMode:'selected',clientIds:[c1.clientId]});
+  let ws=await editor.workspace();assert.equal(ws.clients.length,1);assert.equal(ws.clients[0].revenue,expected.revenue);assert.equal(ws.clients[0].dueDay,expected.dueDay);
+  await owner.action('updateMember',{id:editorId,permissions:['clients.view','demands.create','demands.execute'],clientIds:[c1.clientId]});
+  ws=await editor.workspace();assert(!('revenue' in ws.clients[0]));assert(!('dueDay' in ws.clients[0]));
+  const html=await (await fetch(base,{headers:{Cookie:editor.cookie}})).text();
+  assert(!html.includes('\\"revenue\\"'));assert(!html.includes('\\"dueDay\\"'));
+  await owner.action('updateMember',{id:readerId,permissions:[]});
  });
  await check('Administrador atua na agência sem conceder administração ou alterar proprietário',async()=>{
   const invitation=await owner.action('inviteMember',{role:'admin',clientAccessMode:'selected',clientIds:[]});

@@ -54,7 +54,8 @@ export async function runTeamWorkloadBrowser({browser,state,check,base}) {
    assert.equal(visible.currentMember.clientAccessMode,'selected');
    assert(!visible.currentMember.permissions.includes('finance.access'));
    assert.equal(visible.transactions.length,0);
-   assert.equal(visible.clients.find(client=>client.id===first.clientId).revenue,0);
+   assert(!("revenue" in visible.clients.find(client=>client.id===first.clientId)));
+   assert(!("dueDay" in visible.clients.find(client=>client.id===first.clientId)));
    assert(!visible.clients.some(client=>client.id===hidden.clientId));
    assert(!visible.deliverables.some(item=>item.title.startsWith('QA Carga Oculta')));
    await page.goto(base);

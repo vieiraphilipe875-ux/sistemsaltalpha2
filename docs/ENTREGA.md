@@ -1,5 +1,11 @@
 # Postito — entrega e verificação
 
+## Landing v5 e ajustes pendentes: QA concluído, publicação em andamento
+
+Reformulação da landing com abertura centralizada, colagem de telas em expansão, leitura progressiva e três capítulos horizontais ligados ao scroll. Movimento restrito à LP, com leitura vertical/toque nativo no celular e fallback estático. Inclui omissão das mensalidades/vencimentos sem finance.access, abas financeiras responsivas, foco integral na busca de colaboradores e orientação de localização do convite.
+
+91 testes unitários e 78 cenários de API/navegador passaram (29 API e 49 navegador), além de TypeScript e build. Lint dos arquivos revisados: zero erros e cinco avisos preexistentes. Detalhes e limitações em docs/REDESIGN-2026-09-24.md; evidências motion-v5-*. Publicação apenas no Preview existente; produção, banco e credenciais preservados.
+
 ## Landing e reformulação visual v4 em 24/09/2026: publicada no Preview
 
 A raiz pública agora apresenta o Postito antes do login, com Entrar e Criar conta no canto superior direito. Propósito, funcionalidades, quatro capturas reais com dados fictícios, sequência de trabalho, diferenciais e FAQ compõem a landing. `/login` e `/cadastro` têm rotas próprias; sessões válidas e convites continuam chegando ao fluxo autorizado.

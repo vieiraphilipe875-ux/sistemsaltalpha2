@@ -84,7 +84,10 @@ export async function getWorkspaceData():Promise<WorkspaceData|null> {
   currentMember:me,agency,agencies:myAgencies,members:publicMembers,
   invites:admin?(await db.select({id:agencyInvites.id,email:agencyInvites.email,role:agencyInvites.role,clientIds:agencyInvites.clientIds,expiresAt:agencyInvites.expiresAt,usedAt:agencyInvites.usedAt,revokedAt:agencyInvites.revokedAt}).from(agencyInvites).where(eq(agencyInvites.agencyId,agencyId)).orderBy(desc(agencyInvites.createdAt))):[],
   activity:admin?await db.select().from(activityLog).where(eq(activityLog.agencyId,agencyId)).orderBy(desc(activityLog.createdAt)).limit(30):[],
-  clients:visibleClients.map(c=>({...c,revenue:finance?c.revenue:0,dueDay:finance?c.dueDay:5,contactName:crm?c.contactName:"",phone:crm?c.phone:"",email:crm?c.email:"",notes:crm?c.notes:"",avatarUrl:c.avatarKey?`/api/clients/${c.id}/media?kind=avatar&v=${encodeURIComponent(c.avatarKey)}`:null,bannerUrl:c.bannerKey?`/api/clients/${c.id}/media?kind=banner&v=${encodeURIComponent(c.bannerKey)}`:null})),
+  clients:visibleClients.map(c=>{
+    const { revenue, dueDay, ...client } = c;
+    return {...client,...(finance?{revenue,dueDay}:{}),contactName:crm?c.contactName:"",phone:crm?c.phone:"",email:crm?c.email:"",notes:crm?c.notes:"",avatarUrl:c.avatarKey?`/api/clients/${c.id}/media?kind=avatar&v=${encodeURIComponent(c.avatarKey)}`:null,bannerUrl:c.bannerKey?`/api/clients/${c.id}/media?kind=banner&v=${encodeURIComponent(c.bannerKey)}`:null};
+  }),
   clientMembers:grants.filter(g=>visibleClientIds.includes(g.clientId)),memberPermissions:publicMembers.flatMap(m=>m.permissions.map(permission=>({memberId:m.id,permission}))),
   boards:allBoards.filter(b=>visibleClientIds.includes(b.clientId)),
   deliverables:tasks.map(t=>({...t,slides:allSlides.filter(s=>s.deliverableId===t.id),assets:allAssets.filter(a=>a.deliverableId===t.id).map(a=>({...a,url:`/api/assets/${a.id}`})),attachments:allAttachments.filter(a=>a.deliverableId===t.id).map(a=>({...a,url:`/api/attachments/${a.id}`})),references:allReferences.filter(r=>r.deliverableId===t.id)})),

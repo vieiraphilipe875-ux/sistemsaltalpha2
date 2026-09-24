@@ -25,8 +25,9 @@ export type Client = {
   contactName: string;
   phone: string;
   email: string;
-  revenue: number;
-  dueDay: number;
+  // Financial fields are absent for members without finance.access.
+  revenue?: number;
+  dueDay?: number;
   notes: string;
   createdAt: string;
 };

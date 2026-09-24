@@ -1,0 +1,27 @@
+{
+  "version": "landing-motion-v5",
+  "base": "b5b284c57331237d938896cb76aa3107cdc60889",
+  "unit": {
+    "passed": 91,
+    "failed": 0
+  },
+  "e2e": {
+    "passed": 78,
+    "failed": 0,
+    "api": 29,
+    "browser": 49
+  },
+  "typecheck": "passed",
+  "build": "passed",
+  "lint": {
+    "errors": 0,
+    "preexistingWarnings": 5
+  },
+  "environment": "Local PGlite, local mail, Chromium; synthetic fixtures only",
+  "hosting": "Preview publication pending",
+  "limitations": [
+    "No real email sent",
+    "No hosted authenticated QA",
+    "No Safari/Firefox QA"
+  ]
+}

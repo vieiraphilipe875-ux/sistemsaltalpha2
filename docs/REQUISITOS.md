@@ -58,6 +58,11 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 | U38 | Todo convite com e-mail deve enviar automaticamente uma mensagem com botão para acessar o quadro, mantendo a restrição ao destinatário | Servidor envia mesmo com canal link/omitido; só a conta correspondente aceita e recebe as permissões/clientes definidos. Botão Acessar quadro preserva o convite pelo login/cadastro até o aceite. Sem e-mail, gerar somente link; falha de envio não anuncia sucesso e revoga o convite. Testar canal legado, destinatário incorreto, escopo, uso único e percurso pelo botão |
 | U39 | Reformular a plataforma com estética e animações do Made With GSAP e referências internas da galeria; criar LP antes do login com ações no topo, funcionalidades, objetivos, diferenciais e prints | Aplicar DESIGN.md v4; LP pública na raiz, `/login` e `/cadastro` próprios, sessão válida entra no sistema e convite conserva o destino. Capturas reais com dados fictícios; comparação de fluxo sem alegações inventadas. Rolagem suave, animações com redução de movimento, teclado, toque e celular; repetir regressão de autenticação e operação |
 
+| U40 | Tornar o motion da referência perceptível e aplicá-lo somente na landing | Entrada por letras/palavras, captura que ganha escala, leitura progressiva e sequência de cartões no scroll; Lenis restrito à LP. Fallback estático e redução de movimento, limpeza na navegação, toque/celular e teste de progresso real dos efeitos |
+| U41 | Remover o controle circulado nas abas do financeiro | Eliminar overflow vertical por dimensionamento; abas responsivas, clique e teclado preservados |
+| U42 | Ocultar a mensalidade de clientes para colaboradores sem acesso ao financeiro | `finance.access` controla a interface e a projeção dos dados; omitir mensalidade/vencimento na API e HTML, testar concessão/revogação sem alterar cadastro |
+| U43 | Corrigir o visual da busca de colaboradores da captura seguinte após o motion | Foco visível no contorno do campo inteiro, sem recorte nas laterais; largura contida no viewport e busca/teclado funcionais |
+
 ## Ordem de execução
 
 1. Consolidar contexto, regras, repositório e serviços existentes.

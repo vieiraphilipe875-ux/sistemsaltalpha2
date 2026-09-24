@@ -28,7 +28,7 @@ Não existe uma lista universal capaz de identificar um site feito por IA. As re
 | Superfícies | Fundos sólidos, bordas discretas, arredondamento controlado e sombra apenas para separar camadas |
 | Formulários | Rótulos visíveis; texto de entrada com 16 px no celular |
 | Dados | Números reais, valores financeiros formatados e estados vazios explicados |
-| Movimento | GSAP na apresentação, Lenis no scroll por roda; modo nativo com movimento reduzido/toque; respostas curtas nas ações internas |
+| Movimento | GSAP e Lenis somente na landing; login e sistema com scroll nativo; redução de movimento e toque preservados |
 
 Pastel é cor de superfície, seleção e agrupamento. Texto, ícones relevantes e foco precisam continuar legíveis. Não depender somente da cor para informar prioridade, atraso, erro, permissão ou conclusão. Alertas mantêm significado: erro em vermelho, confirmação em verde e atenção em âmbar, acompanhados de rótulo ou ícone apropriado.
 
@@ -107,3 +107,14 @@ Abas podem transicionar o indicador de seleção. Botões de gravação podem ex
 Antes de desenhar, escrever: quem usa, que decisão precisa tomar, qual ação principal, quais informações são necessárias e quais estados podem ocorrer. Reutilizar a paleta e a tipografia, escolhendo a estrutura adequada ao conteúdo. Conferir vazio, carregamento, erro, acesso negado, texto longo, foco por teclado e tela estreita. Guardar capturas e resultados da versão testada.
 
 Este documento, `docs/REDESIGN-2026-09-24.md` e `AGENTS.md` registram a direção vigente. `docs/REDESIGN-2026-09-23.md` preserva o histórico. A conclusão dos testes deve ser preenchida no registro da rodada com evidência real, sem herdar automaticamente a aprovação de versões anteriores.
+
+## Refinamento solicitado depois da v4
+
+O motion da apresentação passa a ter sequências visíveis: letras e palavras sobem por máscaras, a captura inicial amplia e ganha alinhamento ao rolar, duas notas pastéis se afastam, o texto de módulos acompanha o scroll, a seção de propósito abre sua composição e ilumina a leitura. Os três passos se sobrepõem durante uma sequência fixa somente em desktop; em celular/redução de movimento, seguem na ordem vertical. Botões da LP respondem ao cursor e o rodapé entra por letras. Nenhum desses efeitos de apresentação é montado no sistema ou na autenticação.
+
+As abas financeiras passam a se ajustar à altura do conteúdo, com duas colunas no celular, sem a barra vertical indicada pelo titular. Buscas em seletores recebem um campo com margem interna e foco no contorno completo, incluindo a lupa, evitando a borda cortada do print. A identificação de foco permanece visível por teclado.
+
+
+### Landing v5, confirmação posterior do titular
+
+O motion passa a estruturar a composição: hero centralizado com cápsula lilás, colagem de três telas que abre para uma visão geral, seção escura com máscara/leitura progressiva, três capítulos ilustrados em sequência horizontal, exploração direta por abas, comparação editorial e encerramento centralizado. Os antigos cartões empilhados e notas isoladas da proposta local foram substituídos. Sequências fixadas em desktop a partir de 900 × 650 com ponteiro fino; no toque e em telas menores, leitura vertical com movimento proporcional, sem pin. Preferência por movimento reduzido restaura o estado estático. A direção interna v4 permanece.
