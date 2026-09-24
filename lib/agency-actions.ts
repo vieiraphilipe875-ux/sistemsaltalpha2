@@ -16,7 +16,6 @@ import { getCurrentMember, canAccessClient } from "./server-workspace";
 import { digest, rateLimit } from "./security";
 import { rolePermissionDefaults, permissionKeys } from "./permissions";
 import { AppError } from "./http";
-import { assertMailConfigured } from "./mail";
 import { createAgencyInvitation } from "./agency-invitations";
 import { agencyClientIdsInput, authorizeAgencyClientIds } from "./agency-client-scope";
 
@@ -272,9 +271,6 @@ export async function agencyAction(raw: unknown) {
         "Somente o proprietário pode convidar administradores.",
         403,
       );
-    if (p.delivery === "email" && !p.email)
-      throw new AppError("Informe o e-mail do convite.");
-    if (p.email) assertMailConfigured();
     await rateLimit(`invite:${agencyId}`, 40, 60);
     const clientIds = await authorizeAgencyClientIds(db, me, p.clientIds);
     const permissions =
@@ -286,6 +282,8 @@ export async function agencyAction(raw: unknown) {
     if (!agency) throw new AppError("Agência não disponível.", 404);
     return createAgencyInvitation(db, {
       ...p, clientIds, agencyId, agencyName: agency.name, createdBy: me.id, inviterName: me.name, permissions,
+      // Invitation emails are paused for testing, including requests from older tabs.
+      delivery: "link",
     });
   }
   if (action === "revokeInvite") {

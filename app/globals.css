@@ -123,7 +123,7 @@ button:disabled { cursor: not-allowed; }
 [data-slot="input"]:focus-visible, [data-slot="textarea"]:focus-visible, .profile-select:focus-visible {
   outline: 2px solid var(--ring); outline-offset: 2px; box-shadow: 0 0 0 4px #e6e7fd80;
 }
-[data-slot="dialog-overlay"], [data-slot="sheet-overlay"] { background: #22263b38; }
+[data-slot="dialog-overlay"], [data-slot="sheet-overlay"] { background: #10131bb3; }
 [data-slot="dialog-content"] { border-color: var(--border); border-radius: 20px; background: white; box-shadow: 0 24px 100px #22263b25; }
 [data-slot="dialog-title"], [data-slot="sheet-title"] { line-height: 1.3; letter-spacing: -.025em; font-weight: 650; }
 [data-slot="dialog-description"], [data-slot="sheet-description"] { line-height: 1.6; color: var(--muted-foreground); }

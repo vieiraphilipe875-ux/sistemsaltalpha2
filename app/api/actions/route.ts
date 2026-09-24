@@ -1,4 +1,5 @@
 import { lockKanbanBoard, lockDemandKanban, resolveKanbanPlacement, saveKanbanColumns } from "@/lib/kanban-server";
+import { stageAssignment, notifyDemand } from "@/lib/demand-workflow";
 import {dateInputToISO} from "@/lib/dates";
 import {futureMonthlyDates} from "@/lib/finance";
 import { bucket } from "@/lib/storage";
@@ -8,7 +9,7 @@ import { createClientRecord } from "@/lib/client-creation";
 import { agencyAction, agencyActionNames } from "@/lib/agency-actions";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
-import { annotations, assets, attachments, boards, clientMembers, clients, crmActivities, crmDeals, crmLeads, deliverables, financeWorkers, activityLog, members, slides, deliverableReferences, transactions, workerCompetencies } from "@/db/schema";
+import { annotations, assets, attachments, boards, clientMembers, clients, crmActivities, crmDeals, crmLeads, deliverables, financeWorkers, activityLog, members, slides, deliverableReferences, transactions, workerCompetencies, taskNotifications } from "@/db/schema";
 import { canAccessAsset, canAccessDeliverable, canManageDeliverable, getCurrentMember } from "@/lib/server-workspace";
 import { hashPassword } from "@/lib/auth";
 import { hasPermission, permissionKeys, type PermissionKey } from "@/lib/permissions";
@@ -32,6 +33,12 @@ export async function POST(request: Request) {
     const financeOwnerId = can("finance.access") ? member.agencyOwnerId : null;
     let recordActivity = true;
     async function execute() {
+    if (payload.action === "markNotificationRead") {
+      const rows=await db.update(taskNotifications).set({readAt:new Date().toISOString()}).where(and(eq(taskNotifications.id,payload.id),eq(taskNotifications.agencyId,member.agencyOwnerId!),eq(taskNotifications.memberId,member.id))).returning({id:taskNotifications.id});
+      if(!rows.length)throw new AppError("Notificação não disponível.",404);
+      recordActivity=false;
+      return Response.json({ok:true});
+    }
     if (payload.action === "saveKanbanColumns") {
       return Response.json(await saveKanbanColumns(db, { agencyId: member.agencyOwnerId!, kind: payload.kind, clientId: payload.clientId }, payload));
     }
@@ -58,7 +65,10 @@ export async function POST(request: Request) {
         const hasStoriesVersion = Boolean(payload.hasStoriesVersion);
         const config = await lockKanbanBoard(db, { agencyId: member.agencyOwnerId!, kind: "demands", clientId: targetBoard.clientId });
         const placement = resolveKanbanPlacement(config, null, payload, "briefing");
-        await db.insert(deliverables).values({ columnId: placement.columnId, id, boardId: payload.boardId, title, kind: payload.kind, slideCount, status: placement.status as typeof deliverables.$inferInsert.status, assigneeId: payload.assigneeId, dueAt: dateInputToISO(payload.dueAt), notes: payload.notes?.trim() ?? "", sourceUrl: "", sortOrder: Date.now(), createdAt, updatedAt: createdAt, hasStoriesVersion });
+        const routing = await stageAssignment(db,member.agencyOwnerId!,config,placement.columnId);
+        const assigneeId=routing.assigneeId ?? payload.assigneeId;
+        const [created]=await db.insert(deliverables).values({ priority:payload.priority, labels:payload.labels, columnId: placement.columnId, id, boardId: payload.boardId, title, kind: payload.kind, slideCount, status: placement.status as typeof deliverables.$inferInsert.status, assigneeId, assignedById:assigneeId?member.id:null, assignedAt:assigneeId?createdAt:null, dueAt:routing.dueAt ?? dateInputToISO(payload.dueAt), notes: payload.notes?.trim() ?? "", sourceUrl: "", sortOrder: Date.now(), createdAt, updatedAt: createdAt, hasStoriesVersion }).returning();
+        await notifyDemand(db,member.agencyOwnerId!,created);
         const draftSlides = Array.from({ length: slideCount }, (_, index) => payload.slides?.find((slide: {position:number;copy:string;direction:string}) => slide.position === index + 1) ?? { position: index + 1, copy: "", direction: "" });
         await db.insert(slides).values(draftSlides.map((slide) => ({ id: crypto.randomUUID(), deliverableId: id, position: slide.position, copy: slide.copy?.trim() ?? "", direction: slide.direction?.trim() ?? "" })));
         return Response.json({ ok: true, id });
@@ -119,18 +129,45 @@ export async function POST(request: Request) {
 
     if (payload.action === "updateDeliverable") {
       const { config, task } = await lockDemandKanban(db, member.agencyOwnerId!, payload.id);
-      const placement = resolveKanbanPlacement(config, task, payload, "briefing");
+      let move = payload;
+      if(payload.completeStage) {
+        if(payload.expectedColumnId===undefined || payload.expectedColumnId!==task.columnId)throw new AppError("Esta demanda mudou de etapa. Atualize antes de concluir.",409);
+        const nextId=config.columns.find(column=>column.id===task.columnId)?.nextColumnId;
+        if(!nextId)throw new AppError("Configure a próxima etapa nas opções desta lista.",409);
+        if(payload.status || payload.columnId!==undefined)throw new AppError("Use apenas a ação de concluir etapa.");
+        move={...payload,columnId:nextId};
+      }
+      const placement = resolveKanbanPlacement(config, task, move, "briefing");
       if (!managesTask) {
-        const destination = config.columns.find(column => column.id === payload.columnId);
+        if(task.assigneeId!==member.id)throw new AppError("Esta demanda já passou para outro responsável.",403);
+        const destination = config.columns.find(column => column.id === move.columnId);
         if ((destination?.status && !["production", "review"].includes(destination.status)) || (payload.status && !["production", "review"].includes(payload.status))) throw new AppError("Profissionais de produção só podem iniciar, enviar para revisão ou organizar suas demandas em listas personalizadas.", 403);
       }
-      const update: Record<string, string | number | null> = { updatedAt: new Date().toISOString(), status: placement.status, columnId: placement.columnId };
+      const update: Record<string, unknown> = { updatedAt: new Date().toISOString(), status: placement.status, columnId: placement.columnId };
       if (typeof payload.sortOrder === "number") update.sortOrder = payload.sortOrder;
       if ("assigneeId" in payload) update.assigneeId = payload.assigneeId ?? null;
       if (payload.dueAt) update.dueAt = dateInputToISO(payload.dueAt);
       if (payload.title) update.title = payload.title.trim();
       if (typeof payload.notes === "string") update.notes = payload.notes;
-      await db.update(deliverables).set(update).where(eq(deliverables.id, payload.id));
+      if (payload.priority) update.priority = payload.priority;
+      if (payload.labels) update.labels = payload.labels;
+      if (payload.cover) {
+        const cover = payload.cover;
+        if (["image", "full"].includes(cover.mode)) {
+          if (!cover.fileId || !cover.fileKind) throw new AppError("Escolha uma imagem desta demanda.");
+          const source = cover.fileKind === "attachment" ? attachments : assets;
+          const [file] = await db.select({id:source.id,mimeType:source.mimeType}).from(source)
+            .where(and(eq(source.id,cover.fileId),eq(source.deliverableId,task.id))).limit(1);
+          if (!file || !/^image\/(jpeg|png|webp|gif|avif)$/.test(file.mimeType)) throw new AppError("Escolha uma imagem anexada a esta demanda.");
+        }
+        update.coverMode = cover.mode;
+        update.coverFileId = ["image", "full"].includes(cover.mode) ? cover.fileId : null;
+        update.coverFileKind = ["image", "full"].includes(cover.mode) ? cover.fileKind : null;
+      }
+      if(placement.columnId!==task.columnId)Object.assign(update,await stageAssignment(db,member.agencyOwnerId!,config,placement.columnId));
+      if("assigneeId" in update && update.assigneeId!==task.assigneeId){update.assignedById=update.assigneeId?member.id:null;update.assignedAt=update.assigneeId?new Date().toISOString():null;}
+      const [updated]=await db.update(deliverables).set(update).where(eq(deliverables.id, payload.id)).returning();
+      await notifyDemand(db,member.agencyOwnerId!,updated,task);
       return Response.json({ ok: true });
     }
 
@@ -167,7 +204,10 @@ export async function POST(request: Request) {
       if (asset) {
         const { config, task } = await lockDemandKanban(db, member.agencyOwnerId!, asset.deliverableId);
         const placement = resolveKanbanPlacement(config, task, { status: "changes" }, "briefing");
-        await db.update(deliverables).set({ status: "changes", columnId: placement.columnId, updatedAt: new Date().toISOString() }).where(eq(deliverables.id, asset.deliverableId));
+        const routing=placement.columnId!==task.columnId?await stageAssignment(db,member.agencyOwnerId!,config,placement.columnId):{};
+        const changed=routing.assigneeId && routing.assigneeId!==task.assigneeId;
+        const [updated]=await db.update(deliverables).set({ status: "changes", columnId: placement.columnId, ...routing, ...(changed?{assignedById:member.id,assignedAt:new Date().toISOString()}:{}), updatedAt: new Date().toISOString() }).where(eq(deliverables.id, asset.deliverableId)).returning();
+        await notifyDemand(db,member.agencyOwnerId!,updated,task);
       }
 
       return Response.json({ ok: true, annotation: row });
@@ -339,7 +379,7 @@ export async function POST(request: Request) {
       const createdAt = new Date().toISOString();
       const config = await lockKanbanBoard(db, { agencyId: crmOwnerId, kind: "crmLeads" });
       const placement = resolveKanbanPlacement(config, null, payload, "new");
-      const row = { columnId: placement.columnId, id: crypto.randomUUID(), agencyOwnerId: crmOwnerId, company, contactName: payload.contactName.trim(), email: payload.email.trim(), phone: payload.phone.trim(), source: payload.source.trim() || "Manual", status: placement.status as typeof crmLeads.$inferInsert.status, score: 0, potentialValue: Math.max(0, Number(payload.potentialValue) || 0), nextAction: payload.nextAction.trim(), nextActionAt: payload.nextActionAt ? dateInputToISO(payload.nextActionAt) : null, notes: payload.notes.trim(), ownerId: payload.ownerId || member.id, createdAt, updatedAt: createdAt };
+      const row = { priority:payload.priority, labels:payload.labels, columnId: placement.columnId, id: crypto.randomUUID(), agencyOwnerId: crmOwnerId, company, contactName: payload.contactName.trim(), email: payload.email.trim(), phone: payload.phone.trim(), source: payload.source.trim() || "Manual", status: placement.status as typeof crmLeads.$inferInsert.status, score: 0, potentialValue: Math.max(0, Number(payload.potentialValue) || 0), nextAction: payload.nextAction.trim(), nextActionAt: payload.nextActionAt ? dateInputToISO(payload.nextActionAt) : null, notes: payload.notes.trim(), ownerId: payload.ownerId || member.id, createdAt, updatedAt: createdAt };
       await db.insert(crmLeads).values(row);
       if (row.nextAction) await db.insert(crmActivities).values({ id: crypto.randomUUID(), agencyOwnerId: crmOwnerId, leadId: row.id, dealId: null, type: "task", title: row.nextAction, dueAt: row.nextActionAt, status: "pending", notes: "", createdBy: member.id, createdAt });
       return Response.json({ ok: true, id: row.id });
@@ -354,6 +394,8 @@ export async function POST(request: Request) {
       const update: Record<string, unknown> = { updatedAt: new Date().toISOString(), status: placement.status, columnId: placement.columnId };
       if (typeof payload.score === "number") update.score = Math.max(0, Math.min(100, payload.score));
       if (typeof payload.nextAction === "string") update.nextAction = payload.nextAction.trim();
+      if (payload.priority) update.priority = payload.priority;
+      if (payload.labels) update.labels = payload.labels;
       if ("nextActionAt" in payload) update.nextActionAt = payload.nextActionAt ? dateInputToISO(payload.nextActionAt) : null;
       if (typeof payload.notes === "string") update.notes = payload.notes.trim();
       await db.update(crmLeads).set(update).where(eq(crmLeads.id, payload.id));

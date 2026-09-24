@@ -1,5 +1,21 @@
 # Postito — entrega e verificação
 
+## Fluxo visual, dashboards e convites por link em 24/09/2026
+
+Kanbans de demandas e CRM oferecem controles junto às listas: título editável, cor, arraste, reordenação por menu, criação de cartão dentro da lista e remoção com destino explícito ou Sem lista. Capas usam imagens já autorizadas da demanda (automática, topo, inteira ou sem capa); prioridades e etiquetas editáveis aparecem em demandas e leads. A demanda abre em diálogo central com fundo escuro. As transições respeitam movimento reduzido.
+
+Cada lista de demandas pode definir responsável, duração em horas e próxima etapa. Mover para ela ou usar Concluir etapa aplica a atribuição e o prazo configurados na mesma transação, rejeitando etapas antigas ou responsáveis sem acesso. Execução não concede acesso integral à pasta nem poder de aprovação. Notificações internas persistentes avisam o responsável e continuam filtradas pelo acesso atual; não são e-mails nem push do sistema operacional. Prazo próximo fica amarelo, vencido fica vermelho e a conclusão usa o texto Aprovada. A configuração de pessoas e próximas etapas é opcional e precisa ser feita nas listas reais pelo gestor.
+
+Todos têm dashboard. Executores veem suas demandas, prazos e clientes atendidos; gestão recebe resumos de pagamentos e CRM quando possui essas permissões. Planejamento mantém a carga da equipe. Clicar no colaborador abre agenda por dia local, com horário, cliente, lista, prioridade e quem atribuiu; registros antigos sem autoria mostram Não registrado. Profissão organiza a equipe e não concede acesso.
+
+Convites voltaram ao link copiável, inclusive quando uma interface antiga pede envio por e-mail. O e-mail opcional apenas restringe o destinatário. Confirmação de cadastro e recuperação permanecem por e-mail. Ajuda contextual funciona por mouse, teclado e toque; a data do CRM explica a próxima ação e sua atividade. A revisão visual corrigiu a máscara dos títulos animados, a largura mínima de um painel do CRM no celular e o fechamento da ajuda pelo segundo toque.
+
+**93 testes unitários e 109 cenários de API/navegador aprovados**, com contas, agências, banco, arquivos e caixa de e-mail locais isolados. TypeScript e build passaram (compilação 3,8 s, TypeScript 10,6 s), com o aviso conhecido de file tracing. Lint: zero erros e 35 avisos de variáveis/importações sem uso. A regressão cobre isolamento de agência e tarefa, revogação, convite e aceite por link, duas pessoas recebendo/passando a mesma demanda, aprovação restrita, notificações, capas, listas, agenda, conflito e formulários em 390/320 px. Os títulos animados foram comparados com e sem máscara de 320 a 1440 px. Capturas selecionadas foram inspecionadas; isso não comprova todos os estados nem Safari/Firefox.
+
+As migrações aditivas Drizzle 0004–0006 foram aplicadas no banco hospedado pela migração `20260924221708_postito_task_covers_labels_and_workflow`, com precondição do histórico e registro dos três hashes/timestamps no ledger. Colunas, defaults, RLS, policy exclusiva do backend e ausência de grants para PUBLIC/anon/authenticated foram conferidos. O advisor não apresentou novo achado; permanece o INFO do histórico privado de migrações, intencionalmente sem policy de acesso. Nenhuma conta, credencial, atribuição ou prazo real foi reconfigurado.
+
+Evidências: `evidence/workflow-regression-20260924.json`, `workflow-agenda-desktop.png`, `workflow-board-desktop.png`, `workflow-dashboard-mobile.png`, `ui-polish-crm-help-mobile.png` e `ui-polish-hero-1440.png`. Publicação direcionada ao Preview existente. A operação autenticada hospedada e a entrega real de e-mail não integram esta verificação.
+
 ## Rodapé sem recorte da marca em 24/09/2026
 
 Corrigida a máscara que cortava a borda direita do último “o” de Postito. Uma folga de 0,1 em preserva o desenho inteiro da letra e a animação. Conferência visual e de pixels em 1920, 1440, 820, 390 e 320 px, mais movimento reduzido, sem corte, transbordamento ou erro de execução; Voltar ao início passou nos seis casos. Fallback sem JavaScript inspecionado visualmente. Detalhes e limites do diagnóstico em `docs/REDESIGN-2026-09-24.md`; capturas e medições em `evidence/footer-clipping-*`. Publicação direcionada ao Preview existente.

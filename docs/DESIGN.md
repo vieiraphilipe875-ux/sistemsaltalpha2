@@ -120,3 +120,19 @@ As abas financeiras passam a se ajustar à altura do conteúdo, com duas colunas
 ### Landing v5, confirmação posterior do titular
 
 O motion passa a estruturar a composição: hero centralizado com cápsula lilás, colagem de três telas que abre para uma visão geral, seção escura com máscara/leitura progressiva, três capítulos ilustrados em sequência horizontal, exploração direta por abas, comparação editorial e encerramento centralizado. Os antigos cartões empilhados e notas isoladas da proposta local foram substituídos. Sequências fixadas em desktop a partir de 900 × 650 com ponteiro fino; no toque e em telas menores, leitura vertical com movimento proporcional, sem pin. Preferência por movimento reduzido restaura o estado estático. A direção interna v4 permanece.
+
+## Ajuda contextual e integridade dos textos — 24/09
+
+Ícones discretos de interrogação acompanham os termos menos óbvios: origem, valor potencial, próxima ação e data, contexto inicial, previsão de fechamento e pipeline ponderado. Usar frases curtas e exemplos concretos. O botão tem área de 24 px, foco visível e nome acessível; o balão abre por hover, foco ou toque, fecha com Escape/toque fora e respeita as bordas da tela e movimento reduzido. O formulário de oportunidade também rola em telas baixas.
+
+Convites agora apresentam Gerar link de convite, o campo copiável e Copiar link. Informar que o envio por e-mail está pausado e que preencher o endereço apenas limita quem aceita. FAQ da landing deve descrever o mesmo fluxo.
+
+A máscara compartilhada dos títulos precisa incluir a tinta dos glifos, especialmente pontuação e acentos com espaçamento negativo. Ajustar respiro sem deslocar as linhas ou eliminar a animação. Conferir títulos completos, rodapé, formulários e telas de trabalho em desktop/celular; truncamento intencional de nomes longos não é uma máscara de letras.
+
+## Interação de quadros e demandas — referência Trello
+
+Controles no cabeçalho de cada lista, prévia de cor/nome e destino claro na remoção. Arraste usa a lista como imagem de apoio e realça o destino; menu de esquerda/direita oferece alternativa acessível. Os cartões podem ter capa no topo ou fundo escurecido para leitura do título, e voltam ao tamanho compacto sem capa. Modal da demanda ocupa até 94vw × 90dvh, com fundo escuro e contexto do quadro visível.
+
+Transições curtas de movimentação usam View Transitions quando suportadas e respeitam movimento reduzido. Urgente tem sino vermelho e texto; prazo de até 24 horas usa amarelo, vencido usa vermelho, conclusão usa Aprovada em texto neutro. Etiquetas conservam texto contrastante e nomes editáveis. Concluir etapa indica explicitamente a próxima lista. Notificações têm título, mensagem, horário e estado de leitura.
+
+Dashboard: indicadores operacionais e próximas entregas para todos os executores; síntese de pagamentos/CRM para gestão autorizada. Carga da equipe leva à agenda por dias, com horários locais e atribuidor, sem estimativa fictícia de capacidade.

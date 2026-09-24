@@ -1,6 +1,6 @@
 export const kanbanKinds = ["demands", "crmLeads", "crmDeals", "crmClients"] as const;
 export type KanbanKind = typeof kanbanKinds[number];
-export type KanbanColumn = { id: string; name: string; color: string; status: string | null };
+export type KanbanColumn = { id: string; name: string; color: string; status: string | null; assigneeId?: string | null; dueHours?: number | null; nextColumnId?: string | null };
 export type KanbanBoardConfig = { kind: KanbanKind; clientId: string | null; revision: number; columns: KanbanColumn[] };
 
 const defaults: Record<KanbanKind, [string, string, string][]> = {

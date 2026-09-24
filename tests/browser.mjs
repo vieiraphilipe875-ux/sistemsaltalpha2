@@ -11,6 +11,8 @@ import {runTeamWorkloadBrowser} from './team-workload-browser.mjs';
 import {runBreadcrumbBrowser} from './breadcrumb-browser.mjs';
 import {runClientImageCropBrowser} from './client-image-crop-browser.mjs';
 import {runPasswordRecoveryBrowser} from './password-recovery-browser.mjs';
+import {runWorkflowBrowser} from './workflow-browser.mjs';
+import {runUiPolishBrowser} from './ui-polish-browser.mjs';
 import {writeFile} from 'node:fs/promises';
 export async function runBrowser({base,state,check}){
  const browser=await chromium.launch({headless:true});
@@ -246,6 +248,8 @@ export async function runBrowser({base,state,check}){
   await runTeamWorkloadBrowser({browser,state,check,base});
   await runBreadcrumbBrowser({browser,state,check,base});
   await runClientImageCropBrowser({browser,state,check,base});
+  await runUiPolishBrowser({browser,state,check,base});
+  await runWorkflowBrowser({browser,state,check,base});
   await check('Navegador: sem erros de execução no fluxo percorrido',async()=>{assert.deepEqual(errors,[]);});
  }catch(e){await diagnosticPage.screenshot({path:'evidence/failure.png',fullPage:true,animations:'disabled',caret:'initial'}).catch(()=>{});await writeFile('evidence/browser-errors.json',JSON.stringify(errors));await writeFile('evidence/browser-failure.txt',(await diagnosticPage.locator('body').innerText({timeout:5000}).catch(()=>'' )).slice(0,18000));throw e;}
  finally{await browser.close();}

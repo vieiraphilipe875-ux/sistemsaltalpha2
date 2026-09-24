@@ -112,13 +112,20 @@ export const boards = sqliteTable("boards", {
 export const deliverables = sqliteTable("deliverables", {
   id: text("id").primaryKey(),
   columnId: text("column_id"),
+  priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).notNull().default("normal"),
+  labels: jsonb("labels").$type<{id:string;name:string;color:string}[]>().notNull().default([]),
   boardId: text("board_id").notNull().references(() => boards.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   kind: text("kind", { enum: ["carousel", "reels", "stories", "static"] }).notNull(),
   slideCount: integer("slide_count").notNull().default(1),
   status: text("status", { enum: ["briefing", "production", "review", "changes", "approved"] }).notNull().default("briefing"),
   hasStoriesVersion: boolean("has_stories_version").notNull().default(false),
+  coverMode: text("cover_mode", { enum: ["auto", "none", "image", "full"] }).notNull().default("auto"),
+  coverFileId: text("cover_file_id"),
+  coverFileKind: text("cover_file_kind", { enum: ["attachment", "asset"] }),
   assigneeId: text("assignee_id").references(() => members.id),
+  assignedById: text("assigned_by_id").references(() => members.id, { onDelete: "set null" }),
+  assignedAt: text("assigned_at"),
   dueAt: text("due_at").notNull(),
   notes: text("notes").notNull().default(""),
   sourceUrl: text("source_url").notNull().default(""),
@@ -130,6 +137,17 @@ export const deliverables = sqliteTable("deliverables", {
   index("idx_deliverables_assignee_due").on(table.assigneeId, table.dueAt),
   index("idx_deliverables_open_status").on(table.status),
 ]);
+
+export const taskNotifications = sqliteTable("task_notifications", {
+  id: text("id").primaryKey(),
+  agencyId: text("agency_id").notNull().references(() => agencies.id, { onDelete: "cascade" }),
+  memberId: text("member_id").notNull().references(() => members.id, { onDelete: "cascade" }),
+  deliverableId: text("deliverable_id").notNull().references(() => deliverables.id, { onDelete: "cascade" }),
+  kind: text("kind", { enum: ["assignment", "urgent", "stage", "deadline"] }).notNull(),
+  message: text("message").notNull(),
+  createdAt: text("created_at").notNull(),
+  readAt: text("read_at"),
+}, t => [index("task_notifications_inbox_idx").on(t.agencyId, t.memberId, t.createdAt), index("task_notifications_task_idx").on(t.deliverableId)]);
 
 export const slides = sqliteTable("slides", {
   id: text("id").primaryKey(),
@@ -282,6 +300,8 @@ export const deliverableReferences = sqliteTable("deliverable_references", {
 export const crmLeads = sqliteTable("crm_leads", {
   id: text("id").primaryKey(),
   columnId: text("column_id"),
+  priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).notNull().default("normal"),
+  labels: jsonb("labels").$type<{id:string;name:string;color:string}[]>().notNull().default([]),
   agencyOwnerId: text("agency_owner_id").notNull().references(() => agencies.id, {onDelete:"cascade"}),
   company: text("company").notNull(),
   contactName: text("contact_name").notNull().default(""),

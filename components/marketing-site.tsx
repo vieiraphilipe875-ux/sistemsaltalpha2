@@ -17,7 +17,7 @@ const views = [
 const faqs = [
   ["Posso trabalhar em mais de uma agência?", "Sim. Sua conta pode participar de várias agências. Cada uma mantém seus próprios clientes, demandas e permissões, e você alterna entre os espaços pela plataforma."],
   ["Eu escolho o que cada pessoa pode acessar?", "Sim. Ao convidar alguém, você define a permissão e os clientes liberados. Também pode ajustar o acesso depois. A profissão da pessoa e as permissões são informações diferentes."],
-  ["Como minha equipe recebe o convite?", "Preencha o e-mail ao criar o convite. A pessoa recebe uma mensagem com o botão Acessar quadro e precisa entrar com a conta correspondente para aceitar. Os acessos seguem o que você definiu."],
+  ["Como minha equipe recebe o convite?", "Gere um link de convite, copie e compartilhe pelo WhatsApp ou pelo canal que preferir. A pessoa entra ou cria sua conta para aceitar. Se você informar um e-mail, só essa conta poderá aceitar. Os acessos seguem o que você definiu."],
   ["O que acontece depois de criar minha conta?", "Você recebe um código de confirmação por e-mail. Depois de confirmar, pode criar o espaço da sua agência ou aceitar um convite da equipe."],
   ["As telas apresentadas são do sistema de verdade?", "Sim. São capturas da interface do Postito com dados de demonstração. Os clientes, os nomes e os valores exibidos são fictícios."],
 ];

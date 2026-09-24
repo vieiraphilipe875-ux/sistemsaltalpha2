@@ -24,7 +24,7 @@ export async function runMarketingBrowser({browser,base,state,check}) {
     await page.getByRole('tab',{name,exact:true}).click();const panel=page.getByRole('tabpanel');await expect(panel).toBeVisible();await expect.poll(()=>panel.locator('img').evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);
    }
    await page.getByRole('tab',{name:'Visão geral',exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByRole('tab',{name:'Demandas e pautas',exact:true})).toHaveAttribute('aria-selected','true');
-   const question=page.locator('summary').filter({hasText:'Como minha equipe recebe o convite?'});await question.click();await expect(page.locator('details[open]')).toContainText('Acessar quadro');await question.click();
+   const question=page.locator('summary').filter({hasText:'Como minha equipe recebe o convite?'});await question.click();await expect(page.locator('details[open]')).toContainText('Gere um link de convite');await question.click();
    const targets=await page.locator('a[href^="#"]').evaluateAll(links=>links.map(link=>link.getAttribute('href')).filter(href=>href&&href!=='#'));for(const target of targets)assert.equal(await page.locator(target).count(),1);
    await page.screenshot({path:'evidence/redesign-v4-landing-desktop.png',fullPage:true,animations:'disabled'});
   });

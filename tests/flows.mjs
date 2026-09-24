@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {readdir,readFile} from 'node:fs/promises';
+import {runWorkflowFlows} from './workflow-flows.mjs';
 import {runKanbanFlows} from './kanban-flows.mjs';
 export async function runFlows({base,mailDir,check}){
  await check('Saúde do banco sem exposição de dados ou cache',async()=>{
@@ -22,6 +23,7 @@ export async function runFlows({base,mailDir,check}){
   workspace(status=200){return this.req('/api/workspace',null,status,'GET');}
   auth(action,body={},status=200){return this.req('/api/auth/'+action,{email:this.email,...body},status);}
  }
+ const mailCount=async()=> (await readdir(mailDir)).length;
  async function emailFor(actor,subject){
   const files=(await readdir(mailDir)).sort().reverse();
   for(const f of files){const mail=JSON.parse(await readFile(mailDir+'/'+f,'utf8'));if(mail.to===actor.email&&mail.subject.includes(subject))return mail.html;}
@@ -109,13 +111,14 @@ export async function runFlows({base,mailDir,check}){
   await owner.action('updateClient',{id:otherClient.clientId,driveUrl:'https://example.com'},403);
   await owner.action('createClient',{name:'Invalido',revenue:-1},400);
  });
- await check('Convite restrito ao e-mail, agência e uso único',async()=>{
+ await check('Convite por link restrito ao e-mail, agência e uso único, sem envio',async()=>{
+  const messagesBefore=await mailCount();
   const invitation=await owner.action('inviteMember',{email:`  ${editor.email.toUpperCase()}  `,role:'editor',clientIds:[],clientAccessMode:'selected',delivery:'link'});
-  assert.equal(invitation.delivery,'email');
-  assert.equal(invitation.emailStatus,'accepted');
+  assert.equal(invitation.delivery,'link');
+  assert.equal(invitation.emailStatus,'not_requested');
   const link=invitation.link;
   const token=new URL(link).searchParams.get('invite');
-  assert((await emailFor(editor,'Convite')).includes(token));
+  assert.equal(await mailCount(),messagesBefore);
   await outside.action('acceptInvite',{token},403);
   await editor.action('acceptInvite',{token});await editor.action('acceptInvite',{token},400);
   assert.equal((await editor.workspace()).clients.length,0);
@@ -123,16 +126,19 @@ export async function runFlows({base,mailDir,check}){
   await reader.action('acceptInvite',{token:new URL(inv.link).searchParams.get('invite')});
   assert.equal((await reader.workspace()).clients.length,1);
  });
- await check('Convite com e-mail envia automaticamente sem escolher canal; endereço inválido não cria convite',async()=>{
-  const recipient={email:'automatic-invite@example.invalid'};
-  const invitation=await owner.action('inviteMember',{email:recipient.email,role:'viewer',clientIds:[c1.clientId],clientAccessMode:'selected'});
-  assert.equal(invitation.delivery,'email');assert.equal(invitation.emailStatus,'accepted');
-  assert((await emailFor(recipient,'Convite')).includes(new URL(invitation.link).searchParams.get('invite')));
-  const before=await owner.workspace();
-  const saved=before.invites.find(invite=>invite.email===recipient.email);
-  assert(saved);assert.deepEqual(saved.clientIds,[c1.clientId]);assert.equal(saved.role,'viewer');
-  await owner.action('inviteMember',{email:'endereco-invalido',role:'viewer',delivery:'link'},400);
-  assert.equal((await owner.workspace()).invites.length,before.invites.length);
+ await check('Convites com canal omitido ou legado de e-mail geram link sem mensagem; endereço inválido não cria convite',async()=>{
+  const messagesBefore=await mailCount();
+  for(const delivery of [undefined,'email']){
+   const recipient={email:`link-${delivery||'default'}@example.invalid`};
+   const invitation=await owner.action('inviteMember',{email:recipient.email,delivery,role:'viewer',clientIds:[c1.clientId],clientAccessMode:'selected'});
+   assert.equal(invitation.delivery,'link');assert.equal(invitation.emailStatus,'not_requested');
+   const before=await owner.workspace();
+   const saved=before.invites.find(invite=>invite.email===recipient.email);
+   assert(saved);assert.deepEqual(saved.clientIds,[c1.clientId]);assert.equal(saved.role,'viewer');
+   await owner.action('inviteMember',{email:'endereco-invalido',role:'viewer',delivery:'link'},400);
+   assert.equal((await owner.workspace()).invites.length,before.invites.length);
+  }
+  assert.equal(await mailCount(),messagesBefore);
  });
  let ownerId,editorId,readerId;
  await check('Atribuição: apenas a demanda recebida e sua pasta aparecem',async()=>{
@@ -431,5 +437,6 @@ export async function runFlows({base,mailDir,check}){
   for(const kind of ['avatar','banner'])await owner.req(`/api/clients/${c1.clientId}/media?kind=${kind}`,null,200,'DELETE');
  });
  const kanban=await runKanbanFlows({Actor,register,check,outside,foreignClientId:c1.clientId});
- return {owner,editor,reader,outside,agency,c1,task,password,emailFor,kanban};
+ const workflow=await runWorkflowFlows({Actor,register,check,outside,upload});
+ return {owner,editor,reader,outside,agency,c1,task,password,emailFor,mailCount,kanban,workflow};
 }

@@ -138,7 +138,7 @@ export async function runBreadcrumbBrowser({browser,state,check,base}) {
     await limitedDemandPath().getByRole('button',{name:'Voltar para Minhas demandas',exact:true}).click();
     await expect(limited.getByRole('dialog')).toHaveCount(0);
     await expect(current(limitedPath())).toHaveText('Minhas demandas');
-    await expect(limited.getByRole('heading',{name:'Clientes',exact:true})).toBeVisible();
+    await expect(limited.getByRole('region',{name:'Resumo da operação'})).toBeVisible();
     assert.deepEqual(errors,[]);
    } finally {
     await limitedContext.close();

@@ -1,3 +1,5 @@
+export type CardPriority = "low" | "normal" | "high" | "urgent";
+export type CardLabel = {id:string;name:string;color:string};
 export type Member = {
   id: string;
   email: string;
@@ -90,6 +92,11 @@ export type Annotation = {
 };
 
 export type Deliverable = {
+  priority?: CardPriority;
+  labels?: CardLabel[];
+  coverMode?: "auto" | "none" | "image" | "full";
+  coverFileId?: string | null;
+  coverFileKind?: "attachment" | "asset" | null;
   columnId: string | null;
   id: string;
   boardId: string;
@@ -99,6 +106,8 @@ export type Deliverable = {
   hasStoriesVersion: boolean;
   status: "briefing" | "production" | "review" | "changes" | "approved";
   assigneeId: string | null;
+  assignedById?: string | null;
+  assignedAt?: string | null;
   dueAt: string;
   notes: string;
   sourceUrl: string;
@@ -120,6 +129,7 @@ export type DeliverableReference = {
 };
 
 export type WorkspaceData = {
+  notifications?: { id:string; deliverableId:string; kind:"assignment"|"urgent"|"stage"|"deadline"; message:string; createdAt:string; readAt:string|null }[];
   kanbanBoards: import("./kanban").KanbanBoardConfig[];
   agency: {id:string;name:string;role:string};
   agencies: {id:string;name:string;role:string}[];
@@ -143,6 +153,8 @@ export type WorkspaceData = {
 };
 
 export type CrmLead = {
+  priority?: CardPriority;
+  labels?: CardLabel[];
   columnId: string | null;
   id: string; agencyOwnerId: string; company: string; contactName: string; email: string; phone: string; source: string;
   status: "new" | "research" | "contacting" | "connected" | "qualifying" | "sql" | "nurture" | "disqualified";

@@ -101,3 +101,17 @@ O editor de foto/banner processa o arquivo no navegador antes do fluxo existente
 O DTO de clientes omite `revenue` e `dueDay` quando a associação ativa não possui `finance.access`. Não devolve zero/dia cinco para representar informação restrita. O tipo `Client` expressa essa ausência; cartões e CRM também verificam a permissão antes de renderizar valores. Atualização de contato mantém a proteção financeira existente no servidor. Não há migração nem alteração de valores de clientes reais.
 
 GSAP usa `matchMedia` escopado à landing; as duas sequências com pin (colagem e capítulos horizontais, landing v5) existem apenas em desktop a partir de 900 × 650 e ponteiro fino. Mudança para movimento reduzido, viewport menor e desmontagem revertem os estilos e os pins. Observação de tamanho da demonstração, carregamento das imagens e abertura do FAQ atualizam as posições; observers/listeners são removidos ao sair. Conteúdo permanece estático legível se a importação de animação falhar.
+
+## Convites por link e ajuda contextual — decisão vigente
+
+Por solicitação posterior de 24/09, `inviteMember` força `delivery=link` após validar endereço, papel, agência, clientes e permissões. Não exige configuração nem chama o provedor de e-mail. O helper respeita o canal explícito e conserva o transporte de e-mail para retomada futura; esse ramo não é alcançado pela ação pública atual. `emailStatus=not_requested` comunica ausência de envio. Destinatário opcional, hash do token, expiração de sete dias, aceite único e revogação permanecem. A decisão substitui o envio automático descrito em U38; confirmação e recuperação mantêm seus próprios transportes.
+
+`FieldHelp` reutiliza o tooltip Radix com estado local e suporte a toque, foco e mouse. `HelpLabel` mantém botão e rótulo como irmãos, com vínculo `htmlFor` ao campo. As explicações do CRM seguem a implementação: criar lead com próxima ação gera atividade; somente informar uma data não gera atividade. Máscaras de `MotionCopy` ganham respiro lateral/vertical compensado por margens para não recortar glifos com tracking negativo.
+
+## Cartões, notificações e fluxo por lista
+
+Migrações Drizzle 0004–0006 são aditivas: campos de capa, prioridade/etiquetas, atribuidor/data e tabela privada task_notifications. As imagens continuam nos endpoints privados atuais; validar pertencimento ao cartão e MIME no servidor antes de salvar a capa. O fluxo por lista fica no JSON versionado de kanban_boards, compartilhado entre pautas do cliente.
+
+A passagem usa o mesmo lock do quadro e da demanda, revalida o responsável ativo com clients.view/demands.execute e preserva a restrição de aprovação. Concluir etapa verifica a lista esperada; notificações e atribuição são gravadas na mesma transação. Uma configuração antiga apontando a membro desativado falha sem escrita parcial. Remoção estrutural de listas move cartões sem acionar encaminhamento nem alterar prazos/aprovações. O endpoint de notificação filtra agência e destinatário; o DTO filtra novamente tarefas autorizadas. RLS e revogação de anon/authenticated/PUBLIC seguem o schema privado.
+
+assigned_by_id registra quem efetivou a atribuição, inclusive em transição automática; não representa a pessoa que configurou a regra. assigned_at registra o instante da mudança. Os campos são nulos no legado. A agenda calcula dias no fuso do navegador e só agrupa o DTO já autorizado. Dashboard de execução filtra assigneeId; blocos gerenciais exigem role de gestão mais a permissão do módulo.

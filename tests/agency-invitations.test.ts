@@ -87,29 +87,27 @@ test("Convite: e-mail chama Brevo com o link persistido e distingue aceite de en
   assert.equal(stored.usedAt, null);
 });
 
-test("Convite: e-mail preenchido envia automaticamente mesmo com delivery=link", async t => {
-  configure(t);
-  let calls = 0;
-  let emailedLink = "";
-  t.mock.method(globalThis, "fetch", async (_input: unknown, init?: RequestInit) => {
-    calls++;
-    const payload = JSON.parse(String(init?.body));
-    assert.deepEqual(payload.to, [{ email: invitation.email }]);
-    emailedLink = payload.htmlContent.match(/href="([^"]+)"/)[1];
-    return Response.json({ messageId: "<fixture@brevo.example.invalid>" }, { status: 201 });
+for (const configured of [true, false]) {
+  test(`Convite: link com destinatário preserva restrição sem envio; provedor configurado=${configured}`, async t => {
+    configure(t);
+    if (!configured) delete process.env.BREVO_API_KEY;
+    let calls = 0;
+    t.mock.method(globalThis, "fetch", async () => { calls++; throw new Error("Unexpected network"); });
+    const result = await createAgencyInvitation(db, {
+      ...invitation, email: "  RECIPIENT@example.invalid  ", delivery: "link",
+    });
+    assert.equal(calls, 0);
+    assert.equal(result.delivery, "link");
+    assert.equal(result.emailStatus, "not_requested");
+    const [stored] = await db.select().from(schema.agencyInvites);
+    assert.equal(stored.email, invitation.email);
+    assert.equal(stored.tokenHash, digest(new URL(result.link).searchParams.get("invite")!));
+    assert.equal(stored.revokedAt, null);
+    assert.deepEqual(stored.permissions, ["clients.view"]);
+    assert.deepEqual(stored.clientIds, ["client-fixture"]);
+    assert.equal(Date.parse(stored.expiresAt) - Date.parse(stored.createdAt), 7 * 86_400_000);
   });
-  const result = await createAgencyInvitation(db, {
-    ...invitation, email: "  RECIPIENT@example.invalid  ", delivery: "link",
-  });
-  assert.equal(calls, 1);
-  assert.equal(result.delivery, "email");
-  assert.equal(result.emailStatus, "accepted");
-  assert.equal(result.link, emailedLink);
-  const [stored] = await db.select().from(schema.agencyInvites);
-  assert.equal(stored.email, invitation.email);
-  assert.equal(stored.tokenHash, digest(new URL(emailedLink).searchParams.get("invite")!));
-  assert.equal(stored.revokedAt, null);
-});
+}
 
 test("Convite: sem e-mail gera somente link e não exige provedor configurado", async t => {
   configure(t);
@@ -133,7 +131,8 @@ test("Convite: envio sem destinatário falha antes de criar registro", async t =
   assert.equal((await db.select().from(schema.agencyInvites)).length, 0);
 });
 
-for (const delivery of ["email", "link"] as const) {
+// Retain coverage of the dormant email helper; the public action only generates links.
+for (const delivery of ["email"] as const) {
 test(`Convite: e-mail com delivery=${delivery} e configuração ausente não cria registro`, async t => {
   configure(t);
   delete process.env.BREVO_API_KEY;

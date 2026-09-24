@@ -24,10 +24,10 @@ type InvitationInput = {
 // Keep provider acceptance distinct from delivery to the recipient's inbox.
 export async function createAgencyInvitation(db: InvitationDatabase, input: InvitationInput) {
   const email = input.email?.trim().toLowerCase();
-  if (input.delivery === "email" && !email)
+  const sendByEmail = input.delivery === "email";
+  if (sendByEmail && !email)
     throw new AppError("Informe o e-mail do convite.");
-  // A recipient always requests email, including older clients sending delivery=link.
-  if (email) assertMailConfigured();
+  if (sendByEmail) assertMailConfigured();
   const id = randomUUID();
   const token = randomToken();
   const createdAt = new Date().toISOString();
@@ -38,7 +38,7 @@ export async function createAgencyInvitation(db: InvitationDatabase, input: Invi
     role: input.role, permissions: input.permissions, clientIds: [...new Set(input.clientIds)],
     clientAccessMode: input.clientAccessMode, createdBy: input.createdBy, createdAt, expiresAt,
   });
-  if (email) {
+  if (sendByEmail && email) {
     try {
       await sendMail(
         email,

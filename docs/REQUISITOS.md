@@ -105,3 +105,21 @@ Referência mais recente: https://madewithgsap.com/ e sua galeria/coleção de e
 O preview específico do Mobbin não foi recuperado nesta pesquisa. O site oficial https://www.monologue.to/ foi confirmado e inspecionado como referência complementar; a versão atual é visualmente diferente da direção pastel solicitada e não foi confirmada como a mesma captura do Mobbin. Fontes observadas e adaptações estão em DESIGN.md e REDESIGN-2026-09-23.md.
 
 Esta memória registra decisões de projeto em arquivos persistentes. Não representa uma afirmação de acesso automático a todo o histórico de chats ou de memória pessoal universal entre conversas.
+
+## Decisões mais recentes de 24/09: link, ajuda e recortes
+
+O titular colocou o envio direto de convites por e-mail em standby e pediu restaurar o link copiável para compartilhar livremente. Esta solicitação substitui U38: e-mail opcional restringe o aceite, mas não dispara mensagem, inclusive em pedidos de interfaces antigas. Preservar permissões, clientes liberados, sete dias, uso único, revogação e confirmação de cadastro/recuperação existentes.
+
+Acrescentar ícones de ajuda aos termos pouco claros, principalmente Data da próxima ação no cadastro de lead. Explicar o significado, a ação esperada e exemplos, com hover, teclado e toque. Revisar cortes de pontuação/letras/controles no site; a captura de 18h09 mostra os pontos finais do hero cortados. Cobrir larguras de desktop/celular e registrar limites da revisão.
+
+## U42 — Kanban visual, passagem de etapas e dashboard (24/09/2026)
+
+Listas passam a ter botão de criação no quadro, nome clicável, menu de cor/ordem/remoção, arraste no desktop e criação de cartão já no destino. Remover uma lista nunca exclui os cartões; o usuário escolhe outra lista ou Sem lista.
+
+Demandas aceitam capas vindas de anexos/entregas de imagem, no topo ou ocupando o cartão, além de modo compacto e automático. Demandas e leads aceitam prioridade Baixa, Normal, Alta ou Urgente e até oito etiquetas com nomes/cores editáveis por cartão. O sino de urgência pulsa suavemente três vezes; redução de movimento o mantém estático.
+
+Cada lista de demandas pode ter responsável, duração da etapa e destino ao concluir. A movimentação aplica a atribuição e conta o prazo da entrada na lista; sem configuração mantém os valores atuais. Concluir etapa encaminha com uma ação. A aprovação final mantém a permissão de planejamento/revisão. Uma lista de Alterações pode apontar para o designer escolhido; não há associação automática por profissão.
+
+Notificações internas persistidas avisam atribuição, urgência, passagem e mudança de prazo ao responsável. Somente destinatário e agência atual podem marcá-las como lidas. A lista não mostra demandas cujo acesso foi perdido. Atualização durante uso segue o polling de 15 segundos e o foco da janela; não é notificação push do sistema operacional nem envio de e-mail. Prazos ficam amarelos nas últimas 24 horas, vermelhos depois e textualmente Aprovada ao encerrar.
+
+O dashboard agora atende também executores com indicadores e prazos das tarefas atribuídas. Gestão tem resumo de pagamentos e CRM conforme permissão; profissionais de planejamento têm a carga da equipe. A agenda do colaborador agrupa as tarefas autorizadas por dia local, com horário, cliente, lista, urgência e quem atribuiu. Aprovadas entram por opção. Atribuidor não conhecido em registros antigos não é inventado.

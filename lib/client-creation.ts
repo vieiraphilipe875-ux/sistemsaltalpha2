@@ -9,6 +9,7 @@ import type { Member } from "./workspace-types";
 type Transaction = Parameters<Parameters<PgliteDatabase<typeof schema>["transaction"]>[0]>[0];
 type ClientInput = {
   requestId?: string;
+  columnId?: string | null;
   name: string;
   handle: string;
   driveUrl: string;
@@ -44,9 +45,11 @@ export async function createClientRecord(db: Transaction, member: Member, payloa
   const revenue = Math.max(0, Math.round(Number(payload.revenue) || 0));
   const dueDay = Math.max(1, Math.min(31, Math.round(Number(payload.dueDay) || 5)));
   const config = await lockKanbanBoard(db, { agencyId, kind: "crmClients" });
-  const placement = resolveKanbanPlacement(config, null, {}, "active");
+  // A retry still succeeds if its former list was renamed or removed.
+  const [known] = await db.select({columnId:clients.columnId,status:clients.status}).from(clients).where(and(eq(clients.id,clientId),eq(clients.agencyId,agencyId))).limit(1);
+  const placement = known ?? resolveKanbanPlacement(config, null, payload, "active");
   const [inserted] = await db.insert(clients).values({
-    id: clientId, agencyId, columnId: placement.columnId, name, handle: payload.handle.trim(), driveUrl: payload.driveUrl.trim(),
+    id: clientId, agencyId, columnId: placement.columnId, status: placement.status as "active" | "inactive" | "prospecting", name, handle: payload.handle.trim(), driveUrl: payload.driveUrl.trim(),
     accent: ["#64745d", "#ae805b", "#6b8183", "#978362"][name.length % 4], revenue, dueDay, createdAt,
   }).onConflictDoNothing({ target: clients.id }).returning({ id: clients.id });
 

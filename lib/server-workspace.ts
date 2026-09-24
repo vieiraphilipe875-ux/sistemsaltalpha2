@@ -2,7 +2,7 @@ import { defaultKanbanColumns, kanbanScopeKey, type KanbanBoardConfig, type Kanb
 import { and, asc, desc, eq, inArray, or } from "drizzle-orm";
 import { verifySession } from "@/lib/auth";
 import { getDb } from "@/db";
-import { annotations, assets, attachments, boards, clientMembers, clients, crmActivities, crmDeals, crmLeads, deliverables, deliverableReferences, financeWorkers, financialDocuments, members, slides, transactions, workerCompetencies, agencies, agencyMemberships, agencyInvites, activityLog, kanbanBoards } from "@/db/schema";
+import { annotations, assets, attachments, boards, clientMembers, clients, crmActivities, crmDeals, crmLeads, deliverables, deliverableReferences, financeWorkers, financialDocuments, members, slides, transactions, workerCompetencies, agencies, agencyMemberships, agencyInvites, activityLog, kanbanBoards, taskNotifications } from "@/db/schema";
 import { effectivePermissions } from "@/lib/permissions";
 import type { Member, WorkspaceData } from "./workspace-types";
 
@@ -93,6 +93,7 @@ export async function getWorkspaceData():Promise<WorkspaceData|null> {
  };
  return {
   kanbanBoards: [...visibleClientIds.map(clientId => makeKanban("demands", clientId)), ...(crm ? (["crmLeads", "crmDeals", "crmClients"] as const).map(kind => makeKanban(kind)) : [])],
+  notifications:ids.length?await db.select({id:taskNotifications.id,deliverableId:taskNotifications.deliverableId,kind:taskNotifications.kind,message:taskNotifications.message,createdAt:taskNotifications.createdAt,readAt:taskNotifications.readAt}).from(taskNotifications).where(and(eq(taskNotifications.agencyId,agencyId),eq(taskNotifications.memberId,me.id),inArray(taskNotifications.deliverableId,ids))).orderBy(desc(taskNotifications.createdAt)).limit(100):[],
   currentMember:me,agency,agencies:myAgencies,members:publicMembers,
   invites:admin?(await db.select({id:agencyInvites.id,email:agencyInvites.email,role:agencyInvites.role,clientIds:agencyInvites.clientIds,expiresAt:agencyInvites.expiresAt,usedAt:agencyInvites.usedAt,revokedAt:agencyInvites.revokedAt}).from(agencyInvites).where(eq(agencyInvites.agencyId,agencyId)).orderBy(desc(agencyInvites.createdAt))):[],
   activity:admin?await db.select().from(activityLog).where(eq(activityLog.agencyId,agencyId)).orderBy(desc(activityLog.createdAt)).limit(30):[],

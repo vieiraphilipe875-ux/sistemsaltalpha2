@@ -41,30 +41,30 @@ type PropsWithoutAction={data:WorkspaceData};
 type InviteResult={link:string;delivery:"link"|"email";emailStatus:"accepted"|"not_requested";recipient?:string};
 export function InviteDialog({open,onOpenChange,data,postAction}:Props&{open:boolean;onOpenChange:(v:boolean)=>void}){
  const [email,setEmail]=useState(""),[role,setRole]=useState<Member["role"]>("editor"),[scope,setScope]=useState<"all"|"selected">("selected"),[clientIds,setClientIds]=useState<string[]>([]),[permissions,setPermissions]=useState<PermissionKey[]>(rolePermissionDefaults.editor),[busy,setBusy]=useState(false),[invitation,setInvitation]=useState<InviteResult|null>(null);
- const delivery=email.trim()?"email":"link";
  async function submit(){
   if(busy)return;
   setBusy(true);
   const recipient=email.trim();
   try{
-   const result=await postAction({action:"inviteMember",email:recipient||undefined,delivery,role,clientAccessMode:scope,clientIds,permissions}) as InviteResult;
+   const result=await postAction({action:"inviteMember",email:recipient||undefined,delivery:"link",role,clientAccessMode:scope,clientIds,permissions}) as InviteResult;
    setInvitation({...result,recipient});
-   toast.success(result.emailStatus==="accepted"?"Convite encaminhado por e-mail":"Link de convite criado");
+   toast.success("Link de convite criado");
   }catch(e){toast.error((e as Error).message);}finally{setBusy(false);}
  }
  return <Dialog open={open} onOpenChange={v=>{onOpenChange(v);if(!v)setInvitation(null);}}>
   <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
    <DialogHeader><DialogTitle>Convidar para {data.agency.name}</DialogTitle><DialogDescription>Uma conta pode participar de várias agências. Este convite vale por 7 dias e aceita uma pessoa.</DialogDescription></DialogHeader>
    {invitation?<div className="space-y-4">
-    <p className="notice" role="status"><Check size={16}/>{invitation.delivery==="email"&&invitation.emailStatus==="accepted"?`Convite encaminhado para ${invitation.recipient}. Procure por “Convite para” no e-mail e confira Promoções, Atualizações e Spam. Você também pode compartilhar o link abaixo; só a conta convidada poderá aceitar.`:"Link criado. Nenhum e-mail foi enviado. Compartilhe o link com a pessoa convidada."}</p>
+    <p className="notice" role="status"><Check size={16}/>{`Link criado. Compartilhe com a pessoa convidada. ${invitation.recipient?`Somente a conta ${invitation.recipient} poderá aceitar. `:""}Nenhum e-mail foi enviado.`}</p>
     <label>Link do convite<Input value={invitation.link} readOnly onFocus={e=>e.target.select()}/></label>
     <Button onClick={async()=>{try{await navigator.clipboard.writeText(invitation.link);toast.success("Link copiado");}catch{toast.info("Selecione e copie o link acima.");}}}><Copy size={16}/>Copiar link</Button>
     <Button variant="outline" onClick={()=>{setInvitation(null);setEmail("");}}>Criar outro convite</Button>
    </div>:<>
-    <p className="text-sm text-muted-foreground">Com e-mail, o convite é enviado automaticamente e só essa conta pode aceitá-lo. Para compartilhar somente o link, deixe o campo vazio.</p>
+    <p className="text-sm text-muted-foreground">Os convites por e-mail estão pausados. Gere e compartilhe um link para continuar.</p>
     <label>E-mail (opcional)<Input value={email} type="email" disabled={busy} onChange={e=>setEmail(e.target.value)} placeholder="pessoa@agencia.com"/></label>
+    <p className="text-xs text-muted-foreground">Se informar um e-mail, somente essa conta poderá aceitar o convite.</p>
     <AccessFields data={data} role={role} setRole={setRole} scope={scope} setScope={setScope} clientIds={clientIds} setClientIds={setClientIds} permissions={permissions} setPermissions={setPermissions}/>
-    <DialogFooter><Button variant="ghost" onClick={()=>onOpenChange(false)}>Cancelar</Button><Button disabled={busy||(delivery==="email"&&!email.includes("@"))} onClick={submit}>{busy?"Criando...":delivery==="email"?"Enviar convite":"Gerar link de convite"}</Button></DialogFooter>
+    <DialogFooter><Button variant="ghost" onClick={()=>onOpenChange(false)}>Cancelar</Button><Button disabled={busy||Boolean(email.trim()&&!email.includes("@"))} onClick={submit}>{busy?"Criando...":"Gerar link de convite"}</Button></DialogFooter>
    </>}
   </DialogContent>
  </Dialog>;

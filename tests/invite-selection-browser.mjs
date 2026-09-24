@@ -2,7 +2,7 @@ import {expect} from '@playwright/test';
 import assert from 'node:assert/strict';
 
 export async function runInviteSelectionBrowser({browser,state,check,base}) {
- const context=await browser.newContext({viewport:{width:1440,height:1000},locale:'pt-BR'});
+ const context=await browser.newContext({viewport:{width:1440,height:1000},locale:'pt-BR',permissions:['clipboard-read','clipboard-write']});
  const [name,...value]=state.owner.cookie.split('=');
  await context.addCookies([{name,value:value.join('='),url:base}]);
  const page=await context.newPage();
@@ -36,11 +36,12 @@ export async function runInviteSelectionBrowser({browser,state,check,base}) {
   return result;
  }
  try {
-  await check('Navegador: convite de leitor seleciona todos, respeita busca e envia e-mail local',async()=>{
+  await check('Navegador: convite de leitor seleciona todos, respeita busca e copia link sem enviar e-mail',async()=>{
+   const messagesBefore=await state.mailCount();
    const clients=(await state.owner.workspace()).clients;
    assert(clients.length>=2,'A seleção parcial exige ao menos dois clientes na fixture');
    const dialog=await openInvite();
-   await expect(dialog.getByText('Com e-mail, o convite é enviado automaticamente e só essa conta pode aceitá-lo. Para compartilhar somente o link, deixe o campo vazio.',{exact:true})).toBeVisible();
+   await expect(dialog.getByText('Os convites por e-mail estão pausados. Gere e compartilhe um link para continuar.',{exact:true})).toBeVisible();
    await expect(dialog.getByRole('button',{name:'Gerar link de convite',exact:true})).toBeEnabled();
    await dialog.getByLabel('Permissão',{exact:true}).selectOption('viewer');
    const all=dialog.getByRole('checkbox',{name:'Selecionar todos os clientes',exact:true});
@@ -57,15 +58,18 @@ export async function runInviteSelectionBrowser({browser,state,check,base}) {
    for(const client of clients)await expect(dialog.getByRole('checkbox',{name:client.name,exact:true})).toBeChecked();
    await dialog.getByLabel('E-mail (opcional)',{exact:true}).fill('bulk-reader@example.invalid');
    const response=actionResponse('inviteMember');
-   await dialog.getByRole('button',{name:'Enviar convite',exact:true}).click();
-   const result=await assertInviteSaved(await response,clients,'viewer','email');
-   await expect(dialog.getByRole('status')).toContainText('Convite encaminhado para bulk-reader@example.invalid');
+   await dialog.getByRole('button',{name:'Gerar link de convite',exact:true}).click();
+   const result=await assertInviteSaved(await response,clients,'viewer','link');
+   await expect(dialog.getByRole('status')).toContainText('Somente a conta bulk-reader@example.invalid poderá aceitar.');
    await expect(dialog.getByLabel('Link do convite',{exact:true})).toHaveValue(result.link);
-   assert.match(await state.emailFor({email:'bulk-reader@example.invalid'},'Convite'),/href=/);
-   await page.screenshot({path:'evidence/invite-auto-email-confirmed.png',fullPage:true});
+   assert.equal(await state.mailCount(),messagesBefore);
+   await dialog.getByRole('button',{name:'Copiar link',exact:true}).click();
+   assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),result.link);
+   await page.screenshot({path:'evidence/invite-link-confirmed.png',fullPage:true});
    assert.deepEqual(errors,[]);
   });
-  await check('Navegador: convite de editor desmarca todos e envia ao preencher e-mail',async()=>{
+  await check('Navegador: convite de editor desmarca todos e restringe o link ao e-mail',async()=>{
+   const messagesBefore=await state.mailCount();
    const clients=(await state.owner.workspace()).clients;
    const dialog=await openInvite();
    await dialog.getByLabel('Permissão',{exact:true}).selectOption('editor');
@@ -77,17 +81,18 @@ export async function runInviteSelectionBrowser({browser,state,check,base}) {
    await all.check();
    const email=dialog.getByLabel('E-mail (opcional)',{exact:true});
    await email.fill('endereco-incompleto');
-   await expect(dialog.getByRole('button',{name:'Enviar convite',exact:true})).toBeDisabled();
+   await expect(dialog.getByRole('button',{name:'Gerar link de convite',exact:true})).toBeDisabled();
    await email.fill('bulk-editor@example.invalid');
-   await page.screenshot({path:'evidence/invite-auto-email-form.png',fullPage:true});
+   await page.screenshot({path:'evidence/invite-link-form.png',fullPage:true});
    const response=actionResponse('inviteMember');
-   await dialog.getByRole('button',{name:'Enviar convite',exact:true}).click();
-   const result=await assertInviteSaved(await response,clients,'editor','email');
-   await expect(dialog.getByRole('status')).toContainText('Convite encaminhado para bulk-editor@example.invalid');
-   assert((await state.emailFor({email:'bulk-editor@example.invalid'},'Convite')).includes(new URL(result.link).searchParams.get('invite')));
+   await dialog.getByRole('button',{name:'Gerar link de convite',exact:true}).click();
+   const result=await assertInviteSaved(await response,clients,'editor','link');
+   await expect(dialog.getByRole('status')).toContainText('Somente a conta bulk-editor@example.invalid poderá aceitar.');
+   assert.equal(await state.mailCount(),messagesBefore);
+   await expect(dialog.getByLabel('Link do convite',{exact:true})).toHaveValue(result.link);
    assert.deepEqual(errors,[]);
   });
-  await check('Navegador: botão do e-mail abre o quadro após login e aceite, restrito ao destinatário',async()=>{
+  await check('Navegador: link compartilhado abre o quadro após login e aceite, restrito ao destinatário',async()=>{
    const email='invited-reader@example.invalid';
    const invite=await state.owner.action('inviteMember',{email,role:'viewer',clientIds:[state.c1.clientId],clientAccessMode:'selected'});
    const token=new URL(invite.link).searchParams.get('invite');
@@ -102,12 +107,7 @@ export async function runInviteSelectionBrowser({browser,state,check,base}) {
     const verification=await recipientContext.request.post(base+'/api/auth/verify',{data:{email,code},headers:{Origin:base}});
     assert.equal(verification.status(),200);
     await recipientContext.clearCookies();
-    await recipientPage.setContent(await state.emailFor({email},'Convite'));
-    const button=recipientPage.getByRole('link',{name:'Acessar quadro',exact:true});
-    await expect(button).toHaveAttribute('href',invite.link);
-    await expect(button).toHaveCSS('background-color','rgb(37, 40, 61)');
-    await recipientPage.screenshot({path:'evidence/invite-auto-email-button.png',fullPage:true});
-    await button.click();
+    await recipientPage.goto(invite.link);
     await expect(recipientPage.getByText('Você tem um convite. Entre ou crie uma conta para aceitá-lo.',{exact:true})).toBeVisible();
     await recipientPage.getByLabel('E-mail',{exact:true}).fill(email);
     await recipientPage.locator('input[name=password]').fill(state.password);
@@ -115,6 +115,7 @@ export async function runInviteSelectionBrowser({browser,state,check,base}) {
     await recipientPage.getByRole('button',{name:'Aceitar convite',exact:true}).click();
     await expect(recipientPage).toHaveURL(base+'/?client='+state.c1.clientId);
     await expect(recipientPage.getByRole('heading',{name:'Vanessa Lopes',exact:true})).toBeVisible();
+    await recipientPage.screenshot({path:'evidence/invite-link-accepted.png',fullPage:true});
     const workspaceResponse=await recipientContext.request.get(base+'/api/workspace');
     assert.equal(workspaceResponse.status(),200);
     const workspace=await workspaceResponse.json();
@@ -125,7 +126,7 @@ export async function runInviteSelectionBrowser({browser,state,check,base}) {
     assert.equal(replay.status(),400);
     assert.deepEqual(errors,[]);
    } catch(error) {
-    await recipientPage.screenshot({path:'evidence/invite-button-failure.png',fullPage:true}).catch(()=>{});
+    await recipientPage.screenshot({path:'evidence/invite-link-failure.png',fullPage:true}).catch(()=>{});
     throw error;
    } finally {await recipientContext.close();}
   });

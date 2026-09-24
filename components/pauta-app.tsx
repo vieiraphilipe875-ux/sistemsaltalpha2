@@ -1,10 +1,12 @@
 "use client";
 
+import { FieldHelp, HelpLabel } from "@/components/field-help";
 import {normalizeDateInputs} from "@/lib/dates";
 import {parseMoney} from "@/lib/finance";
 import { CLIENT_IMAGE_ACCEPT, CLIENT_IMAGE_HINT, clientImageError } from "@/lib/client-media-policy";
 import { CLIENT_IMAGE_CROP_SPECS } from "@/lib/client-image-crop";
 import { ClientImageCropDialog } from "@/components/client-image-crop-dialog";
+import { KanbanListBoard, KanbanListControl } from "@/components/kanban-list-control";
 import { KanbanColumnsEditor, KanbanMoveSelect } from "@/components/kanban-columns-editor";
 import { getKanbanBoard } from "@/lib/kanban";
 
@@ -14,10 +16,15 @@ import {
   canExecuteTask,
   assignableMembers,
 } from "@/lib/client-permissions";
+import { CardBadges, CardClassificationEditor, ClassificationFields } from "@/components/card-classification";
+import type { CardLabel, CardPriority } from "@/lib/workspace-types";
+import { TaskCoverPicker } from "@/components/task-cover-picker";
+import { taskCover } from "@/lib/task-cover";
 import { TaskSettings } from "./task-settings";
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   AlertCircle,
   ArrowLeft,
@@ -119,6 +126,8 @@ import { uploadRequest } from "@/lib/upload-client";
 import { TeamPanel as Team, InviteDialog } from "@/components/team-panel";
 import { MemberPicker, ClientPeople } from "@/components/member-picker";
 import { ClientPicker } from "@/components/client-picker";
+import { CompleteStage, NotificationInbox } from "@/components/demand-workflow";
+import { ManagementOverview } from "@/components/management-overview";
 import { TeamWorkload } from "@/components/team-workload";
 import { WorkspaceBreadcrumb } from "@/components/workspace-breadcrumb";
 import { FinancialDocuments } from "@/components/financial-documents";
@@ -225,7 +234,7 @@ function initials(name: string) {
 
 function deadline(item: Deliverable) {
   if (item.status === "approved")
-    return { label: "Concluída", tone: "done" as const, hours: Infinity };
+    return { label: "Aprovada", tone: "done" as const, hours: Infinity };
   const diff = new Date(item.dueAt).getTime() - Date.now();
   const hours = diff / 3_600_000;
   if (hours < 0)
@@ -261,11 +270,11 @@ function dueClass(tone: ReturnType<typeof deadline>["tone"]) {
   return tone === "late"
     ? "text-rose-600 bg-rose-50"
     : tone === "urgent"
-      ? "text-orange-700 bg-orange-50"
+      ? "text-amber-800 bg-amber-100"
       : tone === "soon"
-        ? "text-amber-700 bg-amber-50"
+        ? "text-slate-600 bg-slate-100"
         : tone === "done"
-          ? "text-emerald-700 bg-emerald-50"
+          ? "text-slate-700 bg-slate-100"
           : "text-slate-600 bg-slate-100";
 }
 
@@ -291,6 +300,7 @@ export function PautaApp({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [createBoardId, setCreateBoardId] = useState<string|undefined>();
   const [createClientContextId, setCreateClientContextId] = useState<string | null>(null);
+  const [createColumnId, setCreateColumnId] = useState<string | null | undefined>();
   const [createAssigneeId, setCreateAssigneeId] = useState<string|undefined>();
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [createClientOpen, setCreateClientOpen] = useState(false);
@@ -303,20 +313,27 @@ export function PautaApp({
     window.addEventListener("focus",refresh);
     return ()=>{window.clearInterval(timer);window.removeEventListener("focus",refresh);};
   },[]);
-  const [, setClock] = useState(() => Date.now());
+  const [clock, setClock] = useState(() => Date.now());
 
   useEffect(() => {
     const timer = window.setInterval(() => setClock(Date.now()), 60_000);
     return () => window.clearInterval(timer);
   }, []);
 
-  async function reload() {
+  async function reload(animate = false) {
     const sequence=++refreshSequence.current;
     const response = await fetch("/api/workspace", { cache: "no-store" });
     if(response.status===401){window.location.assign("/login");return;}
     if (!response.ok) throw new Error("Não foi possível atualizar os dados.");
     const nextData=await response.json();
-    if(sequence===refreshSequence.current)setData(nextData);
+    if(sequence===refreshSequence.current){
+      if(animate && document.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+        const transition=document.startViewTransition(()=>{if(sequence===refreshSequence.current)flushSync(()=>setData(nextData));});
+        void transition.ready.catch(()=>{});
+        void transition.finished.catch(()=>{});
+        await transition.updateCallbackDone;
+      }else setData(nextData);
+    }
   }
 
   async function postAction(payload: object, success?: string) {
@@ -328,7 +345,9 @@ export function PautaApp({
     const result = await readApiResponse(response);
     if (!response.ok)
       throw Object.assign(new Error(result.error || "Não foi possível salvar."), { status: response.status });
-    try { await reload(); } catch { toast.info("Alteração salva. Atualize a página para conferir os dados recentes."); }
+    const operation=payload as {action?:string;columnId?:string|null};
+    const animate=operation.action==="saveKanbanColumns" || (("columnId" in operation || "completeStage" in operation) && ["updateDeliverable","updateCrmLead","updateCrmDeal","updateClientCrm"].includes(operation.action||""));
+    try { await reload(animate); } catch { toast.info("Alteração salva. Atualize a página para conferir os dados recentes."); }
     if (success) toast.success(success);
     return result;
   }
@@ -345,7 +364,7 @@ export function PautaApp({
   const canSeeFinance = myPermissions.includes("finance.access");
   const executeOnly = myPermissions.includes("demands.execute") && !canPlan;
   const myTasks = useMemo(
-    () => data.deliverables,
+    () => canPlan ? data.deliverables : data.deliverables.filter(task=>task.assigneeId===me.id),
     [data.deliverables, me.id, canPlan],
   );
   const visibleTasks = useMemo(
@@ -500,42 +519,34 @@ export function PautaApp({
               setActiveClientId(id);
             }}
           />
-          {urgent.length > 0 && (
-            <button
-              aria-label={`${urgent.length} demandas com prazo próximo ou vencido`}
-              onClick={() => navigate("dashboard")}
-              className="workspace-alert-button relative grid size-10 shrink-0 place-items-center rounded-xl border border-border bg-white text-muted-foreground transition hover:bg-muted hover:text-foreground"
-            >
-              <Bell className="size-[18px]" />
-              <span className="absolute right-2 top-2 size-2 rounded-full bg-rose-500 ring-2 ring-white" />
-            </button>
-          )}
+          <NotificationInbox now={clock} data={data} onOpen={setActiveDeliverableId} save={postAction} />
         </header>
         <div className="workspace-content mx-auto max-w-[1680px] p-4 sm:p-6 lg:p-8">{syncError&&<p role="status" className="notice mb-4">A conexão está instável. Tentaremos atualizar novamente.</p>}
           {view === "dashboard" &&
             !activeClientId &&
-            (executeOnly ? (
-              <Clients data={data} onOpenClient={setActiveClientId} />
-            ) : (
-              <Dashboard
+            (<Dashboard
+                now={clock}
                 data={data}
                 tasks={visibleTasks}
                 urgent={urgent}
                 onCreateClient={canManageClients ? () => setCreateClientOpen(true) : undefined}
                 onCreateTask={canPlan && data.clients.some((client) => canPlanClient(data, client.id)) ? (assigneeId) => {
                   setCreateClientContextId(null);
+                  setCreateColumnId(undefined);
                   setCreateBoardId(undefined);
                   setCreateAssigneeId(assigneeId);
                   setCreateTaskOpen(true);
                 } : undefined}
                 onBrowseClients={canSeeClients ? () => navigate("clients") : undefined}
+                onFinance={() => navigate("finance")}
+                onCrm={() => navigate("crm")}
                 onOpen={setActiveDeliverableId}
                 onClient={(id) => {
                   setView("clients");
                   setActiveClientId(id);
                 }}
               />
-            ))}
+            )}
           {view === "dashboard" && activeClient && executeOnly && (
             <ClientBoard
               data={data}
@@ -565,14 +576,14 @@ export function PautaApp({
               onOpen={setActiveDeliverableId}
               onCreate={
                 canPlanClient(data, activeClient.id)
-                  ? (boardId) => {setCreateClientContextId(activeClient.id);setCreateBoardId(boardId);setCreateAssigneeId(undefined);setCreateTaskOpen(true);}
+                  ? (boardId, columnId) => {setCreateColumnId(columnId);setCreateClientContextId(activeClient.id);setCreateBoardId(boardId);setCreateAssigneeId(undefined);setCreateTaskOpen(true);}
                   : undefined
               }
               postAction={postAction}
             />
           )}
           {view === "crm" && canSeeCrm && (
-            <CrmWorkspace data={data} postAction={postAction} />
+            <CrmWorkspace data={data} postAction={postAction} onRefresh={reload} />
           )}
           {view === "finance" && canSeeFinance && (
             <FinanceView data={data} postAction={postAction} />
@@ -615,11 +626,12 @@ export function PautaApp({
         postAction={postAction}
       />
       <CreateTaskDialog
-        key={`${createTaskOpen}-${createClientContextId}-${createBoardId}-${createAssigneeId}`}
+        key={`${createTaskOpen}-${createClientContextId}-${createBoardId}-${createAssigneeId}-${createColumnId}`}
         open={createTaskOpen}
         onOpenChange={setCreateTaskOpen}
         data={data}
         defaultClientId={createClientContextId}
+        defaultColumnId={createColumnId}
         defaultBoardId={createBoardId}
         defaultAssigneeId={createAssigneeId}
         postAction={postAction}
@@ -636,6 +648,7 @@ export function PautaApp({
 }
 
 function Dashboard({
+  now,
   data,
   tasks,
   urgent,
@@ -644,7 +657,12 @@ function Dashboard({
   onCreateTask,
   onCreateClient,
   onBrowseClients,
+  onFinance,
+  onCrm,
 }: {
+  now:number;
+  onFinance():void;
+  onCrm():void;
   data: WorkspaceData;
   tasks: Deliverable[];
   urgent: Deliverable[];
@@ -682,8 +700,8 @@ function Dashboard({
       <section className="dashboard-metrics grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Resumo da operação">
         <Metric label="Em andamento" value={active.length} hint="demandas abertas" icon={CircleDot} tone="dark" />
         <Metric label="Em revisão" value={review.length} hint="aguardando retorno" icon={MessageCircle} tone="amber" />
-        <Metric label="Aprovadas" value={approved.length} hint="nesta pauta" icon={CheckCircle2} tone="green" />
-        <Metric label="Clientes" value={data.clients.length} hint="na sua carteira" icon={Users} tone="violet" />
+        <Metric label="Aprovadas" value={approved.length} hint="no seu painel" icon={CheckCircle2} tone="green" />
+        <Metric label="Clientes" value={permissionsFor(data,data.currentMember).includes("demands.create")?data.clients.length:new Set(tasks.map(t=>data.boards.find(b=>b.id===t.boardId)?.clientId).filter(Boolean)).size} hint="na sua carteira" icon={Users} tone="violet" />
       </section>
 
       {urgent.length > 0 && (
@@ -699,7 +717,8 @@ function Dashboard({
         </section>
       )}
 
-      {permissionsFor(data, data.currentMember).includes("demands.create") && <TeamWorkload data={data} onCreateTask={onCreateTask} />}
+      <ManagementOverview now={now} data={data} onFinance={onFinance} onCrm={onCrm} />
+      {permissionsFor(data, data.currentMember).includes("demands.create") && <TeamWorkload data={data} onCreateTask={onCreateTask} onOpenTask={onOpen} />}
 
       <section className="dashboard-work-grid">
         <div className="dashboard-main-column">
@@ -734,7 +753,7 @@ function Dashboard({
           )}
         </div>
 
-        <section className="workspace-panel client-progress-panel">
+        {permissionsFor(data,data.currentMember).includes("demands.create") && <section className="workspace-panel client-progress-panel">
           <div className="panel-heading">
             <div><h2>Clientes ativos</h2><p>Uma visão do ritmo de cada pauta.</p></div>
             <span className="panel-icon"><FolderOpen className="size-[18px]" aria-hidden="true" /></span>
@@ -742,7 +761,7 @@ function Dashboard({
           <div className="client-progress-list">
             {activeClients.slice(0, 6).map((client) => {
               const boardIds = data.boards.filter((board) => board.clientId === client.id).map((board) => board.id);
-              const clientTasks = data.deliverables.filter((item) => boardIds.includes(item.boardId));
+              const clientTasks = tasks.filter((item) => boardIds.includes(item.boardId));
               const done = clientTasks.filter((item) => item.status === "approved").length;
               const progress = clientTasks.length ? Math.round((done / clientTasks.length) * 100) : 0;
               return (
@@ -761,7 +780,7 @@ function Dashboard({
             {!activeClients.length && <div className="workspace-empty compact"><FolderOpen className="size-6 text-muted-foreground" aria-hidden="true" /><strong>Sua carteira começa aqui</strong><p>Os clientes ativos e seu progresso aparecem neste espaço.</p></div>}
           </div>
           {onBrowseClients && <button className="panel-footer-action" onClick={onBrowseClients}>Ver todos os clientes<ChevronRight className="size-4" /></button>}
-        </section>
+        </section>}
       </section>
     </div>
   );
@@ -916,7 +935,9 @@ function Metric({
   hint,
   icon: Icon,
   tone,
+  help,
 }: {
+  help?: string;
   label: string;
   value: number;
   hint: string;
@@ -925,7 +946,7 @@ function Metric({
 }) {
   return (
     <article className="metric" data-tone={tone}>
-      <div className="metric-heading"><p>{label}</p><Icon className="size-[18px]" aria-hidden="true" /></div>
+      <div className="metric-heading"><div className="flex items-center gap-1"><p>{label}</p>{help && <FieldHelp label={label}>{help}</FieldHelp>}</div><Icon className="size-[18px]" aria-hidden="true" /></div>
       <strong className="metric-value">{value}</strong>
       <p className="metric-hint">{hint}</p>
     </article>
@@ -957,6 +978,7 @@ function TaskRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-sm font-semibold">{item.title}</p>
+          {item.priority==="urgent" && <Bell aria-label="Prioridade Urgente" className="size-4 shrink-0 text-rose-600 urgent-bell" />}
           {item.status === "changes" && (
             <span className="size-2 shrink-0 rounded-full bg-rose-500" />
           )}
@@ -1194,7 +1216,7 @@ function ClientBoard({
   client: WorkspaceData["clients"][number];
   onBack(): void;
   onOpen(id: string): void;
-  onCreate?: (boardId?:string) => void;
+  onCreate?: (boardId?:string, columnId?:string|null) => void;
   postAction(payload: object, success?: string): Promise<unknown>;
   onRefresh(): Promise<void>;
 }) {
@@ -1416,8 +1438,8 @@ function ClientBoard({
         <p className="text-xs text-slate-500 sm:hidden">Escolha a lista no cartão para mover a demanda.</p>
       </div>
 
-      {!kanban.columns.length && <div className="mt-5 rounded-2xl border border-dashed bg-white p-5"><h2 className="font-semibold">Monte seu fluxo</h2><p className="mt-1 text-sm text-muted-foreground">Este quadro está sem listas. {canManageLists ? "Use Personalizar listas para adicionar a primeira." : "Quem organiza este cliente pode adicionar as listas."} As demandas existentes continuam em Sem lista.</p></div>}
-      <div className="client-kanban customizable-kanban mt-5">
+      {!kanban.columns.length && <div className="mt-5 rounded-2xl border border-dashed bg-white p-5"><h2 className="font-semibold">Monte seu fluxo</h2><p className="mt-1 text-sm text-muted-foreground">Este quadro está sem listas. {canManageLists ? "Clique em Adicionar lista para começar." : "Quem organiza este cliente pode adicionar as listas."} As demandas existentes continuam em Sem lista.</p></div>}
+      <KanbanListBoard config={kanban} postAction={postAction} enabled={canManageLists} className="client-kanban customizable-kanban mt-5">
         {groups.map((group) => {
           const items = tasks.filter((item) => group.id === "__unassigned" ? !item.columnId || !kanban.columns.some(column => column.id === item.columnId) : item.columnId === group.id);
           const draggedTask = tasks.find(item => item.id === draggingId);
@@ -1444,11 +1466,8 @@ function ClientBoard({
               data-drag-over={overStatus === group.id}
               className="kanban-column min-w-0 transition"
             >
-              <div className="kanban-column-heading flex items-center justify-between gap-2" style={{background: `${group.color}35`, borderTop: `3px solid ${group.color}`}}>
-                <h2 className="min-w-0 break-words text-sm font-bold">{group.name}</h2>
-                <span className="rounded-md bg-white/70 px-2 py-0.5 text-xs font-semibold text-foreground">
-                  {items.length}
-                </span>
+              <div className="kanban-column-heading flex items-center justify-between gap-2" style={{viewTransitionName:`list-demands-${group.id}`,background: `${group.color}35`, borderTop: `3px solid ${group.color}`}}>
+                {canManageLists && group.id !== "__unassigned" ? <KanbanListControl members={assignableMembers(data)} config={kanban} columnId={group.id} count={columnCounts[group.id] ?? 0} postAction={postAction} /> : <><h2 className="min-w-0 break-words text-sm font-bold">{group.name}</h2><span className="text-xs">{items.length}</span></>}
               </div>
               <div className="mt-3 space-y-3">
                 {items.map((item) => (
@@ -1472,10 +1491,12 @@ function ClientBoard({
                   </div>
                 )}
               </div>
+              {onCreate && <Button variant="ghost" className="mt-2 w-full justify-start" aria-label={`Adicionar cartão em ${group.name}`} onClick={() => onCreate(activeBoard?.id, group.id === "__unassigned" ? null : group.id)}><Plus size={16} />Adicionar cartão</Button>}
             </section>
           );
         })}
-      </div>
+        {canManageLists && <KanbanListControl members={assignableMembers(data)} config={kanban} postAction={postAction} />}
+      </KanbanListBoard>
       <Dialog open={driveOpen} onOpenChange={(nextOpen) => { if (!mediaBusyRef.current && !mediaCrop) setDriveOpen(nextOpen); }}>
         <DialogContent showCloseButton={!mediaBusy && !mediaCrop} className="max-h-[92vh] overflow-y-auto rounded-2xl sm:max-w-2xl">
           <DialogHeader>
@@ -1757,17 +1778,24 @@ function CompactTask({
 }) {
   const assignee = data.members.find((member) => member.id === item.assigneeId);
   const due = deadline(item);
+  const cover = taskCover(item);
   const taskClientId = data.boards.find(board => board.id === item.boardId)?.clientId;
   const columns = getKanbanBoard(data.kanbanBoards, "demands", taskClientId).columns;
   const [moving, setMoving] = useState(false);
   return (
     <article
+      style={{viewTransitionName:`task-${item.id}`}}
+      data-task-card={item.id}
+      data-cover-mode={cover ? (cover.full ? "full" : "image") : "none"}
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={`kanban-task group relative rounded-2xl border border-border bg-white transition ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
     >
-      <button onClick={() => onOpen(item.id)} className="w-full p-4 text-left">
+      {cover?.full && <><img src={cover.url} alt="" className="task-cover-background" /><span className="task-cover-shade" aria-hidden="true" /></>}
+      <button onClick={() => onOpen(item.id)} className="task-card-open relative block w-full overflow-hidden rounded-t-2xl text-left">
+        {cover && !cover.full && <img src={cover.url} alt={`Capa de ${item.title}`} className="aspect-[16/10] w-full object-cover" />}
+        <div className="task-card-body p-4">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             {kindMeta[item.kind].label}
@@ -1779,11 +1807,13 @@ function CompactTask({
             <MoreHorizontal className="size-4 text-slate-300" />
           )}
         </div>
+        <CardBadges priority={item.status==="approved"?undefined:item.priority} labels={item.labels} />
         <h3 className="mt-3 line-clamp-3 text-sm font-semibold leading-5">
           {item.title}
         </h3>
         <div className="mt-4 flex items-end justify-between gap-2">
           <span
+            data-deadline-tone={due.tone}
             className={`rounded-lg px-2 py-1 text-xs font-bold ${dueClass(due.tone)}`}
           >
             {due.label}
@@ -1791,6 +1821,7 @@ function CompactTask({
           <span className="grid size-7 place-items-center rounded-full bg-primary text-xs font-bold text-white">
             {initials(assignee?.name ?? "Sem")}
           </span>
+        </div>
         </div>
       </button>
       {postAction && canPlanTask(data, item) && (
@@ -1810,6 +1841,7 @@ function CompactTask({
         </div>
       )}
       {postAction && canExecuteTask(data, item) && <div className="border-t px-3 pb-3">
+        <div className="py-2"><CompleteStage item={item} data={data} save={postAction} /></div>
         <KanbanMoveSelect columns={columns} value={item.columnId ?? null} label={`Lista de ${item.title}`} disabled={moving}
           disabledColumnIds={canPlanTask(data,item) ? [] : columns.filter(column => column.status && !["production","review"].includes(column.status)).map(column => column.id)}
           onChange={async columnId => {
@@ -2238,7 +2270,7 @@ function TaskSheet({
 
   return (
     <Dialog open={open} onOpenChange={requestClose}>
-      <DialogContent className="task-detail-dialog h-[96vh] w-[98vw] max-w-none gap-0 overflow-hidden rounded-[24px] border-0 bg-background p-0 sm:max-w-[98vw]">
+      <DialogContent className="task-detail-dialog h-[90dvh] w-[94vw] max-w-none gap-0 overflow-hidden rounded-[24px] border-0 bg-background p-0 sm:max-w-[1240px]">
         <DialogHeader className="border-b border-slate-200 bg-white px-5 py-4 pr-14 text-left sm:px-7">
           <WorkspaceBreadcrumb label="Caminho da demanda" disabled={navigationBusy} items={[
             ...(onBrowseClients ? [{ label: clientListLabel, onSelect: () => browseParent(onBrowseClients) }] : []),
@@ -2263,6 +2295,7 @@ function TaskSheet({
           <DialogTitle className="mt-2 max-w-5xl text-xl leading-7 tracking-tight sm:text-2xl">
             {item.title}
           </DialogTitle>
+          <CardBadges priority={item.status==="approved"?undefined:item.priority} labels={item.labels} />
           <DialogDescription className="sr-only">
             Área visual da demanda, com fatias, anexos e revisão.
           </DialogDescription>
@@ -2298,6 +2331,7 @@ function TaskSheet({
             )}
           </div>
         </DialogHeader>
+        {canExecuteTask(data,item) && <div className="flex flex-wrap items-center justify-between gap-2 border-b px-5 py-2"><span className="text-xs text-muted-foreground">Atribuída por {data.members.find(m=>m.id===item.assignedById)?.name || "não registrado"}</span><CompleteStage item={item} data={data} save={postAction} disabled={dirty || saving} /></div>}
         {canDelete && (
           <div className="flex flex-wrap items-center justify-end gap-2 border-b border-slate-200 bg-white px-5 py-2 sm:px-7">
             <MemberPicker
@@ -2311,7 +2345,7 @@ function TaskSheet({
                 )
               }
             />
-            <TaskSettings item={item} save={postAction} />
+            <><CardClassificationEditor id={item.id} kind="demand" priority={item.priority} labels={item.labels} save={postAction} /><TaskCoverPicker item={item} save={postAction} /><TaskSettings item={item} save={postAction} /></>
             <Button
               variant="ghost"
               className="text-red-600 hover:bg-red-50 hover:text-red-700"
@@ -3104,6 +3138,7 @@ function CreateTaskDialog({
   defaultClientId,
   defaultBoardId,
   defaultAssigneeId,
+  defaultColumnId,
   postAction,
 }: {
   open: boolean;
@@ -3112,6 +3147,7 @@ function CreateTaskDialog({
   defaultClientId: string | null;
   defaultBoardId?:string;
   defaultAssigneeId?: string;
+  defaultColumnId?: string | null;
   postAction: (payload: object, success?: string) => Promise<unknown>;
 }) {
   const availableClients = data.clients.filter((client) => canPlanClient(data, client.id));
@@ -3136,6 +3172,10 @@ function CreateTaskDialog({
   const selectedClientId = allowedClientIds.has(clientId) ? clientId : "";
   const clientBoards = availableBoards.filter((board) => board.clientId === selectedClientId);
   const selectedBoardId = clientBoards.some((board) => board.id === boardId) ? boardId : "";
+  const creationColumns=getKanbanBoard(data.kanbanBoards,"demands",selectedClientId).columns;
+  const creationColumn=selectedClientId===initialClientId && defaultColumnId!==undefined ? creationColumns.find(c=>c.id===defaultColumnId) : creationColumns.find(c=>c.status==="briefing") ?? creationColumns.find(c=>c.status===null);
+  const [priority, setPriority] = useState<CardPriority>("normal");
+  const [labels, setLabels] = useState<CardLabel[]>([]);
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<Deliverable["kind"]>("carousel");
   const [slides, setSlides] = useState<DraftSlide[]>(() =>
@@ -3213,11 +3253,11 @@ function CreateTaskDialog({
       toast.error("Informe o título da demanda.");
       return;
     }
-    if (!dueAt) {
+    if (!dueAt && !creationColumn?.dueHours) {
       toast.error("Informe a data e a hora do prazo.");
       return;
     }
-    if (!assignableMembers(data).some((member) => member.id === assigneeId)) {
+    if (!assignableMembers(data).some((member) => member.id === (creationColumn?.assigneeId || assigneeId))) {
       toast.error("Selecione uma pessoa responsável.");
       return;
     }
@@ -3231,12 +3271,14 @@ function CreateTaskDialog({
       const result = createdTaskId ? {id:createdTaskId} : await postAction(
         {
           action: "createDeliverable",
+          priority, labels,
           boardId: selectedBoardId,
+          ...(selectedClientId === initialClientId && defaultColumnId !== undefined ? {columnId:defaultColumnId} : {}),
           title,
           kind,
           slideCount: slides.length,
-          assigneeId: assigneeId || null,
-          dueAt,
+          assigneeId: creationColumn?.assigneeId || assigneeId || null,
+          dueAt:creationColumn?.dueHours?new Date(Date.now()+creationColumn.dueHours*3_600_000).toISOString():dueAt,
           notes,
           hasStoriesVersion,
           slides: slides.map((slide, index) => ({
@@ -3323,6 +3365,7 @@ function CreateTaskDialog({
         </DialogHeader>
         <fieldset disabled={saving} className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-background px-5 py-5 sm:px-6">
           <legend className="sr-only">Dados e briefing da nova demanda</legend>
+          {defaultColumnId !== undefined && selectedClientId === initialClientId && <p className="mb-4 text-sm text-muted-foreground">Lista: {getKanbanBoard(data.kanbanBoards,"demands",selectedClientId).columns.find(column=>column.id===defaultColumnId)?.name || "Sem lista"}</p>}
           <section className="grid gap-4 rounded-[20px] border border-slate-200 bg-white p-5 lg:grid-cols-4">
             <div>
               <label className="mb-1.5 block text-sm font-semibold">
@@ -3380,7 +3423,7 @@ function CreateTaskDialog({
               <label className="mb-1.5 block text-sm font-semibold">
                 Prazo
               </label>
-              <Input aria-label="Prazo"
+              <Input aria-label="Prazo" disabled={Boolean(creationColumn?.dueHours)}
                 type="datetime-local"
                 value={dueAt}
                 onChange={(event) => setDueAt(event.target.value)}
@@ -3402,12 +3445,13 @@ function CreateTaskDialog({
               <label className="mb-1.5 block text-sm font-semibold">
                 Responsável
               </label>
-              <MemberPicker
+              {creationColumn?.assigneeId ? <p className="rounded-xl border bg-muted/50 p-3 text-sm">{data.members.find(m=>m.id===creationColumn.assigneeId)?.name || "Responsável da etapa"}<span className="mt-1 block text-xs text-muted-foreground">Definido na lista {creationColumn.name}.</span></p> : <MemberPicker
                 members={assignableMembers(data)}
                 value={assigneeId}
                 onSelect={(id) => setAssigneeId(id || "")}
                 label="Selecionar responsável"
-              />
+              />}
+              {creationColumn?.dueHours && <p className="mt-2 text-xs text-muted-foreground">Esta lista define o prazo automaticamente: {creationColumn.dueHours}h após criar a demanda.</p>}
             </div>
             <div className="lg:col-span-4 flex items-center justify-between">
               <div className="flex-1">
@@ -3497,6 +3541,7 @@ function CreateTaskDialog({
               )}
             </div>
           </section>
+          <section className="mt-4 rounded-2xl border bg-white p-5"><ClassificationFields priority={priority} labels={labels} onPriority={setPriority} onLabels={setLabels} /></section>
           <div className="mt-5 flex items-center justify-between">
             <div>
               <h3 className="font-bold">Fatias da demanda</h3>
@@ -3669,12 +3714,14 @@ function CreateTaskDialog({
 }
 
 function CreateClientDialog({
+  defaultColumnId,
   open,
   canEditFinance,
   onOpenChange,
   postAction,
   onRefresh,
 }: {
+  defaultColumnId?: string | null;
   open: boolean;
   canEditFinance: boolean;
   onOpenChange(open: boolean): void;
@@ -3823,7 +3870,7 @@ function CreateClientDialog({
             requestId,
             uncertain: false,
             payload: {
-              action: "createClient", requestId, name, handle, driveUrl, period,
+              action: "createClient", requestId, name, handle, driveUrl, period, columnId: defaultColumnId,
               ...(canEditFinance ? { revenue: revenue.trim() ? parseMoney(revenue) : 0, dueDay: Number(dueDay) } : {}),
             },
           };
@@ -4003,8 +4050,10 @@ const money = (value: number) =>
 function CrmWorkspace({
   data,
   postAction,
+  onRefresh,
 }: {
   data: WorkspaceData;
+  onRefresh(): Promise<void>;
   postAction(payload: object, success?: string): Promise<unknown>;
 }) {
   const [clock,setClock]=useState(()=>Date.now());
@@ -4013,6 +4062,8 @@ function CrmWorkspace({
   const [search, setSearch] = useState("");
   const [newLead, setNewLead] = useState(false);
   const [newDeal, setNewDeal] = useState(false);
+  const [newLeadColumn, setNewLeadColumn] = useState<string | null | undefined>();
+  const [newDealColumn, setNewDealColumn] = useState<string | null | undefined>();
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [dragLead, setDragLead] = useState<string | null>(null);
   const [dragDeal, setDragDeal] = useState<string | null>(null);
@@ -4114,7 +4165,7 @@ function CrmWorkspace({
           </p>
         </div>
         <Button
-          onClick={() => setNewLead(true)}
+          onClick={() => {setNewLeadColumn(undefined);setNewLead(true);}}
           className="rounded-xl bg-primary"
         >
           <Plus />
@@ -4164,15 +4215,16 @@ function CrmWorkspace({
             />
             <Metric
               label="Pipeline ponderado"
+              help="Soma do valor de cada oportunidade em aberto multiplicado pela chance de venda. Por exemplo: R$ 1.000 com 50% de chance conta como R$ 500. É uma estimativa, não um recebimento confirmado."
               value={Math.round(weighted / 100)}
               hint="valor esperado em reais"
               icon={Wallet}
               tone="violet"
             />
           </div>
-          <div className="mt-5 grid gap-5 lg:grid-cols-[1.35fr_.65fr]">
-            <section className="rounded-[20px] border border-slate-200 bg-white p-5">
-              <div className="flex items-center justify-between">
+          <div className="mt-5 grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-[1.35fr_.65fr]">
+            <section className="min-w-0 rounded-[20px] border border-slate-200 bg-white p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="font-bold">Prioridades agora</h2>
                   <p className="text-xs text-slate-500">
@@ -4297,8 +4349,8 @@ function CrmWorkspace({
               </Button>
             </div>
           </div>
-          {!leadBoard.columns.length && <p className="mb-3 text-sm text-slate-500">Crie suas listas em Personalizar listas. Todos os leads continuam disponíveis em Sem lista.</p>}
-          <div className="crm-kanban grid grid-flow-col auto-cols-[minmax(250px,1fr)] gap-3 overflow-x-auto pb-3" data-kanban-board="crmLeads">
+          {!leadBoard.columns.length && <p className="mb-3 text-sm text-slate-500">Use Adicionar lista para montar seu fluxo. Todos os leads continuam disponíveis em Sem lista.</p>}
+          <KanbanListBoard config={leadBoard} postAction={postAction} className="crm-kanban grid grid-flow-col auto-cols-[minmax(250px,1fr)] gap-3 overflow-x-auto pb-3" data-kanban-board="crmLeads">
             {leadColumns.map((stage) => {
               const items = leads.filter((lead) => lead.columnId === stage.id);
               return (
@@ -4310,18 +4362,12 @@ function CrmWorkspace({
                   className="crm-stage min-w-0 rounded-[18px] border-t-4 p-3"
                   style={{ backgroundColor: `${stage.color}35`, borderTopColor: stage.color }}
                 >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                      {stage.name}
-                    </h3>
-                    <span className="text-xs font-bold text-slate-400">
-                      {items.length}
-                    </span>
-                  </div>
+                  <div className="flex min-w-0 items-center gap-1">{stage.id ? <KanbanListControl config={leadBoard} columnId={stage.id} count={items.length} postAction={postAction} /> : <h3 className="text-sm font-semibold">Sem lista ({items.length})</h3>}</div>
                   <div className="mt-3 space-y-3">
                     {items.map((lead) => (
                       <article
                         key={lead.id}
+                        style={{viewTransitionName:`lead-${lead.id}`}}
                         draggable={!movingCard}
                         onDragStart={(event) => { setDragLead(lead.id); event.dataTransfer.setData("text/plain", lead.id); }}
                         onDragEnd={() => setDragLead(null)}
@@ -4334,6 +4380,7 @@ function CrmWorkspace({
                             {lead.score}
                           </Badge>
                         </div>
+                        <CardBadges priority={lead.priority} labels={lead.labels} />
                         <p className="mt-1 text-xs text-slate-500">
                           {lead.contactName || "Contato não informado"}
                         </p>
@@ -4363,10 +4410,12 @@ function CrmWorkspace({
                       </div>
                     )}
                   </div>
+                  <Button variant="ghost" className="mt-2 w-full justify-start" aria-label={`Adicionar cartão em ${stage.name}`} onClick={() => {setNewLeadColumn(stage.id);setNewLead(true);}}><Plus size={16} />Adicionar cartão</Button>
                 </section>
               );
             })}
-          </div>
+            <KanbanListControl config={leadBoard} postAction={postAction} />
+          </KanbanListBoard>
         </TabsContent>
         <TabsContent value="deals" className="mt-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -4380,7 +4429,7 @@ function CrmWorkspace({
             <div className="flex flex-wrap gap-2">
             <KanbanColumnsEditor config={dealBoard} postAction={postAction} counts={Object.fromEntries(dealBoard.columns.map((column) => [column.id, data.crmDeals.filter((deal) => deal.columnId === column.id).length]))} />
             <Button
-              onClick={() => setNewDeal(true)}
+              onClick={() => {setNewDealColumn(undefined);setNewDeal(true);}}
               className="rounded-xl bg-primary"
             >
               <Plus />
@@ -4388,8 +4437,8 @@ function CrmWorkspace({
             </Button>
             </div>
           </div>
-          {!dealBoard.columns.length && <p className="mb-3 text-sm text-slate-500">Crie suas listas em Personalizar listas. As oportunidades continuam em Sem lista.</p>}
-          <div className="crm-kanban grid grid-flow-col auto-cols-[minmax(250px,1fr)] gap-3 overflow-x-auto pb-3" data-kanban-board="crmDeals">
+          {!dealBoard.columns.length && <p className="mb-3 text-sm text-slate-500">Use Adicionar lista para montar seu fluxo. As oportunidades continuam em Sem lista.</p>}
+          <KanbanListBoard config={dealBoard} postAction={postAction} className="crm-kanban grid grid-flow-col auto-cols-[minmax(250px,1fr)] gap-3 overflow-x-auto pb-3" data-kanban-board="crmDeals">
             {dealColumns.map((stage) => {
               const items = data.crmDeals.filter((deal) => deal.columnId === stage.id);
               return (
@@ -4401,18 +4450,12 @@ function CrmWorkspace({
                   className="crm-stage min-w-0 rounded-[18px] border-t-4 p-3"
                   style={{ backgroundColor: `${stage.color}35`, borderTopColor: stage.color }}
                 >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                      {stage.name}
-                    </h3>
-                    <span className="text-xs text-slate-400">
-                      {money(items.reduce((t, d) => t + d.value, 0))}
-                    </span>
-                  </div>
+                  <div className="flex min-w-0 items-center gap-1">{stage.id ? <KanbanListControl config={dealBoard} columnId={stage.id} count={items.length} postAction={postAction} /> : <h3 className="text-sm font-semibold">Sem lista ({items.length})</h3>}</div>
                   <div className="mt-3 space-y-3">
                     {items.map((deal) => (
                       <article
                         key={deal.id}
+                        style={{viewTransitionName:`deal-${deal.id}`}}
                         draggable={!movingCard}
                         onDragStart={(event) => { setDragDeal(deal.id); event.dataTransfer.setData("text/plain", deal.id); }}
                         onDragEnd={() => setDragDeal(null)}
@@ -4443,13 +4486,15 @@ function CrmWorkspace({
                       </div>
                     )}
                   </div>
+                  <Button variant="ghost" className="mt-2 w-full justify-start" aria-label={`Adicionar cartão em ${stage.name}`} onClick={() => {setNewDealColumn(stage.id);setNewDeal(true);}}><Plus size={16} />Adicionar cartão</Button>
                 </section>
               );
             })}
-          </div>
+            <KanbanListControl config={dealBoard} postAction={postAction} />
+          </KanbanListBoard>
         </TabsContent>
         <TabsContent value="clients" className="mt-5">
-          <CrmView data={data} postAction={postAction} />
+          <CrmView data={data} postAction={postAction} onRefresh={onRefresh} />
         </TabsContent>
         <TabsContent value="activities" className="mt-5">
           <section className="overflow-hidden rounded-[20px] border border-slate-200 bg-white">
@@ -4500,6 +4545,7 @@ function CrmWorkspace({
         </TabsContent>
       </Tabs>
       <NewCrmLeadDialog
+        columnId={newLeadColumn}
         open={newLead}
         onOpenChange={setNewLead}
         postAction={postAction}
@@ -4508,6 +4554,7 @@ function CrmWorkspace({
         <DialogContent><DialogHeader><DialogTitle>Marcar oportunidade como perdida</DialogTitle><DialogDescription>Registre o motivo para manter o histórico da negociação.</DialogDescription></DialogHeader><label className="space-y-2 text-sm font-medium">Motivo da perda<Textarea aria-label="Motivo da perda" value={lossReason} maxLength={2000} disabled={Boolean(movingCard)} onChange={(event) => setLossReason(event.target.value)} /></label>{lossError && <p role="alert" className="text-sm text-red-700">{lossError}</p>}<DialogFooter><Button variant="outline" disabled={Boolean(movingCard)} onClick={() => setPendingLoss(null)}>Cancelar</Button><Button disabled={Boolean(movingCard)} onClick={() => void confirmLoss()}>{movingCard ? "Salvando…" : "Confirmar perda"}</Button></DialogFooter></DialogContent>
       </Dialog>
       <NewCrmDealDialog
+        columnId={newDealColumn}
         open={newDeal}
         onOpenChange={setNewDeal}
         postAction={postAction}
@@ -4525,6 +4572,8 @@ function CrmWorkspace({
           </SheetHeader>
           {selectedLead && (
             <div className="space-y-5 p-6">
+              <CardBadges priority={selectedLead.priority} labels={selectedLead.labels} />
+              <CardClassificationEditor id={selectedLead.id} kind="lead" priority={selectedLead.priority} labels={selectedLead.labels} save={postAction} />
               <div className="rounded-2xl bg-primary p-5 text-white">
                 <p className="text-xs uppercase tracking-wide text-white/50">
                   Próxima ação
@@ -4596,14 +4645,18 @@ function CrmWorkspace({
 }
 
 function NewCrmLeadDialog({
+  columnId,
   open,
   onOpenChange,
   postAction,
 }: {
+  columnId?: string | null;
   open: boolean;
   onOpenChange(open: boolean): void;
   postAction(payload: object, success?: string): Promise<unknown>;
 }) {
+  const [priority, setPriority] = useState<CardPriority>("normal");
+  const [labels, setLabels] = useState<CardLabel[]>([]);
   const [company, setCompany] = useState("");
   const [contactName, setContactName] = useState("");
   const [email, setEmail] = useState("");
@@ -4620,6 +4673,8 @@ function NewCrmLeadDialog({
       await postAction(
         {
           action: "createCrmLead",
+          priority, labels,
+          columnId,
           company,
           contactName,
           email,
@@ -4633,6 +4688,7 @@ function NewCrmLeadDialog({
         "Lead criado",
       );
       onOpenChange(false);
+      setPriority("normal");setLabels([]);
       setCompany("");
       setContactName("");
       setEmail("");
@@ -4653,7 +4709,7 @@ function NewCrmLeadDialog({
         <DialogHeader>
           <DialogTitle>Novo lead</DialogTitle>
           <DialogDescription>
-            Cadastro rápido agora; o contexto pode ser enriquecido depois.
+            Lead é uma pessoa ou empresa que pode se tornar cliente. Registre o contato e o próximo passo.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -4678,9 +4734,9 @@ function NewCrmLeadDialog({
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-semibold">Origem</label>
+            <HelpLabel label="Origem" htmlFor="crm-lead-source">Onde você encontrou esse contato, como Instagram ou indicação. Outbound significa que sua equipe procurou a pessoa ou empresa.</HelpLabel>
             <Select value={source} onValueChange={setSource}>
-              <SelectTrigger>
+              <SelectTrigger id="crm-lead-source" aria-label="Origem">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -4715,46 +4771,39 @@ function NewCrmLeadDialog({
             <Input aria-label="Telefone / WhatsApp" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-semibold">
-              Valor potencial (R$)
-            </label>
-            <Input aria-label="Valor potencial (R$)"
+            <HelpLabel label="Valor potencial (R$)" htmlFor="crm-lead-value">Estimativa do valor que essa negociação pode gerar. Use para planejar as vendas; preencher este campo não cria uma cobrança.</HelpLabel>
+            <Input id="crm-lead-value" aria-label="Valor potencial (R$)"
               type="number"
               value={value}
               onChange={(e) => setValue(e.target.value)}
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-semibold">
-              Data da próxima ação
-            </label>
-            <Input aria-label="Data da próxima ação"
+            <HelpLabel label="Data da próxima ação" htmlFor="crm-lead-next-date">Dia e horário em que você pretende executar a próxima ação, como ligar ou enviar uma proposta. Preencha também Próxima ação para criar a atividade no CRM.</HelpLabel>
+            <Input id="crm-lead-next-date" aria-label="Data da próxima ação"
               type="datetime-local"
               value={nextActionAt}
               onChange={(e) => setNextActionAt(e.target.value)}
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-semibold">
-              Próxima ação
-            </label>
-            <Input aria-label="Próxima ação"
+            <HelpLabel label="Próxima ação" htmlFor="crm-lead-next-action">O próximo passo para avançar a conversa, como enviar uma proposta ou confirmar interesse. Ao criar o lead, esse texto vira uma atividade pendente no CRM.</HelpLabel>
+            <Input id="crm-lead-next-action" aria-label="Próxima ação"
               value={nextAction}
               onChange={(e) => setNextAction(e.target.value)}
               placeholder="Ligar e confirmar interesse"
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-semibold">
-              Contexto inicial
-            </label>
-            <Textarea aria-label="Contexto inicial"
+            <HelpLabel label="Contexto inicial" htmlFor="crm-lead-notes">Anote o que sua equipe precisa saber: necessidade do contato, serviço de interesse, urgência e o que já foi conversado.</HelpLabel>
+            <Textarea id="crm-lead-notes" aria-label="Contexto inicial"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Necessidade, urgência e informações relevantes"
             />
           </div>
         </div>
+        <ClassificationFields priority={priority} labels={labels} onPriority={setPriority} onLabels={setLabels} />
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancelar
@@ -4773,10 +4822,12 @@ function NewCrmLeadDialog({
 }
 
 function NewCrmDealDialog({
+  columnId,
   open,
   onOpenChange,
   postAction,
 }: {
+  columnId?: string | null;
   open: boolean;
   onOpenChange(open: boolean): void;
   postAction(payload: object, success?: string): Promise<unknown>;
@@ -4795,6 +4846,7 @@ function NewCrmDealDialog({
       await postAction(
         {
           action: "createCrmDeal",
+          columnId,
           company,
           contactName,
           value: Number(value) * 100,
@@ -4823,7 +4875,7 @@ function NewCrmDealDialog({
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-[22px] sm:max-w-xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-[22px] sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Nova oportunidade</DialogTitle>
           <DialogDescription>
@@ -4846,43 +4898,35 @@ function NewCrmDealDialog({
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-semibold">
-              Valor (R$)
-            </label>
-            <Input aria-label="Valor (R$)"
+            <HelpLabel label="Valor (R$)" htmlFor="crm-deal-value">Valor estimado desta negociação. Ajuda a acompanhar as oportunidades; não representa um pagamento recebido.</HelpLabel>
+            <Input id="crm-deal-value" aria-label="Valor (R$)"
               type="number"
               value={value}
               onChange={(e) => setValue(e.target.value)}
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-semibold">
-              Fechamento previsto
-            </label>
-            <Input aria-label="Fechamento previsto"
+            <HelpLabel label="Fechamento previsto" htmlFor="crm-deal-close">Data em que você espera concluir a venda. É uma previsão para planejamento e pode ser diferente da data do próximo contato.</HelpLabel>
+            <Input id="crm-deal-close" aria-label="Fechamento previsto"
               type="date"
               value={closeDate}
               onChange={(e) => setCloseDate(e.target.value)}
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-semibold">
-              Data da próxima ação
-            </label>
-            <Input aria-label="Data da próxima ação"
+            <HelpLabel label="Data da próxima ação" htmlFor="crm-deal-next-date">Dia e horário planejados para o próximo passo desta negociação, como uma reunião ou o retorno sobre a proposta.</HelpLabel>
+            <Input id="crm-deal-next-date" aria-label="Data da próxima ação"
               type="datetime-local"
               value={nextActionAt}
               onChange={(e) => setNextActionAt(e.target.value)}
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-semibold">
-              Próxima ação
-            </label>
-            <Input aria-label="Próxima ação"
+            <HelpLabel label="Próxima ação" htmlFor="crm-deal-next-action">Descreva o que sua equipe fará para avançar esta negociação, como apresentar a proposta ou confirmar a decisão do cliente.</HelpLabel>
+            <Input id="crm-deal-next-action" aria-label="Próxima ação"
               value={nextAction}
               onChange={(e) => setNextAction(e.target.value)}
-              placeholder="Agendar discovery"
+              placeholder="Agendar reunião para entender a necessidade"
             />
           </div>
           <div className="sm:col-span-2">
@@ -4913,10 +4957,14 @@ function NewCrmDealDialog({
 function CrmView({
   data,
   postAction,
+  onRefresh,
 }: {
   data: WorkspaceData;
+  onRefresh(): Promise<void>;
   postAction(payload: object, success?: string): Promise<unknown>;
 }) {
+  const [adding, setAdding] = useState(false);
+  const [addingColumn, setAddingColumn] = useState<string | null>(null);
   const [editingClient, setEditingClient] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [overStatus, setOverStatus] = useState<string | null>(null);
@@ -4976,7 +5024,7 @@ function CrmView({
         </div>
       </div>
       {!board.columns.length && <p className="mb-3 text-sm text-slate-500">Nenhuma lista criada. Os clientes e seus dados permanecem em Sem lista.</p>}
-      <div className="crm-kanban grid grid-flow-col auto-cols-[minmax(250px,1fr)] gap-4 overflow-x-auto pb-3" data-kanban-board="crmClients">
+      <KanbanListBoard config={board} postAction={postAction} enabled={canCustomize} className="crm-kanban grid grid-flow-col auto-cols-[minmax(250px,1fr)] gap-4 overflow-x-auto pb-3" data-kanban-board="crmClients">
         {columns.map((column) => {
           const key = column.id ?? "unassigned";
           const clients = filteredClients.filter((client) => client.columnId === column.id);
@@ -4999,9 +5047,7 @@ function CrmView({
                 if (clientId) void moveClient(clientId, column.id);
               }}
             >
-              <h2 className="font-bold uppercase tracking-wide text-slate-500 text-xs">
-                {column.name} ({clients.length})
-              </h2>
+              {canCustomize && column.id ? <KanbanListControl config={board} columnId={column.id} count={clients.length} postAction={postAction} /> : <h2 className="text-sm font-semibold">{column.name} ({clients.length})</h2>}
               {clients.map((client) => (
                 <div
                   key={client.id}
@@ -5042,10 +5088,13 @@ function CrmView({
                   Solte um cliente aqui
                 </div>
               )}
+              {data.currentMember.permissions.includes("clients.manage") && <Button variant="ghost" className="w-full justify-start" aria-label={`Adicionar cartão em ${column.name}`} onClick={() => {setAddingColumn(column.id);setAdding(true);}}><Plus size={16} />Adicionar cartão</Button>}
             </div>
           );
         })}
-      </div>
+        {canCustomize && <KanbanListControl config={board} postAction={postAction} />}
+      </KanbanListBoard>
+      <CreateClientDialog open={adding} onOpenChange={setAdding} defaultColumnId={addingColumn} canEditFinance={data.currentMember.permissions.includes("finance.access")} postAction={postAction} onRefresh={onRefresh} />
       {editingClient && (
         <CrmEditDialog
           canEditFinance={data.currentMember.permissions.includes("finance.access")}

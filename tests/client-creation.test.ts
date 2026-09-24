@@ -146,3 +146,15 @@ test("Cadastro de cliente: UUID da chave aceita diferenças de caixa sem novo re
   assert.equal(retry.clientId, first.clientId);
   await assertCounts(1);
 });
+
+
+test("Cadastro na lista: persiste destino, rejeita lista inexistente e preserva retry após remoção", async () => {
+  const customId=randomUUID();
+  await db.insert(schema.kanbanBoards).values({id:`${actor.agencyOwnerId}:crmClients:agency`,agencyId:actor.agencyOwnerId!,kind:"crmClients",clientId:null,revision:1,columns:[{id:customId,name:"Novo contato",color:"#DFEEFF",status:null}],updatedAt:now});
+  const first=await create({...input,columnId:customId} as typeof input);
+  assert.equal((await db.select().from(schema.clients))[0].columnId,customId);
+  await db.update(schema.kanbanBoards).set({columns:[]});await db.update(schema.clients).set({columnId:null});
+  const retry=await create({...input,columnId:customId} as typeof input);assert.equal(retry.clientId,first.clientId);assert.equal(retry.replayed,true);
+  await assert.rejects(create({...input,requestId:randomUUID(),columnId:customId} as typeof input),error=>error instanceof AppError&&error.status===409);
+  await assertCounts(1);
+});

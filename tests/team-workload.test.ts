@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { filterTeamWorkload, getTeamWorkload } from "../lib/team-workload";
+import { filterTeamWorkload, getTeamWorkload, memberWorkDays } from "../lib/team-workload";
 import type { Deliverable, Member, WorkspaceData } from "../lib/workspace-types";
 
 const now = new Date("2026-09-24T12:00:00Z");
@@ -107,4 +107,22 @@ test("Carga da equipe: combina busca por nome e profissão sem atribuir capacida
   assert.equal(filterTeamWorkload(rows, "", "video_editor")[0].member.id, "bruno");
   assert.equal(filterTeamWorkload(rows, "", "").length, 2);
   assert(rows.every(row => row.open === 0));
+});
+
+
+test("Agenda da equipe: agrupa por dia local, ordena horários e identifica quem atribuiu sem inventar legado", () => {
+  const previousTZ=process.env.TZ;process.env.TZ="America/Sao_Paulo";
+  try {
+    const data=workspace([member("ana"),member("social",{name:"Social da agência"})],[
+      task("late",{dueAt:"2026-09-28T01:30:00Z",assignedById:"social"}),
+      task("early",{dueAt:"2026-09-27T12:00:00Z"}),
+      task("next",{dueAt:"2026-09-28T12:00:00Z"}),
+      task("approved",{status:"approved",dueAt:"2026-09-27T14:00:00Z"}),
+      task("other",{assigneeId:"social"}),
+    ]);
+    const groups=memberWorkDays(data,"ana");
+    assert.deepEqual(groups.map(g=>[g.day,g.tasks.map(t=>t.id)]),[["2026-09-27",["early","late"]],["2026-09-28",["next"]]]);
+    assert.equal(groups[0].tasks[1].assignedBy,"Social da agência");assert.equal(groups[0].tasks[0].assignedBy,"Não registrado");
+    assert.equal(memberWorkDays(data,"ana",true)[0].tasks.length,3);
+  } finally {if(previousTZ===undefined)delete process.env.TZ;else process.env.TZ=previousTZ;}
 });

@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { getDb } from "../db";
-import { boards, clients, crmDeals, crmLeads, deliverables, kanbanBoards } from "../db/schema";
+import { boards, clients, crmDeals, crmLeads, deliverables, kanbanBoards, agencyMemberships, members } from "../db/schema";
 import { AppError } from "./http";
 import { defaultKanbanColumns, kanbanScopeKey, type KanbanBoardConfig, type KanbanColumn, type KanbanKind } from "./kanban";
 
@@ -72,6 +72,9 @@ export async function saveKanbanColumns(db: Transaction, scope: KanbanScope, inp
     const existing = config.columns.find(item => item.id === column.id);
     if (existing ? existing.status !== column.status : column.status !== null) throw new AppError("A situação original da lista deve ser preservada; novas listas são personalizadas.");
     if (!existing && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(column.id)) throw new AppError("Identificador da nova lista inválido.");
+    if (scope.kind !== "demands" && (column.assigneeId || column.dueHours || column.nextColumnId)) throw new AppError("O fluxo de responsáveis pertence às demandas.");
+    if (column.nextColumnId === column.id) throw new AppError("Escolha outra lista como próxima etapa.");
+    if (column.assigneeId) await validateWorkflowAssignee(db, scope.agencyId, column.assigneeId);
   }
   const removed = config.columns.filter(column => !ids.has(column.id));
   if (input.moves.length !== removed.length || new Set(input.moves.map(move => move.fromColumnId)).size !== removed.length || input.moves.some(move => !removed.some(column => column.id === move.fromColumnId) || (move.toColumnId !== null && !ids.has(move.toColumnId)))) {
@@ -90,6 +93,13 @@ export async function saveKanbanColumns(db: Transaction, scope: KanbanScope, inp
     }
   }
   const revision = config.revision + 1;
-  await db.update(kanbanBoards).set({ columns: input.columns, revision, updatedAt: new Date().toISOString() }).where(eq(kanbanBoards.id, config.id));
+  const columns = input.columns.map(column => column.nextColumnId && !ids.has(column.nextColumnId) ? { ...column, nextColumnId: null } : column);
+  await db.update(kanbanBoards).set({ columns, revision, updatedAt: new Date().toISOString() }).where(eq(kanbanBoards.id, config.id));
   return { ok: true, revision };
+}
+
+export async function validateWorkflowAssignee(db: Transaction, agencyId: string, memberId: string) {
+  const [row] = await db.select({ membership: agencyMemberships, accountStatus: members.status }).from(agencyMemberships).innerJoin(members, eq(members.id, agencyMemberships.memberId)).where(and(eq(agencyMemberships.agencyId, agencyId), eq(agencyMemberships.memberId, memberId))).limit(1);
+  const member = row?.membership;
+  if (!member || member.status !== "active" || row.accountStatus !== "active" || member.role === "viewer" || (!["manager", "admin"].includes(member.role) && (!member.permissions.includes("demands.execute") || !member.permissions.includes("clients.view")))) throw new AppError("O responsável da etapa não está disponível. Peça à agência para ajustar o fluxo.", 409);
 }
