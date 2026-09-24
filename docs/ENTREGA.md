@@ -1,6 +1,6 @@
 # Postito — entrega e verificação
 
-## Distribuição de demandas no dashboard em 24/09/2026: verificado, aguardando publicação
+## Distribuição de demandas no dashboard em 24/09/2026: publicado no Preview
 
 O titular solicitou em áudio uma tabela no dashboard com colaboradores, filtro por profissão e quantidade de demandas atribuídas, para orientar quem distribui o trabalho. Pediu também criação pela área principal, com seleção do responsável, cliente e pauta; o cliente deve ser pesquisável e oferecer lista rolável antes de digitar, e a demanda salva deve aparecer no Kanban correspondente. A transcrição integral não faz parte do repositório.
 
@@ -10,7 +10,7 @@ A criação central reutiliza o diálogo e a autorização existentes, mantendo 
 
 **QA local concluído: 80 testes unitários e 53 cenários E2E aprovados, sendo 25 de API e 28 de navegador.** A suíte inclui oito testes do helper de carga, com elegibilidade/zero, escopo, reatribuição, aprovação e datas locais em São Paulo e na transição de horário de verão de Nova York. A primeira E2E parou em transbordamento móvel do dashboard, antes dos cinco novos cenários da tabela; o ajuste de largura/rolagem foi aplicado e a segunda execução completa passou. TypeScript aprovado; lint dos arquivos de código alterados com zero erros e 18 avisos preexistentes. Build aprovado, com compilação em 3,1 s e etapa TypeScript em 8,2 s; permaneceu o aviso conhecido de file tracing no encadeamento `next.config.ts` → `lib/storage.ts` → rota de documentos financeiros.
 
-A publicação desta versão no Preview e sua conferência hospedada permanecem pendentes. Evidências: `evidence/team-workload-20260924.json`, `evidence/team-workload-regression-20260924.json` e três capturas com fixtures (`team-workload-authorized.png`, `team-workload-created-kanban.png`, `team-workload-mobile.png`). Os 72 testes unitários e 48 cenários abaixo pertencem à correção anterior. Separadamente, a recuperação real autorizada foi executada e conferida no banco; isso não comprova renderização autenticada das imagens no ambiente hospedado.
+Publicação confirmada no Preview: commit `2afd07ba1a1494246aa96ff194650d54215bd562`, árvore `cab1cea2b7b19faaa6f4eb8376e73f8103998809`, deployment `dpl_5PuDdWxcfJCGDNuyG29MUuHwuM5v` em **READY** (50 segundos). A [implantação](https://postito-fw9muketd-vieiraphilipe875-7609s-projects.vercel.app) e o [alias estável](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/) exibem a versão; o alias abriu a tela de login no navegador. A verificação funcional autenticada hospedada permanece pendente, separada da regressão local. Produção, schema, variáveis de ambiente, acesso ADM e confirmação em cinco minutos foram preservados. Evidências: `evidence/team-workload-20260924.json`, `evidence/team-workload-regression-20260924.json` e três capturas com fixtures (`team-workload-authorized.png`, `team-workload-created-kanban.png`, `team-workload-mobile.png`). Os 72 testes unitários e 48 cenários abaixo pertencem à correção anterior. Separadamente, a recuperação real autorizada foi executada e conferida no banco; isso não comprova renderização autenticada das imagens no ambiente hospedado.
 
 ## Clientes, imagens e convites em 24/09/2026: publicado no Preview
 

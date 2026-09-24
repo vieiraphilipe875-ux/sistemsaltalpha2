@@ -2,7 +2,7 @@
   "date": "2026-09-24",
   "scope": "Dashboard team workload and centralized demand creation with searchable client selection",
   "branch": "postito/release-0.2.0",
-  "status": "verified_locally_awaiting_preview_publication",
+  "status": "published_preview_local_qa_passed",
   "requirements": {
     "source": "User audio dated 2026-09-24, summarized without publishing the full transcript",
     "ids": [
@@ -96,7 +96,7 @@
       "typescript_seconds": 8.2,
       "known_warning": "Existing NFT/file-tracing warning through next.config.ts, lib/storage.ts and the financial document route"
     },
-    "new_deployment": "pending",
+    "new_deployment": "ready",
     "hosted_authenticated_verification": "pending",
     "previous_round_results_reused_as_current_qa": false,
     "targeted_unit_tests": {
@@ -129,7 +129,8 @@
       "evidence/team-workload-created-kanban.png",
       "evidence/team-workload-mobile.png"
     ],
-    "test_environment": "Local isolated PGlite, fixture accounts and clients, local email; Chromium browser"
+    "test_environment": "Local isolated PGlite, fixture accounts and clients, local email; Chromium browser",
+    "hosted_public_login_page": "loaded_in_browser"
   },
   "prior_round_reference": {
     "scope": "Client images, creation idempotency and invites",
@@ -148,7 +149,7 @@
     "Workload reflects only authorized demands in the active agency and may be partial.",
     "One demand is the counting unit; no estimate of hours, slide complexity or global person capacity is claimed.",
     "The example of twelve demands does not define a quota, period, contractual limit or creation block.",
-    "Current local QA passed 80 unit tests and 53 API/browser scenarios plus typecheck, lint and build. Preview publication and hosted verification remain pending.",
+    "Current local QA passed 80 unit tests and 53 API/browser scenarios plus typecheck, lint and build. Preview is READY and the public login page loaded; authenticated hosted verification remains pending.",
     "The client-without-board read was simulated; board/demand creation and subsequent assertions used real local database persistence.",
     "All three screenshots use fixtures; they do not prove authenticated cloud rendering of real client images.",
     "The separately authorized real-data recovery was completed and verified in the database; it does not by itself validate the new dashboard feature."
@@ -164,5 +165,17 @@
     "recovery_is_not_team_workload_qa": true,
     "indirect_bypass_attempted": false
   },
-  "manual_remote_database_writes_for_team_workload": false
+  "manual_remote_database_writes_for_team_workload": false,
+  "deployment": {
+    "commit": "2afd07ba1a1494246aa96ff194650d54215bd562",
+    "tree": "cab1cea2b7b19faaa6f4eb8376e73f8103998809",
+    "id": "dpl_5PuDdWxcfJCGDNuyG29MUuHwuM5v",
+    "status": "READY",
+    "environment": "Preview",
+    "duration_seconds": 50,
+    "url": "https://postito-fw9muketd-vieiraphilipe875-7609s-projects.vercel.app",
+    "stable_alias": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/",
+    "public_login_page_verified": true,
+    "authenticated_hosted_flows_verified": false
+  }
 }
