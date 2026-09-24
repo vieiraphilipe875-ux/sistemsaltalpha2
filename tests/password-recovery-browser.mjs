@@ -8,7 +8,7 @@ export async function runPasswordRecoveryBrowser({browser,state,check,base}) {
   const context=await browser.newContext({javaScriptEnabled:false});
   try {
    if(cookies)await context.addCookies(cookies);
-   const page=await context.newPage();await page.goto(base);
+   const page=await context.newPage();await page.goto(cookies?base:base+'/login');
    const form=page.locator(selector);await expect(form).toBeVisible();
    await expect(form).toHaveAttribute('method','post');
    const controls=await form.locator('input,button').all();assert(controls.length>0);
@@ -20,7 +20,7 @@ export async function runPasswordRecoveryBrowser({browser,state,check,base}) {
   const page=await context.newPage();
   page.on('pageerror',error=>errors.push(error.message));
   try {
-   await page.goto(base);
+   await page.goto(base+'/login');
    await fn({page,context});
   } catch(error) {
    await page.screenshot({path:'evidence/password-recovery-failure.png',fullPage:true}).catch(()=>{});

@@ -312,7 +312,7 @@ export function PautaApp({
   async function reload() {
     const sequence=++refreshSequence.current;
     const response = await fetch("/api/workspace", { cache: "no-store" });
-    if(response.status===401){window.location.assign("/");return;}
+    if(response.status===401){window.location.assign("/login");return;}
     if (!response.ok) throw new Error("Não foi possível atualizar os dados.");
     const nextData=await response.json();
     if(sequence===refreshSequence.current)setData(nextData);

@@ -56,6 +56,7 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 | U36 | Recuperação só envia para e-mail de conta cadastrada; cadastro ainda incompleto retorna ao cadastro | Conta ativa recebe recuperação; endereço inexistente ou pendente retorna `nextStep=signup`, sem envio, com e-mail preservado na tela. Pendência é concluída pelo código de confirmação, sem recriar conta, sobrescrever credenciais ou ativar por link de senha. Inativa permanece sem envio/acesso. Testar os percursos e distinguir caixa local da entrega real |
 | U37 | Criar minha conta envia automaticamente o código; renomear Solicitar código para Reenviar código | Cadastro novo e retomada de cadastro pendente enviam após clicar em Criar minha conta; botão Reenviar código funcional; validade de cinco minutos e limite de tentativas preservados; repetição compartilha limite de reenvio, não duplica conta nem altera dados/credenciais; conta já confirmada não recebe novo código |
 | U38 | Todo convite com e-mail deve enviar automaticamente uma mensagem com botão para acessar o quadro, mantendo a restrição ao destinatário | Servidor envia mesmo com canal link/omitido; só a conta correspondente aceita e recebe as permissões/clientes definidos. Botão Acessar quadro preserva o convite pelo login/cadastro até o aceite. Sem e-mail, gerar somente link; falha de envio não anuncia sucesso e revoga o convite. Testar canal legado, destinatário incorreto, escopo, uso único e percurso pelo botão |
+| U39 | Reformular a plataforma com estética e animações do Made With GSAP e referências internas da galeria; criar LP antes do login com ações no topo, funcionalidades, objetivos, diferenciais e prints | Aplicar DESIGN.md v4; LP pública na raiz, `/login` e `/cadastro` próprios, sessão válida entra no sistema e convite conserva o destino. Capturas reais com dados fictícios; comparação de fluxo sem alegações inventadas. Rolagem suave, animações com redução de movimento, teclado, toque e celular; repetir regressão de autenticação e operação |
 
 ## Ordem de execução
 
@@ -69,7 +70,8 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 8. Conforme U28/U29, validar a correção da confirmação com expiração de cinco minutos e homologar cadastro, recuperação de senha e envio real com conta de teste; executar a regressão pertinente e registrar o resultado hospedado.
 9. U30/U31: correção de clientes, uploads e convites publicada após regressão própria. Homologar imagens e entrega/aceite reais. A recuperação dos registros existentes foi concluída após autorização explícita, revalidação das precondições e conferência pós-transação; verificar separadamente a renderização autenticada das imagens.
 10. Conforme U32/U33, implementar a tabela de distribuição de demandas e criação central, verificar escopo, contagens, escolha de cliente/pauta/responsável e atualização do Kanban; executar QA próprio e conferir a publicação desta versão.
-11. Conversa futura sobre planos, limites, preços e checkout.
+11. U39: pesquisar a referência e sua galeria, definir direção v4, implementar landing e visual interno, gerar capturas fictícias reais, testar fluxos e movimento, publicar no Preview e conferir as rotas hospedadas.
+12. Conversa futura sobre planos, limites, preços e checkout.
 
 A homologação de e-mail foi adiada pelo titular em 23/09/2026 para avançar na operação. Em seguida, ele decidiu remover a troca de senha pelo perfil sem e-mail e retomar cadastro, confirmação, recuperação e envio de e-mails somente após finalizar o restante do sistema. A ativação manual de uma conta indicada é uma ação administrativa individual; não comprova propriedade da caixa postal nem elimina a confirmação dos cadastros públicos. O acesso ADM, suas credenciais e seus dados permanecem preservados. Testes isolados de mensagens continuam sem comprovar entrega real.
 
@@ -77,7 +79,7 @@ A retomada registrada em U28 substitui apenas a postergação de e-mail/cadastro
 
 ## Sugestões e decisões de produto
 
-- Direção visual mais recente: DM Sans, fundo branco frio, grafite e superfícies azul/lilás/menta/rosa pastel. Dashboard com indicadores antes das listas, busca por atalho e teclado, limpeza da busca e ações rápidas reais, reutilizando diálogos com permissão. A reformulação não antecipa e-mail, cadastro ou monetização; sua verificação é registrada separadamente dos resultados de versões anteriores.
+- Direção visual mais recente, U39: DM Sans, navegação grafite, canvas claro e pastéis. Apresentação pública com títulos expressivos e movimento inspirado no Made With GSAP, suas referências LxL Creative e Studio Namma; telas operacionais mantêm foco no trabalho. A landing usa funções existentes e não antecipa monetização. Verificação em REDESIGN-2026-09-24.md.
 - Implementado nesta rodada: detectar conflitos de pauta e avisar sobre rascunho não salvo; separar edição comercial e financeira; explicar o alcance integral do administrador.
 - Próximas sugestões: “Meu trabalho” entre agências, filtros salvos, modelos/checklists de demanda e notificações configuráveis. A visualização deve preservar a agência de origem e o acesso do usuário.
 - Distribuição no dashboard implementada: tabela por colaborador e profissão, carga visível da agência atual e criação central. O número de 12 citado no áudio não define periodicidade, capacidade persistida ou limite de contratação; não implementá-los por inferência. Uma capacidade configurável por pessoa/período pode ser discutida depois, sem impedir o fluxo solicitado agora.
@@ -90,6 +92,8 @@ A retomada registrada em U28 substitui apenas a postergação de e-mail/cadastro
 Mensagem principal do usuário nesta sessão; áudio de 24/09 sobre distribuição de demandas e criação central, resumido neste documento sem publicar a transcrição integral; plano de ação de 23/09; AGENTS.md; docs/DESIGN.md; docs/ARQUITETURA.md; docs/ENTREGA.md; docs/PROXIMAS-ETAPAS.md; PR nº 1 e seu registro até 22/09.
 
 Referências indicadas: https://designspells.com/?tag=desktop · https://www.awwwards.com/ · https://ui.shadcn.com/ · https://mobbin.com/sites/monologue-dfd894e7-101b-4679-aa3e-d75a2db3bc3c/66238a42-7413-4b88-a880-f20e738a69d1/preview
+
+Referência mais recente: https://madewithgsap.com/ e sua galeria/coleção de efeitos, incluindo inspeção pública de https://www.lxlcreative.co.uk/ e https://studionamma.com/. O efeito com restrição de associação não foi acessado integralmente. Não houve contratação ou cópia de código pago.
 
 O preview específico do Mobbin não foi recuperado nesta pesquisa. O site oficial https://www.monologue.to/ foi confirmado e inspecionado como referência complementar; a versão atual é visualmente diferente da direção pastel solicitada e não foi confirmada como a mesma captura do Mobbin. Fontes observadas e adaptações estão em DESIGN.md e REDESIGN-2026-09-23.md.
 

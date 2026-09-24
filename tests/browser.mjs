@@ -1,4 +1,5 @@
 import {chromium,expect} from '@playwright/test';
+import {runMarketingBrowser} from './marketing-browser.mjs';
 import {runFinancialDocumentsBrowser,runAssigneeEligibilityBrowser} from './financial-documents-browser.mjs';
 import assert from 'node:assert/strict';
 import {runRedesignControlsBrowser,runRedesignMobileBrowser} from './redesign-browser.mjs';
@@ -18,13 +19,14 @@ export async function runBrowser({base,state,check}){
  async function snapshot(name){await page.screenshot({path:'evidence/'+name+'.png',fullPage:true,animations:'disabled',caret:'initial'});}
  async function closeDialog(){await page.keyboard.press('Escape');}
  try{
+  await runMarketingBrowser({browser,base,state,check});
   await check('Navegador: login, logo, navegação e busca de clientes',async()=>{
-   await page.goto(base);await page.getByRole('button',{name:'Confirmar meu e-mail'}).click();await expect(page.getByRole('heading',{name:'Confirme seu e-mail.'})).toBeVisible();await page.getByRole('button',{name:'Voltar para entrar'}).click();await snapshot('login-desktop');await page.getByRole('textbox',{name:'E-mail',exact:true}).fill(state.owner.email);
+   await page.goto(base+'/login');await page.getByRole('button',{name:'Confirmar meu e-mail'}).click();await expect(page.getByRole('heading',{name:'Confirme seu e-mail.'})).toBeVisible();await page.getByRole('button',{name:'Voltar para entrar'}).click();await snapshot('login-desktop');await page.getByRole('textbox',{name:'E-mail',exact:true}).fill(state.owner.email);
    await page.locator('input[name=password]').fill(state.password);
    await page.getByRole('button',{name:'Mostrar senha'}).click();await expect(page.locator('input[name=password]')).toHaveAttribute('type','text');
    await page.getByRole('button',{name:'Entrar',exact:true}).click();
    await page.getByRole('button',{name:'Clientes e pautas',exact:true}).waitFor({timeout:60000});
-   await expect(page.locator('.postito-workspace')).toHaveCSS('background-color','rgb(245, 246, 251)');
+   await expect(page.locator('.postito-workspace')).toHaveCSS('background-color','rgb(245, 246, 248)');
    await expect(page.locator('.metric-value').first()).toHaveCSS('font-family',/DM Sans/);
    await snapshot('dashboard');
    await page.getByRole('textbox',{name:'Buscar clientes ou demandas'}).fill('vanessa');
@@ -181,7 +183,7 @@ export async function runBrowser({base,state,check}){
    const newcomer=await browser.newContext({viewport:{width:390,height:844}}),form=await newcomer.newPage();
    diagnosticPage=form;
    form.on('pageerror',e=>errors.push(e.message));
-   await form.goto(base);await form.screenshot({path:'evidence/login-mobile.png',fullPage:true,animations:'disabled',caret:'initial'});assert.equal(await form.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);await form.getByRole('button',{name:'Começar agora'}).click();
+   await form.goto(base+'/login');await form.screenshot({path:'evidence/login-mobile.png',fullPage:true,animations:'disabled',caret:'initial'});assert.equal(await form.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);await form.getByRole('button',{name:'Começar agora'}).click();
    await form.getByLabel('Seu nome').fill('Elisa Prado');await form.getByLabel('E-mail',{exact:true}).fill('elisa@example.invalid');
    await form.getByLabel('Sua profissão').selectOption('copywriter');
    await form.locator('input[name=password]').fill(state.password);await form.getByLabel('Confirmar senha',{exact:true}).fill(state.password);
@@ -209,7 +211,7 @@ export async function runBrowser({base,state,check}){
    assert.equal(createdAgency.status(),200,'Criar a primeira agência deve aceitar o nome preenchido');
    await form.getByRole('textbox',{name:'Buscar clientes ou demandas'}).waitFor({timeout:60000});
    assert.equal(new URL(form.url()).searchParams.has('agency'),false,'Criar agência deve usar o formulário hidratado, sem submissão GET nativa');
-   const out=await newcomer.request.post(base+'/api/auth/logout',{data:{},headers:{Origin:base}});assert.equal(out.status(),200);await form.goto(base);
+   const out=await newcomer.request.post(base+'/api/auth/logout',{data:{},headers:{Origin:base}});assert.equal(out.status(),200);await form.goto(base+'/login');
    await form.getByRole('button',{name:'Esqueci minha senha'}).click();await form.getByLabel('E-mail',{exact:true}).fill('elisa@example.invalid');await form.getByRole('button',{name:'Enviar link'}).click();
    await expect(form.getByRole('status')).toContainText('link para recuperar o acesso');
    const reset=await state.emailFor({email:'elisa@example.invalid'},'Redefina');const link=reset.match(/href="([^"]+)"/)[1].replaceAll('&amp;','&');await form.goto(link);

@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
+import { SmoothScroll } from "@/components/smooth-scroll";
 import "./globals.css";
+import "lenis/dist/lenis.css";
+import "./design-v4.css";
+import "./landing.css";
 
 export const metadata: Metadata = {
   title: "Postito | Sua agência, com tudo no lugar",
@@ -14,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className="antialiased">{children}<Toaster richColors position="top-right" /></body>
+      <body className="antialiased">{children}<SmoothScroll/><Toaster richColors position="top-right" /></body>
     </html>
   );
 }

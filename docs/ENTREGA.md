@@ -1,6 +1,14 @@
 # Postito — entrega e verificação
 
-## Convites automáticos com botão de acesso em 24/09/2026: validado para Preview
+## Landing e reformulação visual v4 em 24/09/2026: verificada localmente
+
+A raiz pública agora apresenta o Postito antes do login, com Entrar e Criar conta no canto superior direito. Propósito, funcionalidades, quatro capturas reais com dados fictícios, sequência de trabalho, diferenciais e FAQ compõem a landing. `/login` e `/cadastro` têm rotas próprias; sessões válidas e convites continuam chegando ao fluxo autorizado.
+
+A direção v4 aplica navegação grafite, áreas claras e cores pastéis ao dashboard, clientes, demandas, CRM, financeiro, equipe, diálogos e entrada. Made With GSAP e referências públicas de sua galeria, incluindo LxL Creative e Studio Namma, orientam tipografia, composição e movimento. GSAP anima a apresentação e Lenis suaviza a roda do mouse; toque e movimento reduzido usam scroll nativo, preservando áreas internas e modais.
+
+Passaram **91 testes unitários e 72 cenários de API/navegador (28 API e 44 navegador)**, TypeScript, lint dos arquivos novos/alterados verificados e build. A regressão inclui os fluxos de conta, convites, permissões, clientes/imagens, produção, CRM e financeiro. As capturas foram geradas com fixtures locais, sem dados de clientes reais. Detalhes em `docs/REDESIGN-2026-09-24.md` e `evidence/redesign-v4-20260924.json`. Publicação no Preview e conferência hospedada aguardam registro; não há promoção a produção.
+
+## Convites automáticos com botão de acesso em 24/09/2026: publicado no Preview
 
 Todo convite novo com e-mail agora envia automaticamente a mensagem para o endereço preenchido. A regra é aplicada pelo servidor inclusive para interfaces antigas que enviam canal link ou omitem o canal. O e-mail continua restringindo o aceite à conta correspondente; permissões, clientes selecionados, validade de sete dias, uso único e revogação permanecem. O formulário dispensa escolher o canal: com destinatário mostra Enviar convite; sem destinatário, Gerar link de convite.
 
@@ -10,6 +18,8 @@ A mensagem inclui o botão **Acessar quadro**, que conserva o convite pelo login
 
 Evidências: `evidence/invite-auto-email-20260924.json`, `evidence/invite-auto-email-regression-20260924.json` e capturas `invite-auto-email-button.png`, `invite-auto-email-confirmed.png`, `invite-auto-email-form.png`. Mensagens e contas são fixtures locais; não houve envio de convite real, reenvio em massa, alteração do banco hospedado, schema, variáveis ou acesso ADM. Entrega na caixa postal e aceite hospedado são verificações separadas.
 
+
+Publicação confirmada: commit `908552f0078709e314f1ca34f32ca791988e1352`, árvore `c5629ec9ba7c76710674de62d63f5eac8d593f9e`, deployment `dpl_GxMKtoARrb7ygJG2zTu1CisV8qj3` em **READY**, build de 40 s. [Implantação](https://postito-64y42r9gl-vieiraphilipe875-7609s-projects.vercel.app) e [alias estável](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/). O alias abriu a tela de login; o fluxo autenticado de convite foi validado localmente, sem disparo real nessa conferência.
 
 ## Confirmação automática no cadastro em 24/09/2026: publicado no Preview
 

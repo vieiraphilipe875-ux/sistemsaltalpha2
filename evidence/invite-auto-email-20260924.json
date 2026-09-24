@@ -34,13 +34,24 @@
     ]
   },
   "deployment": {
-    "status": "awaiting publication",
-    "environment": "Preview"
+    "status": "READY",
+    "id": "dpl_GxMKtoARrb7ygJG2zTu1CisV8qj3",
+    "commit": "908552f0078709e314f1ca34f32ca791988e1352",
+    "tree": "c5629ec9ba7c76710674de62d63f5eac8d593f9e",
+    "duration_seconds": 40,
+    "environment": "Preview",
+    "url": "https://postito-64y42r9gl-vieiraphilipe875-7609s-projects.vercel.app",
+    "stable_alias": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app"
   },
   "real_email_sent_this_turn": false,
   "real_delivery_verified_this_turn": false,
   "remote_data_mutated": false,
   "schema_or_env_changed": false,
   "production_promoted": false,
-  "regression_evidence": "evidence/invite-auto-email-regression-20260924.json"
+  "regression_evidence": "evidence/invite-auto-email-regression-20260924.json",
+  "hosted_verification": {
+    "login_loaded": true,
+    "authenticated_invite_flow_checked": false,
+    "no_real_email_sent": true
+  }
 }

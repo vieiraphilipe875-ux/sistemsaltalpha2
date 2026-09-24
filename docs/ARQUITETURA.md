@@ -37,6 +37,10 @@ Verificar desktop/celular, busca e teclado, escopo parcial, troca de agência, p
 
 ## Autenticação
 
+Na reformulação U39, a raiz anônima sem convite renderiza `MarketingSite`. `/login` e `/cadastro` reutilizam `AuthForm` e `AuthShell`; sessão válida redireciona à raiz, preservando eventual token de convite. A raiz com `invite` continua no login/aceite e usuário conectado continua no workspace/onboarding. Expiração de sessão no cliente encaminha a `/login`. Recuperação e APIs privadas mantêm seus contratos; a landing não consulta dados de clientes.
+
+`SmoothScroll`, no layout compartilhado, carrega Lenis dinamicamente e reinicializa por pathname. Movimento reduzido ou ponteiro de toque mantém scroll nativo; modais e regiões internas evitam capturar a rolagem da página. O ciclo de inicialização tem guarda de geração/desmontagem. `MarketingMotion` carrega GSAP/ScrollTrigger somente na landing, escopa efeitos à raiz pública e reverte os efeitos ao mudar a preferência ou desmontar. Os estilos públicos ficam em `landing.css` e a revisão do sistema em `design-v4.css`, após os estilos de base. Capturas públicas estáticas usam somente fixtures do script local `capture-marketing.mjs`.
+
 - Senha nova protegida por scrypt com salt individual. Hashes PBKDF2/SHA-256 legados são aceitos na importação e atualizados no login.
 - Conta pendente não autentica com senha antes da confirmação do e-mail.
 - Criar minha conta emite código automaticamente para uma conta nova ou uma conta `pending` já existente, sem reescrever dados do cadastro existente. A repetição usa também o limite `resend:<email>` compartilhado com Reenviar código, além do limite de cadastro. Contas ativas/inativas não recebem um novo código. `emailStatus=accepted` só é retornado após o transporte aceitar a mensagem; uma mudança concorrente de status que impeça criar o desafio não anuncia envio.
