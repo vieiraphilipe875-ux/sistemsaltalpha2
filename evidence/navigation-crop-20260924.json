@@ -1,0 +1,122 @@
+{
+  "date": "2026-09-24",
+  "scope": "Clickable breadcrumbs and client avatar/banner crop preview",
+  "branch": "postito/release-0.2.0",
+  "status": "verified_locally_awaiting_preview",
+  "requirements": [
+    "U34",
+    "U35"
+  ],
+  "breadcrumbs": {
+    "parent_navigation": true,
+    "current_aria_page": true,
+    "keyboard": true,
+    "mobile": true,
+    "task_client_resolved_from_task_board": true,
+    "unsaved_draft_guard_preserved": true,
+    "server_scope_unchanged": true
+  },
+  "crop": {
+    "avatar_output": {
+      "width": 512,
+      "height": 512,
+      "ratio": "1:1"
+    },
+    "banner_output": {
+      "width": 1920,
+      "height": 480,
+      "ratio": "4:1"
+    },
+    "source_exact_dimensions_required": false,
+    "source_limit_mb": 20,
+    "output": "static PNG",
+    "proportional_cover": true,
+    "position_drag_zoom_and_keyboard": true,
+    "cancel_does_not_upload": true,
+    "creation_upload_after_create": true,
+    "personalization_upload_after_apply": true,
+    "banner_display_ratio_matches_preview": true
+  },
+  "validation": {
+    "initial_breadcrumb_round": {
+      "unit_passed": 80,
+      "api_browser_passed": 56,
+      "typecheck": "passed",
+      "lint_errors": 0,
+      "lint_existing_warnings": 18,
+      "does_not_validate_crop_or_later_scope_scenario": true
+    },
+    "integrated_unit": {
+      "status": "passed",
+      "passed": 86,
+      "failed": 0,
+      "new_geometry_tests": 6
+    },
+    "integrated_api_browser": {
+      "status": "passed",
+      "passed": 61,
+      "api": 25,
+      "browser": 36,
+      "new_breadcrumb": 4,
+      "new_crop": 4,
+      "regression_evidence": "evidence/navigation-crop-regression-20260924.json"
+    },
+    "build": {
+      "status": "passed",
+      "compile_seconds": 3.4,
+      "typescript_seconds": 8.7,
+      "warning": "Existing NFT/file tracing next.config.ts → lib/storage.ts → financial documents route"
+    },
+    "hosted_public_page": "pending",
+    "authenticated_hosted_flow": "not_run",
+    "typecheck": "passed",
+    "lint": {
+      "errors": 0,
+      "pre_existing_warnings": 18
+    },
+    "first_integrated_attempt": {
+      "status": "stopped_on_test_fixture",
+      "detail": "The additional restricted-member breadcrumb test referenced an unavailable fixture ID before any crop-specific scenarios. Existing client-media flows and first three breadcrumb scenarios passed.",
+      "requires_fixture_fix_and_rerun": false
+    },
+    "focused_api_browser": {
+      "status": "passed",
+      "passed": 33,
+      "api": 25,
+      "new_browser_scenarios": 8,
+      "details": "Restricted-member fixture creates its own private task and restores state; crop tested with color-band fixtures, pixel checks, keyboard, mouse and real touch events."
+    },
+    "earlier_attempts": [
+      {
+        "result": "test_fixture_failure",
+        "reason": "Restricted breadcrumb scenario expected state.hiddenTask, which was not exported."
+      },
+      {
+        "result": "test_fixture_failure",
+        "reason": "Fallback assumed another task still existed in the same board; original private task was deleted by prior integration coverage."
+      }
+    ],
+    "visual_correction": "Bound the demand modal grid column to minmax(0,1fr); its breadcrumb now wraps within the mobile dialog instead of clipping. Added a bounding-box assertion.",
+    "build_before_final_mobile_css": {
+      "status": "passed",
+      "compile_seconds": 3.0,
+      "typescript_seconds": 7.7,
+      "warning": "Existing NFT/file tracing next.config.ts → lib/storage.ts → finance documents route"
+    },
+    "fixture_screenshots": [
+      "evidence/breadcrumb-desktop.png",
+      "evidence/breadcrumb-mobile.png",
+      "evidence/client-image-crop-desktop.png",
+      "evidence/client-image-crop-mobile.png"
+    ]
+  },
+  "real_client_database_writes": false,
+  "schema_changes": false,
+  "environment_changes": false,
+  "production_promoted": false,
+  "limits": [
+    "Tests use isolated local accounts, database and images.",
+    "No Safari/Firefox or authenticated hosted crop verification claimed.",
+    "Existing remote client image objects are not rewritten by this feature."
+  ]
+}

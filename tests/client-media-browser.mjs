@@ -6,6 +6,29 @@ const bluePng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQ
 const pinkPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR4nGM8kdLzn4GBgYGJAQoAKeQCuwB/NLQAAAAASUVORK5CYII=','base64');
 const png=(name,buffer=bluePng)=>({name,mimeType:'image/png',buffer});
 
+async function applyCrop(page,kind) {
+ const dialog=page.getByRole('dialog',{name:`Ajustar ${kind==='avatar'?'foto':'banner'} do cliente`,exact:true});
+ await dialog.getByRole('button',{name:'Aplicar recorte',exact:true}).click();
+ await expect(dialog).toHaveCount(0);
+}
+
+async function assertCroppedColor(page,url,source,width,height,base) {
+ const response=await page.request.get(new URL(url,base).href);assert.equal(response.status(),200);
+ const actual=(await response.body()).toString('base64');
+ const details=await page.evaluate(async ({actual,source})=>{
+  async function decode(data) {
+   const image=new Image();image.src=`data:image/png;base64,${data}`;await image.decode();
+   const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;
+   const context=canvas.getContext('2d');context.drawImage(image,0,0);
+   return {width:canvas.width,height:canvas.height,pixel:Array.from(context.getImageData(Math.floor(canvas.width/2),Math.floor(canvas.height/2),1,1).data)};
+  }
+  return {actual:await decode(actual),source:await decode(source)};
+ },{actual,source:source.toString('base64')});
+ assert.equal(details.actual.width,width);assert.equal(details.actual.height,height);
+ assert.deepEqual(details.actual.pixel,details.source.pixel,'O recorte conserva a cor da imagem escolhida');
+}
+
+
 export async function runClientMediaBrowser({browser,state,check,base}) {
  async function isolated(name,run) {
   await check(name,async()=>{
@@ -84,7 +107,9 @@ export async function runClientMediaBrowser({browser,state,check,base}) {
   assert.equal(requests.length,0,'Validação deve acontecer antes de chamar createClient');
   assert.equal((await state.owner.workspace()).clients.filter(client=>client.name===name).length,0);
   await dialog.getByLabel('Foto do cliente',{exact:true}).setInputFiles(png('foto.png'));
+  await applyCrop(page,'avatar');
   await dialog.getByLabel('Banner do cliente',{exact:true}).setInputFiles(png('banner.png',pinkPng));
+  await applyCrop(page,'banner');
   await dialog.getByRole('button',{name:'Criar cliente',exact:true}).evaluate(button=>{button.click();button.click();});
   await expect(dialog).toHaveCount(0,{timeout:20000});
   assert.equal(requests.length,1,'Cliques imediatos devem iniciar apenas um cadastro');
@@ -112,7 +137,9 @@ export async function runClientMediaBrowser({browser,state,check,base}) {
   });
   const dialog=await newClient(page,name,'125');
   await dialog.getByLabel('Foto do cliente',{exact:true}).setInputFiles(png('foto.png'));
+  await applyCrop(page,'avatar');
   await dialog.getByLabel('Banner do cliente',{exact:true}).setInputFiles(png('banner.png',pinkPng));
+  await applyCrop(page,'banner');
   await dialog.getByRole('button',{name:'Criar cliente',exact:true}).click();
   await expect(dialog.getByRole('alert').filter({hasText:'Cliente criado.'})).toBeVisible({timeout:20000});
   await expect(dialog.getByText('Foto salva',{exact:true})).toBeVisible();
@@ -159,6 +186,7 @@ export async function runClientMediaBrowser({browser,state,check,base}) {
   });
   let dialog=await newClient(page,partialName);
   await dialog.getByLabel('Banner do cliente',{exact:true}).setInputFiles(png('pendente.png'));
+  await applyCrop(page,'banner');
   await dialog.getByRole('button',{name:'Criar cliente',exact:true}).click();
   await expect(dialog.getByRole('alert').filter({hasText:'Cliente criado.'})).toBeVisible({timeout:20000});
   const partial=await oneClient(partialName);
@@ -185,12 +213,14 @@ export async function runClientMediaBrowser({browser,state,check,base}) {
   let dialog=page.getByRole('dialog',{name:`Personalizar ${name}`,exact:true});
   const before=await oneClient(name);
   await dialog.getByLabel('Foto do cliente',{exact:true}).setInputFiles(png('nova-foto.png',pinkPng));
+  await applyCrop(page,'avatar');
   await expect(page.getByText('Foto atualizada',{exact:true})).toBeVisible();
   await dialog.getByLabel('Banner do cliente',{exact:true}).setInputFiles(png('novo-banner.png'));
+  await applyCrop(page,'banner');
   await expect(page.getByText('Banner atualizado',{exact:true})).toBeVisible();
   const updated=await oneClient(name);assert.notEqual(updated.avatarUrl,before.avatarUrl);assert.notEqual(updated.bannerUrl,before.bannerUrl);
-  assert.deepEqual(await (await page.request.get(new URL(updated.avatarUrl,base).href)).body(),pinkPng);
-  assert.deepEqual(await (await page.request.get(new URL(updated.bannerUrl,base).href)).body(),bluePng);
+  await assertCroppedColor(page,updated.avatarUrl,pinkPng,512,512,base);
+  await assertCroppedColor(page,updated.bannerUrl,bluePng,1920,480,base);
   await dialog.locator('[data-slot="dialog-footer"]').getByRole('button',{name:'Fechar',exact:true}).click();
   await page.reload();await page.getByRole('button',{name:'Clientes e pautas',exact:true}).click();
   await identityVisible(page,name);

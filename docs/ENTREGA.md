@@ -1,5 +1,15 @@
 # Postito — entrega e verificação
 
+## Navegação pelo caminho e recorte de imagens em 24/09/2026: verificado, aguardando publicação
+
+O caminho do topo passa a oferecer retorno à lista de clientes por clique e teclado; a página atual é identificada e não executa navegação para si mesma. Dentro da demanda, os níveis anteriores levam à lista ou ao cliente real da demanda, mesmo quando ela foi aberta pela busca sobre outra pasta. A proteção de rascunho é compartilhada com o fechamento e preserva o texto se o descarte for cancelado. A trilha fica disponível também no celular, respeitando os dados já autorizados.
+
+A solicitação seguinte acrescenta dimensões recomendadas e editor local de recorte: foto de 512 × 512 px e banner de 1920 × 480 px, com escala proporcional, arraste, zoom e controles por teclado. O banner usa 4:1 na prévia, na pasta e no cartão para não refazer o enquadramento na exibição. A escolha é aplicada antes de iniciar o upload; cancelar preserva a imagem anterior. O resultado será uma imagem PNG estática, informado no editor. Permanecem os limites e regras de idempotência da criação de clientes.
+
+**QA integrado: 86 testes unitários e 61 cenários de API/navegador aprovados (25 API e 36 navegador), incluindo seis testes de geometria e oito novos cenários de navegador.** TypeScript aprovado; lint sem erros e com 18 avisos preexistentes. A rodada inicial só de navegação passou em 56 cenários; duas tentativas integradas pararam em suposições incorretas de fixtures no teste de acesso restrito. O cenário passou a criar sua própria demanda privada e restaurar os dados. A revisão visual também corrigiu a coluna do modal que cortava a trilha no celular, com asserção de limites. Os 33 cenários focados passaram, seguidos pela regressão completa de 61.
+
+Foram verificados clique/teclado, rascunho e cancelamento, acesso por atribuição, fotos inválidas, upload parcial sem duplicação, zoom, arraste por mouse e toque em 390/320 px, dimensões e pixels do PNG salvo após recarregar. Capturas usam somente fixtures; não houve edição de clientes reais. Evidências: `evidence/navigation-crop-20260924.json`, `evidence/navigation-crop-regression-20260924.json`, `breadcrumb-desktop.png`, `breadcrumb-mobile.png`, `client-image-crop-desktop.png` e `client-image-crop-mobile.png`. Build final aprovado (compilação 3,4 s e TypeScript 8,7 s), com o aviso conhecido de file tracing em `next.config.ts`/`lib/storage.ts`. Publicação em conclusão; conferência funcional autenticada hospedada não realizada.
+
 ## Distribuição de demandas no dashboard em 24/09/2026: publicado no Preview
 
 O titular solicitou em áudio uma tabela no dashboard com colaboradores, filtro por profissão e quantidade de demandas atribuídas, para orientar quem distribui o trabalho. Pediu também criação pela área principal, com seleção do responsável, cliente e pauta; o cliente deve ser pesquisável e oferecer lista rolável antes de digitar, e a demanda salva deve aparecer no Kanban correspondente. A transcrição integral não faz parte do repositório.

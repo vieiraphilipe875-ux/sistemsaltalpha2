@@ -3,6 +3,8 @@
 import {normalizeDateInputs} from "@/lib/dates";
 import {parseMoney} from "@/lib/finance";
 import { CLIENT_IMAGE_ACCEPT, CLIENT_IMAGE_HINT, clientImageError } from "@/lib/client-media-policy";
+import { CLIENT_IMAGE_CROP_SPECS } from "@/lib/client-image-crop";
+import { ClientImageCropDialog } from "@/components/client-image-crop-dialog";
 
 import {
   canPlanClient,
@@ -117,6 +119,7 @@ import { TeamPanel as Team, InviteDialog } from "@/components/team-panel";
 import { MemberPicker, ClientPeople } from "@/components/member-picker";
 import { ClientPicker } from "@/components/client-picker";
 import { TeamWorkload } from "@/components/team-workload";
+import { WorkspaceBreadcrumb } from "@/components/workspace-breadcrumb";
 import { FinancialDocuments } from "@/components/financial-documents";
 import {
   AgencySwitcher,
@@ -484,10 +487,10 @@ export function PautaApp({
           >
             <Menu aria-hidden="true" />
           </Button>
-          <div className="workspace-breadcrumb">
-            <span>{navItems.find((item) => item.id === view)?.label}</span>
-            {activeClient && <><ChevronRight aria-hidden="true" className="size-3.5" /><strong>{activeClient.name}</strong></>}
-          </div>
+          <WorkspaceBreadcrumb items={[
+            { label: navItems.find((item) => item.id === view)?.label ?? "Visão geral", onSelect: activeClient ? () => navigate(view) : undefined },
+            ...(activeClient ? [{ label: activeClient.name }] : []),
+          ]} />
           <GlobalSearch
             data={data}
             onTask={setActiveDeliverableId}
@@ -595,6 +598,12 @@ export function PautaApp({
         item={activeDeliverable}
         open={Boolean(activeDeliverable)}
         onOpenChange={(open) => !open && setActiveDeliverableId(null)}
+        clientListLabel={executeOnly ? "Minhas demandas" : "Clientes e pautas"}
+        onBrowseClients={canSeeClients || executeOnly ? () => navigate(executeOnly ? "dashboard" : "clients") : undefined}
+        onBrowseClient={canSeeClients || executeOnly ? (id) => {
+          navigate(executeOnly ? "dashboard" : "clients");
+          setActiveClientId(id);
+        } : undefined}
         postAction={postAction}
         reload={reload}
       />
@@ -1196,6 +1205,7 @@ function ClientBoard({
   const [driveUrl, setDriveUrl] = useState(client.driveUrl);
   const [mediaBusy, setMediaBusy] = useState<"avatar" | "banner" | null>(null);
   const mediaBusyRef = useRef(false);
+  const [mediaCrop, setMediaCrop] = useState<{ kind: "avatar" | "banner"; file: File } | null>(null);
   const [mediaErrors, setMediaErrors] = useState<Partial<Record<"avatar" | "banner", string>>>({});
 
   const boards = data.boards
@@ -1247,6 +1257,13 @@ function ClientBoard({
       setOverStatus(null);
     }
   }
+  function chooseClientMedia(kind: "avatar" | "banner", file: File) {
+    if (mediaBusyRef.current || mediaCrop) return;
+    const error = clientImageError(file, CLIENT_IMAGE_CROP_SPECS[kind].label);
+    setMediaErrors((current) => ({ ...current, [kind]: error ?? undefined }));
+    if (!error) setMediaCrop({ kind, file });
+  }
+
   async function changeClientMedia(kind: "avatar" | "banner", file: File) {
     if (mediaBusyRef.current) return;
     const validationError = clientImageError(file, kind === "avatar" ? "Foto do cliente" : "Banner do cliente");
@@ -1448,8 +1465,8 @@ function ClientBoard({
           );
         })}
       </div>
-      <Dialog open={driveOpen} onOpenChange={(nextOpen) => { if (!mediaBusyRef.current) setDriveOpen(nextOpen); }}>
-        <DialogContent showCloseButton={!mediaBusy} className="max-h-[92vh] overflow-y-auto rounded-2xl sm:max-w-2xl">
+      <Dialog open={driveOpen} onOpenChange={(nextOpen) => { if (!mediaBusyRef.current && !mediaCrop) setDriveOpen(nextOpen); }}>
+        <DialogContent showCloseButton={!mediaBusy && !mediaCrop} className="max-h-[92vh] overflow-y-auto rounded-2xl sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Personalizar {client.name}</DialogTitle>
             <DialogDescription>
@@ -1473,6 +1490,7 @@ function ClientBoard({
             </div>
             <div>
               <p className="mb-2 text-sm font-semibold">Foto do cliente</p>
+              <p id="edit-client-avatar-hint" className="mb-3 text-xs leading-relaxed text-slate-500">Recomendado: {CLIENT_IMAGE_CROP_SPECS.avatar.width} × {CLIENT_IMAGE_CROP_SPECS.avatar.height} px · {CLIENT_IMAGE_CROP_SPECS.avatar.ratioLabel}. {CLIENT_IMAGE_HINT} Ajuste o recorte antes de salvar.</p>
               <div className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
                 {client.avatarUrl ? (
                   <img
@@ -1505,7 +1523,7 @@ function ClientBoard({
                     className="sr-only"
                     onChange={(event) => {
                       const file = event.currentTarget.files?.[0];
-                      if (file) void changeClientMedia("avatar", file);
+                      if (file) chooseClientMedia("avatar", file);
                       event.currentTarget.value = "";
                     }}
                   />
@@ -1523,12 +1541,12 @@ function ClientBoard({
                   </Button>
                 )}
               </div>
-              <p id="edit-client-avatar-hint" className="mt-2 text-xs text-slate-500">{CLIENT_IMAGE_HINT}</p>
               {mediaErrors.avatar && <p id="edit-client-avatar-error" role="alert" className="mt-2 text-sm text-rose-700">{mediaErrors.avatar}</p>}
             </div>
             <div>
               <p className="mb-2 text-sm font-semibold">Banner do cliente</p>
-              <div className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+              <p id="edit-client-banner-hint" className="mb-3 text-xs leading-relaxed text-slate-500">Recomendado: {CLIENT_IMAGE_CROP_SPECS.banner.width} × {CLIENT_IMAGE_CROP_SPECS.banner.height} px · {CLIENT_IMAGE_CROP_SPECS.banner.ratioLabel}. {CLIENT_IMAGE_HINT} Ajuste o recorte antes de salvar.</p>
+              <div className="relative aspect-[4/1] overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
                 {client.bannerUrl ? (
                   <img
                     src={client.bannerUrl}
@@ -1560,7 +1578,7 @@ function ClientBoard({
                     className="sr-only"
                     onChange={(event) => {
                       const file = event.currentTarget.files?.[0];
-                      if (file) void changeClientMedia("banner", file);
+                      if (file) chooseClientMedia("banner", file);
                       event.currentTarget.value = "";
                     }}
                   />
@@ -1578,7 +1596,6 @@ function ClientBoard({
                   </Button>
                 )}
               </div>
-              <p id="edit-client-banner-hint" className="mt-2 text-xs text-slate-500">{CLIENT_IMAGE_HINT}</p>
               {mediaErrors.banner && <p id="edit-client-banner-error" role="alert" className="mt-2 text-sm text-rose-700">{mediaErrors.banner}</p>}
             </div>
           </div>
@@ -1610,6 +1627,19 @@ function ClientBoard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {mediaCrop && (
+        <ClientImageCropDialog
+          file={mediaCrop.file}
+          kind={mediaCrop.kind}
+          open
+          onOpenChange={(nextOpen) => { if (!nextOpen) setMediaCrop(null); }}
+          onApply={(file) => {
+            const kind = mediaCrop.kind;
+            setMediaCrop(null);
+            void changeClientMedia(kind, file);
+          }}
+        />
+      )}
       {createBoardOpen && (
         <CreateBoardDialog
           open={createBoardOpen}
@@ -1926,6 +1956,9 @@ function TaskSheet({
   item,
   open,
   onOpenChange,
+  clientListLabel,
+  onBrowseClients,
+  onBrowseClient,
   postAction,
   reload,
 }: {
@@ -1933,6 +1966,9 @@ function TaskSheet({
   item: Deliverable | null;
   open: boolean;
   onOpenChange(open: boolean): void;
+  clientListLabel: string;
+  onBrowseClients?: () => void;
+  onBrowseClient?: (id: string) => void;
   postAction(payload: object, success?: string): Promise<unknown>;
   reload(): Promise<void>;
 }) {
@@ -1995,9 +2031,21 @@ function TaskSheet({
   const canExecute = canExecuteTask(data, item);
   const canDelete = canPlan;
 
+  const navigationBusy = saving || uploadingSlide !== null || removingAttachmentId !== null;
+
+  function canLeave() {
+    return !navigationBusy && (!dirty || window.confirm("Há alterações não salvas na pauta. Descartar e fechar?"));
+  }
+
   function requestClose(nextOpen: boolean) {
-    if (!nextOpen && (saving || (dirty && !window.confirm("Há alterações não salvas na pauta. Descartar e fechar?")))) return;
+    if (!nextOpen && !canLeave()) return;
     onOpenChange(nextOpen);
+  }
+
+  function browseParent(action: () => void) {
+    if (!canLeave()) return;
+    onOpenChange(false);
+    action();
   }
 
   async function loadLatestSlides() {
@@ -2166,6 +2214,11 @@ function TaskSheet({
     <Dialog open={open} onOpenChange={requestClose}>
       <DialogContent className="task-detail-dialog h-[96vh] w-[98vw] max-w-none gap-0 overflow-hidden rounded-[24px] border-0 bg-background p-0 sm:max-w-[98vw]">
         <DialogHeader className="border-b border-slate-200 bg-white px-5 py-4 pr-14 text-left sm:px-7">
+          <WorkspaceBreadcrumb label="Caminho da demanda" disabled={navigationBusy} items={[
+            ...(onBrowseClients ? [{ label: clientListLabel, onSelect: () => browseParent(onBrowseClients) }] : []),
+            ...(client ? [{ label: client.name, onSelect: onBrowseClient ? () => browseParent(() => onBrowseClient(client.id)) : undefined }] : []),
+            { label: item.title },
+          ]} />
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="font-bold" style={{ color: client?.accent }}>
               {client?.name}
@@ -2889,6 +2942,7 @@ function DraftFileField({
   describedBy,
   invalid = false,
   disabled = false,
+  aspectRatio = 1,
 }: {
   file?: File;
   onFile(file: File): void;
@@ -2898,6 +2952,7 @@ function DraftFileField({
   describedBy?: string;
   invalid?: boolean;
   disabled?: boolean;
+  aspectRatio?: number;
 }) {
   const [preview,setPreview]=useState<{file:File;url:string}|null>(null);
   const previewUrl=preview?.file===file ? preview?.url || "" : "";
@@ -2917,7 +2972,7 @@ function DraftFileField({
   };
   if (!file)
     return (
-      <label className="relative grid aspect-square cursor-pointer place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-3 text-center transition hover:border-primary hover:bg-muted focus-within:ring-2 focus-within:ring-ring">
+      <label style={{ aspectRatio }} className="relative grid cursor-pointer place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-3 text-center transition hover:border-primary hover:bg-muted focus-within:ring-2 focus-within:ring-ring">
         <input
           type="file"
           accept={accept}
@@ -2946,7 +3001,8 @@ function DraftFileField({
         aria-label={label ? `Ampliar ${label.toLowerCase()}` : undefined}
         disabled={disabled}
         onClick={() => setViewerOpen(true)}
-        className="group relative aspect-square w-full cursor-zoom-in overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
+        style={{ aspectRatio }}
+        className="group relative w-full cursor-zoom-in overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
       >
         {file.type.startsWith("image/") && previewUrl ? (
           <img
@@ -3602,6 +3658,8 @@ function CreateClientDialog({
   const [dueDay, setDueDay] = useState("5");
   const [avatar, setAvatar] = useState<File | null>(null);
   const [banner, setBanner] = useState<File | null>(null);
+  const [imageOriginals, setImageOriginals] = useState<Partial<Record<MediaKind, File>>>({});
+  const [imageCrop, setImageCrop] = useState<{ kind: MediaKind; file: File } | null>(null);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [creationStarted, setCreationStarted] = useState(false);
@@ -3621,6 +3679,8 @@ function CreateClientDialog({
     setDueDay("5");
     setAvatar(null);
     setBanner(null);
+    setImageOriginals({});
+    setImageCrop(null);
     setCreationStarted(false);
     requestRef.current = null;
     setCreatedClientId(null);
@@ -3631,11 +3691,33 @@ function CreateClientDialog({
   }
 
   function chooseImage(kind: MediaKind, file: File | null) {
-    if (savingRef.current || savedImages[kind]) return;
+    if (savingRef.current || savedImages[kind] || imageCrop) return;
+    const error = file ? clientImageError(file, CLIENT_IMAGE_CROP_SPECS[kind].label) : null;
+    if (file && !error) {
+      // A valid source remains local until its crop is explicitly applied.
+      setImageCrop({ kind, file });
+      return;
+    }
+    // Invalid selections remain pending so they cannot silently create a client without the requested image.
     if (kind === "avatar") setAvatar(file);
     else setBanner(file);
-    const error = file ? clientImageError(file, kind === "avatar" ? "Foto do cliente" : "Banner do cliente") : null;
+    setImageOriginals((current) => ({ ...current, [kind]: undefined }));
     setImageErrors((current) => ({ ...current, [kind]: error ?? undefined }));
+  }
+
+  function applyImageCrop(file: File) {
+    if (!imageCrop || savingRef.current || savedImages[imageCrop.kind]) return;
+    const { kind, file: original } = imageCrop;
+    const error = clientImageError(file, CLIENT_IMAGE_CROP_SPECS[kind].label);
+    if (error) {
+      setImageErrors((current) => ({ ...current, [kind]: error }));
+      return;
+    }
+    if (kind === "avatar") setAvatar(file);
+    else setBanner(file);
+    setImageOriginals((current) => ({ ...current, [kind]: original }));
+    setImageErrors((current) => ({ ...current, [kind]: undefined }));
+    setImageCrop(null);
   }
 
   async function finishWithoutPendingImages() {
@@ -3655,7 +3737,7 @@ function CreateClientDialog({
   }
 
   function changeOpen(nextOpen: boolean) {
-    if (savingRef.current) return;
+    if (savingRef.current || imageCrop) return;
     if (!nextOpen && createdClientIdRef.current) {
       void finishWithoutPendingImages();
       return;
@@ -3679,7 +3761,7 @@ function CreateClientDialog({
   }
 
   async function submit() {
-    if (savingRef.current) return;
+    if (savingRef.current || imageCrop) return;
     const validationErrors: Partial<Record<MediaKind, string>> = {};
     if (avatar && !savedImages.avatar) {
       const error = clientImageError(avatar, "Foto do cliente");
@@ -3768,8 +3850,9 @@ function CreateClientDialog({
 
   const hasPendingImages = Boolean((avatar && !savedImages.avatar) || (banner && !savedImages.banner));
   return (
+    <>
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogContent showCloseButton={!saving} className="max-h-[94vh] overflow-y-auto rounded-2xl sm:max-w-2xl">
+      <DialogContent showCloseButton={!saving && !imageCrop} className="max-h-[94vh] overflow-y-auto rounded-2xl sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{createdClientId ? "Concluir cliente" : "Novo cliente"}</DialogTitle>
           <DialogDescription>
@@ -3818,6 +3901,9 @@ function CreateClientDialog({
               const label = kind === "avatar" ? "Foto do cliente" : "Banner do cliente";
               return <div key={kind}>
                 <p className="mb-2 text-sm font-semibold">{label}</p>
+                <p id={`new-client-${kind}-hint`} className="mb-3 text-xs leading-relaxed text-slate-500">
+                  Recomendado: {CLIENT_IMAGE_CROP_SPECS[kind].width} × {CLIENT_IMAGE_CROP_SPECS[kind].height} px · {CLIENT_IMAGE_CROP_SPECS[kind].ratioLabel}. {CLIENT_IMAGE_HINT} Ajuste o recorte antes de salvar.
+                </p>
                 <DraftFileField
                   file={(kind === "avatar" ? avatar : banner) ?? undefined}
                   onFile={(file) => chooseImage(kind, file)}
@@ -3826,11 +3912,25 @@ function CreateClientDialog({
                   label={label}
                   describedBy={`new-client-${kind}-hint${imageErrors[kind] ? ` new-client-${kind}-error` : ""}`}
                   invalid={Boolean(imageErrors[kind])}
-                  disabled={saving || savedImages[kind]}
+                  disabled={saving || savedImages[kind] || Boolean(imageCrop)}
+                  aspectRatio={CLIENT_IMAGE_CROP_SPECS[kind].aspectRatio}
                 />
-                <p id={`new-client-${kind}-hint`} className="mt-2 text-xs text-slate-500">
-                  {kind === "avatar" ? "Preferencialmente quadrada. " : "Recomendado: 1920 × 640. "}{CLIENT_IMAGE_HINT}
-                </p>
+                {imageOriginals[kind] && !savedImages[kind] && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 w-full"
+                    disabled={saving || Boolean(imageCrop)}
+                    aria-label={`Reajustar recorte ${kind === "avatar" ? "da foto" : "do banner"}`}
+                    onClick={() => {
+                      const original = imageOriginals[kind];
+                      if (original) setImageCrop({ kind, file: original });
+                    }}
+                  >
+                    Reajustar recorte
+                  </Button>
+                )}
                 {savedImages[kind] && <p role="status" className="mt-2 text-sm font-semibold text-emerald-700">{kind === "avatar" ? "Foto salva" : "Banner salvo"}</p>}
                 {imageErrors[kind] && <p id={`new-client-${kind}-error`} role="alert" className="mt-2 text-sm text-rose-700">{imageErrors[kind]}</p>}
               </div>;
@@ -3847,6 +3947,16 @@ function CreateClientDialog({
         </form>
       </DialogContent>
     </Dialog>
+    {imageCrop && (
+      <ClientImageCropDialog
+        file={imageCrop.file}
+        kind={imageCrop.kind}
+        open
+        onOpenChange={(nextOpen) => { if (!nextOpen) setImageCrop(null); }}
+        onApply={applyImageCrop}
+      />
+    )}
+    </>
   );
 }
 

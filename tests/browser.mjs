@@ -5,6 +5,8 @@ import {runRedesignControlsBrowser,runRedesignMobileBrowser} from './redesign-br
 import {runClientMediaBrowser} from './client-media-browser.mjs';
 import {runInviteSelectionBrowser} from './invite-selection-browser.mjs';
 import {runTeamWorkloadBrowser} from './team-workload-browser.mjs';
+import {runBreadcrumbBrowser} from './breadcrumb-browser.mjs';
+import {runClientImageCropBrowser} from './client-image-crop-browser.mjs';
 import {writeFile} from 'node:fs/promises';
 export async function runBrowser({base,state,check}){
  const browser=await chromium.launch({headless:true});
@@ -202,6 +204,8 @@ export async function runBrowser({base,state,check}){
   await runClientMediaBrowser({browser,state,check,base});
   await runInviteSelectionBrowser({browser,state,check,base});
   await runTeamWorkloadBrowser({browser,state,check,base});
+  await runBreadcrumbBrowser({browser,state,check,base});
+  await runClientImageCropBrowser({browser,state,check,base});
   await check('Navegador: sem erros de execução no fluxo percorrido',async()=>{assert.deepEqual(errors,[]);});
  }catch(e){await snapshot('failure').catch(()=>{});await writeFile('evidence/browser-errors.json',JSON.stringify(errors));await writeFile('evidence/browser-failure.txt',(await page.locator('body').innerText({timeout:5000}).catch(()=>'' )).slice(0,18000));throw e;}
  finally{await browser.close();}
