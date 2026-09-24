@@ -115,6 +115,8 @@ import {
 import { uploadRequest } from "@/lib/upload-client";
 import { TeamPanel as Team, InviteDialog } from "@/components/team-panel";
 import { MemberPicker, ClientPeople } from "@/components/member-picker";
+import { ClientPicker } from "@/components/client-picker";
+import { TeamWorkload } from "@/components/team-workload";
 import { FinancialDocuments } from "@/components/financial-documents";
 import {
   AgencySwitcher,
@@ -284,6 +286,8 @@ export function PautaApp({
   const [profileOpen, setProfileOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [createBoardId, setCreateBoardId] = useState<string|undefined>();
+  const [createClientContextId, setCreateClientContextId] = useState<string | null>(null);
+  const [createAssigneeId, setCreateAssigneeId] = useState<string|undefined>();
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [createClientOpen, setCreateClientOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -514,8 +518,10 @@ export function PautaApp({
                 tasks={visibleTasks}
                 urgent={urgent}
                 onCreateClient={canManageClients ? () => setCreateClientOpen(true) : undefined}
-                onCreateTask={canPlan && data.boards.some((board) => canPlanClient(data, board.clientId)) ? () => {
-                  setCreateBoardId(data.boards.find((board) => canPlanClient(data, board.clientId))?.id);
+                onCreateTask={canPlan && data.clients.some((client) => canPlanClient(data, client.id)) ? (assigneeId) => {
+                  setCreateClientContextId(null);
+                  setCreateBoardId(undefined);
+                  setCreateAssigneeId(assigneeId);
                   setCreateTaskOpen(true);
                 } : undefined}
                 onBrowseClients={canSeeClients ? () => navigate("clients") : undefined}
@@ -555,7 +561,7 @@ export function PautaApp({
               onOpen={setActiveDeliverableId}
               onCreate={
                 canPlanClient(data, activeClient.id)
-                  ? (boardId) => {setCreateBoardId(boardId);setCreateTaskOpen(true);}
+                  ? (boardId) => {setCreateClientContextId(activeClient.id);setCreateBoardId(boardId);setCreateAssigneeId(undefined);setCreateTaskOpen(true);}
                   : undefined
               }
               postAction={postAction}
@@ -599,12 +605,13 @@ export function PautaApp({
         postAction={postAction}
       />
       <CreateTaskDialog
-        key={`${createTaskOpen}-${activeClientId}-${createBoardId}`}
+        key={`${createTaskOpen}-${createClientContextId}-${createBoardId}-${createAssigneeId}`}
         open={createTaskOpen}
         onOpenChange={setCreateTaskOpen}
         data={data}
-        defaultClientId={activeClientId}
+        defaultClientId={createClientContextId}
         defaultBoardId={createBoardId}
+        defaultAssigneeId={createAssigneeId}
         postAction={postAction}
       />
       <CreateClientDialog
@@ -633,7 +640,7 @@ function Dashboard({
   urgent: Deliverable[];
   onOpen(id: string): void;
   onClient(id: string): void;
-  onCreateTask?: () => void;
+  onCreateTask?: (assigneeId?: string) => void;
   onCreateClient?: () => void;
   onBrowseClients?: () => void;
 }) {
@@ -658,7 +665,7 @@ function Dashboard({
         </div>
         <div className="dashboard-actions">
           {onCreateClient && <Button variant="outline" onClick={onCreateClient}><Plus />Novo cliente</Button>}
-          {onCreateTask && <Button onClick={onCreateTask}><Plus />Nova demanda</Button>}
+          {onCreateTask && <Button onClick={() => onCreateTask()}><Plus />Nova demanda</Button>}
         </div>
       </section>
 
@@ -682,6 +689,8 @@ function Dashboard({
         </section>
       )}
 
+      {permissionsFor(data, data.currentMember).includes("demands.create") && <TeamWorkload data={data} onCreateTask={onCreateTask} />}
+
       <section className="dashboard-work-grid">
         <div className="dashboard-main-column">
           <section className="workspace-panel overflow-hidden">
@@ -696,7 +705,7 @@ function Dashboard({
                   <span className="empty-symbol"><CheckCircle2 aria-hidden="true" /></span>
                   <strong>Tudo em dia por aqui</strong>
                   <p>Nenhuma demanda aberta neste momento.</p>
-                  {onCreateTask && <Button variant="outline" onClick={onCreateTask}>Criar uma demanda<Plus /></Button>}
+                  {onCreateTask && <Button variant="outline" onClick={() => onCreateTask()}>Criar uma demanda<Plus /></Button>}
                 </div>
               )}
             </div>
@@ -1629,8 +1638,11 @@ function CreateBoardDialog({
 }) {
   const [period, setPeriod] = useState(()=>{const date=new Date();return `${date.toLocaleString("pt-BR",{month:"short"}).toUpperCase().replace(".","")} • ${date.getFullYear()}`;});
   const [saving,setSaving]=useState(false);
+  const savingRef = useRef(false);
 
   async function submit() {
+    if (savingRef.current) return;
+    savingRef.current = true;
     try {
       setSaving(true);
       await postAction(
@@ -1641,12 +1653,13 @@ function CreateBoardDialog({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Falha ao criar");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl">
+    <Dialog open={open} onOpenChange={(nextOpen) => { if (!savingRef.current) onOpenChange(nextOpen); }}>
+      <DialogContent showCloseButton={!saving} className="rounded-2xl">
         <DialogHeader>
           <DialogTitle>Nova Pasta (Mês)</DialogTitle>
           <DialogDescription>
@@ -1659,6 +1672,7 @@ function CreateBoardDialog({
               Período / Nome da Pasta
             </label>
             <Input aria-label="Período / Nome da Pasta"
+              disabled={saving}
               value={period}
               onChange={(event) => setPeriod(event.target.value)}
               placeholder="Ex.: OUT • 2026"
@@ -1667,7 +1681,7 @@ function CreateBoardDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button variant="ghost" disabled={saving} onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button
@@ -3001,6 +3015,7 @@ function CreateTaskDialog({
   data,
   defaultClientId,
   defaultBoardId,
+  defaultAssigneeId,
   postAction,
 }: {
   open: boolean;
@@ -3008,12 +3023,18 @@ function CreateTaskDialog({
   data: WorkspaceData;
   defaultClientId: string | null;
   defaultBoardId?:string;
+  defaultAssigneeId?: string;
   postAction: (payload: object, success?: string) => Promise<unknown>;
 }) {
-  const defaultBoard = defaultBoardId ??
-    data.boards.find((board) => board.clientId === defaultClientId)?.id ??
-    data.boards[0]?.id ??
-    "";
+  const availableClients = data.clients.filter((client) => canPlanClient(data, client.id));
+  const allowedClientIds = new Set(availableClients.map((client) => client.id));
+  const availableBoards = data.boards.filter((board) => allowedClientIds.has(board.clientId));
+  const initialBoard = availableBoards.find((board) => board.id === defaultBoardId);
+  const initialClientId = initialBoard?.clientId ?? (defaultClientId && allowedClientIds.has(defaultClientId) ? defaultClientId : "");
+  function preferredBoard(clientId: string) {
+    const matching = availableBoards.filter((board) => board.clientId === clientId);
+    return matching.find((board) => board.status !== "completed")?.id ?? matching[0]?.id ?? "";
+  }
   type DraftSlide = {
     id: string;
     copy: string;
@@ -3021,7 +3042,12 @@ function CreateTaskDialog({
     file?: File;
   };
   type DraftRef = { id: string; url: string; description: string };
-  const [boardId, setBoardId] = useState(defaultBoard);
+  const [clientId, setClientId] = useState(initialClientId);
+  const [boardId, setBoardId] = useState(initialBoard?.id ?? preferredBoard(initialClientId));
+  const [createBoardOpen, setCreateBoardOpen] = useState(false);
+  const selectedClientId = allowedClientIds.has(clientId) ? clientId : "";
+  const clientBoards = availableBoards.filter((board) => board.clientId === selectedClientId);
+  const selectedBoardId = clientBoards.some((board) => board.id === boardId) ? boardId : "";
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<Deliverable["kind"]>("carousel");
   const [slides, setSlides] = useState<DraftSlide[]>(() =>
@@ -3032,13 +3058,14 @@ function CreateTaskDialog({
     })),
   );
   const [assigneeId, setAssigneeId] = useState(
-    () => assignableMembers(data)[0]?.id ?? "",
+    () => assignableMembers(data).some((member) => member.id === defaultAssigneeId) ? defaultAssigneeId! : "",
   );
   const [dueAt, setDueAt] = useState("");
   const [notes, setNotes] = useState("");
   const [hasStoriesVersion, setHasStoriesVersion] = useState(false);
   const [refs, setRefs] = useState<DraftRef[]>([]);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [dragging, setDragging] = useState<number | null>(null);
 
   function changeKind(value: Deliverable["kind"]) {
@@ -3085,7 +3112,12 @@ function CreateTaskDialog({
 
   const [createdTaskId,setCreatedTaskId] = useState<string|null>(null);
   async function submit() {
-    if (!boardId) {
+    if (savingRef.current) return;
+    if (!selectedClientId) {
+      toast.error("Selecione um cliente para criar a demanda.");
+      return;
+    }
+    if (!selectedBoardId) {
       toast.error("Selecione uma pauta para criar a demanda.");
       return;
     }
@@ -3097,7 +3129,7 @@ function CreateTaskDialog({
       toast.error("Informe a data e a hora do prazo.");
       return;
     }
-    if (!assigneeId) {
+    if (!assignableMembers(data).some((member) => member.id === assigneeId)) {
       toast.error("Selecione uma pessoa responsável.");
       return;
     }
@@ -3106,11 +3138,12 @@ function CreateTaskDialog({
       return;
     }
     try {
+      savingRef.current = true;
       setSaving(true);
       const result = createdTaskId ? {id:createdTaskId} : await postAction(
         {
           action: "createDeliverable",
-          boardId,
+          boardId: selectedBoardId,
           title,
           kind,
           slideCount: slides.length,
@@ -3183,48 +3216,57 @@ function CreateTaskDialog({
         error instanceof Error ? error.message : "Falha ao criar demanda",
       );
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[94vh] w-[96vw] max-w-none gap-0 overflow-hidden rounded-[24px] p-0 sm:max-w-[1120px]">
+    <>
+    <Dialog open={open} onOpenChange={(nextOpen) => { if (!savingRef.current) onOpenChange(nextOpen); }}>
+      <DialogContent showCloseButton={!saving} className="h-[94vh] w-[96vw] max-w-none gap-0 overflow-hidden rounded-[24px] p-0 sm:max-w-[1120px]">
         <DialogHeader className="border-b border-slate-200 px-6 py-5 text-left">
           <DialogTitle className="text-2xl tracking-tight">
             Criar nova demanda
           </DialogTitle>
           <DialogDescription>
-            Monte a pauta visualmente, defina o responsável e anexe as
-            referências visuais.
+            Escolha o cliente e a pauta, defina o responsável e prepare o briefing.
           </DialogDescription>
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto bg-background px-5 py-5 sm:px-6">
+        <fieldset disabled={saving} className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-background px-5 py-5 sm:px-6">
+          <legend className="sr-only">Dados e briefing da nova demanda</legend>
           <section className="grid gap-4 rounded-[20px] border border-slate-200 bg-white p-5 lg:grid-cols-4">
-            <div className="lg:col-span-2">
+            <div>
               <label className="mb-1.5 block text-sm font-semibold">
-                Cliente / pauta
+                Cliente
               </label>
-              <Select value={boardId} onValueChange={setBoardId}>
-                <SelectTrigger className="w-full rounded-xl">
-                  <SelectValue />
+              <ClientPicker
+                clients={availableClients}
+                value={selectedClientId}
+                disabled={saving || Boolean(createdTaskId)}
+                onSelect={(id) => { setClientId(id); setBoardId(preferredBoard(id)); }}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold">Pauta</label>
+              <Select value={selectedBoardId} onValueChange={setBoardId} disabled={!selectedClientId || !clientBoards.length || saving || Boolean(createdTaskId)}>
+                <SelectTrigger aria-label="Selecionar pauta" className="w-full rounded-xl">
+                  <SelectValue placeholder={selectedClientId ? "Escolha a pauta" : "Escolha o cliente primeiro"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {data.boards
-                    .filter((board) => canPlanClient(data, board.clientId))
-                    .map((board) => (
-                      <SelectItem key={board.id} value={board.id}>
-                        {
-                          data.clients.find(
-                            (client) => client.id === board.clientId,
-                          )?.name
-                        }{" "}
-                        · {board.period}
-                      </SelectItem>
-                    ))}
+                  {clientBoards.map((board) => (
+                    <SelectItem key={board.id} value={board.id}>
+                      {board.period || board.title}{board.status === "completed" ? " · Concluída" : ""}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+            {selectedClientId && !clientBoards.length && <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted p-3 lg:col-span-4">
+              <p role="status" className="text-sm text-muted-foreground">Este cliente ainda não tem uma pauta. Crie uma pasta para receber a demanda.</p>
+              <Button type="button" variant="outline" size="sm" disabled={saving} onClick={() => setCreateBoardOpen(true)}><Plus />Nova pasta</Button>
+            </div>}
+            {!availableClients.length && <p role="status" className="text-sm text-muted-foreground lg:col-span-4">Nenhum cliente liberado para criar demandas. Peça acesso à pasta de um cliente para continuar.</p>}
             <div>
               <label className="mb-1.5 block text-sm font-semibold">
                 Formato
@@ -3235,7 +3277,7 @@ function CreateTaskDialog({
                   changeKind(value as Deliverable["kind"])
                 }
               >
-                <SelectTrigger className="w-full rounded-xl">
+                <SelectTrigger aria-label="Formato da demanda" className="w-full rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -3509,14 +3551,14 @@ function CreateTaskDialog({
               )}
             </div>
           </div>
-        </div>
+        </fieldset>
         <DialogFooter className="border-t border-slate-200 bg-white px-6 py-4">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button variant="ghost" disabled={saving} onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button
             onClick={submit}
-            disabled={saving}
+            disabled={saving || !selectedClientId || !selectedBoardId}
             className="rounded-xl bg-primary"
           >
             {saving ? "Criando e enviando anexos..." : "Criar demanda"}
@@ -3524,6 +3566,17 @@ function CreateTaskDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {createBoardOpen && selectedClientId && <CreateBoardDialog
+      open={createBoardOpen}
+      onOpenChange={setCreateBoardOpen}
+      clientId={selectedClientId}
+      postAction={async (payload, success) => {
+        const result = await postAction(payload, success) as { boardId?: string };
+        if (result.boardId) setBoardId(result.boardId);
+        return result;
+      }}
+    />}
+    </>
   );
 }
 

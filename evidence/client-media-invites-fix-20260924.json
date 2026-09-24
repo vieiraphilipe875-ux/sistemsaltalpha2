@@ -2,7 +2,7 @@
   "date": "2026-09-24",
   "scope": "Client creation retries, avatar/banner persistence, email invites and current-client bulk selection",
   "branch": "postito/release-0.2.0",
-  "status": "published_preview_real_data_recovery_requires_approval",
+  "status": "published_preview_real_data_recovery_completed_after_explicit_consent",
   "client_creation": {
     "user_report": "A file warning after creation suggested failure; resubmitting created a second client and images were not shown.",
     "confirmed_code_causes": [
@@ -31,7 +31,8 @@
         "upload_completion_consumed": false,
         "images_linked_to_client": false
       },
-      "real_names_ids_recipients_and_commercial_amounts_recorded": false
+      "real_names_ids_recipients_and_commercial_amounts_recorded": false,
+      "phase": "Before authorized recovery; historical diagnosis"
     },
     "policy": {
       "validate_all_selected_images_before_creating_client": true,
@@ -62,13 +63,46 @@
       "trust_uploader_custom_metadata_for_size_or_mime": false
     },
     "real_data_recovery": {
-      "image_recovery": "blocked_with_combined_repair_pending_explicit_approval",
-      "duplicate_reconciliation": "blocked_pending_explicit_approval",
-      "remote_repairs_performed": false,
+      "image_recovery": "completed_and_verified_in_database",
+      "duplicate_reconciliation": "duplicate_inactive_forecasts_archived_without_deletion",
+      "remote_repairs_performed": true,
       "remote_data_deleted": false,
       "proposal": "Keep original client and invites, link the two existing verified images, inactivate duplicate, archive its 12 untouched forecasts, preserve reversible audit.",
       "proposal_tested": "Recovery and rollback passed against synthetic PGlite fixtures.",
-      "approval_review": "Rejected combined SQL mutation because specific real client and financial changes were not explicitly authorized. No indirect retry attempted."
+      "approval_review": {
+        "initial_result": "Rejected because specific real client and financial changes lacked explicit authorization",
+        "resolution": "User subsequently explicitly authorized image recovery and the necessary work",
+        "status": "resolved_by_subsequent_explicit_consent",
+        "indirect_bypass_attempted": false
+      },
+      "preconditions_revalidated_before_execution": true,
+      "execution": "Authorized transaction completed successfully in the hosted database",
+      "post_commit_verification": {
+        "status": "passed",
+        "original": {
+          "status": "active",
+          "avatar_linked": true,
+          "banner_linked": true,
+          "completed_media_tickets": 2,
+          "unarchived_forecasts": 12,
+          "archived_forecasts": 0,
+          "linked_invites": 2,
+          "boards": 1,
+          "tasks": 0
+        },
+        "duplicate": {
+          "status": "inactive",
+          "unarchived_forecasts": 0,
+          "archived_forecasts": 12,
+          "linked_invites": 0,
+          "boards": 1,
+          "tasks": 0
+        },
+        "linked_storage_objects": 2,
+        "reversible_audit_records": 1
+      },
+      "rollback_executed_remotely": false,
+      "authenticated_browser_image_rendering": "pending_separate_verification"
     }
   },
   "invites": {
@@ -185,9 +219,11 @@
   "historical_evidence_rewritten": false,
   "limits": [
     "Concurrency tests use isolated PGlite rather than multiple hosted PostgreSQL connections.",
-    "Local browser/API regression passed and Preview is READY. Hosted media rendering and real invite acceptance after this deployment require confirmation.",
+    "Local browser/API regression passed and Preview is READY. Hosted image linkage is verified in the database; authenticated rendering and real invite acceptance still require confirmation.",
     "Provider acceptance is distinct from mailbox delivery and invitation acceptance.",
-    "Existing client data remains unchanged: automatic approval review blocked the combined repair pending explicit consent.",
+    "Automatic approval initially blocked the real-data repair; subsequent explicit user consent resolved that block. Preconditions were revalidated and the authorized transaction was verified after commit.",
     "No real client name, identifier, recipient, token, credential or commercial amount is included."
-  ]
+  ],
+  "manual_remote_database_writes": true,
+  "remote_write_scope": "Only the explicitly authorized recovery of existing client images and reversible duplicate reconciliation"
 }
