@@ -8,12 +8,12 @@ function member(id: string, fields: Partial<Member> = {}): Member {
   return { id, name: id, email: `${id}@example.invalid`, profession: "designer", role: "editor", status: "active", permissions: ["clients.view", "demands.execute"], agencyOwnerId: "agency-visible", clientAccessMode: "selected", createdAt: now.toISOString(), ...fields };
 }
 function task(id: string, fields: Partial<Deliverable> = {}): Deliverable {
-  return { id, boardId: "board-visible", title: `Demanda ${id}`, kind: "carousel", slideCount: 12, hasStoriesVersion: true, status: "production", assigneeId: "ana", dueAt: "2026-09-25T12:00:00Z", notes: "", sourceUrl: "", sortOrder: 0, createdAt: now.toISOString(), updatedAt: now.toISOString(), slides: [], assets: [], attachments: [], references: [], ...fields };
+  return { id, boardId: "board-visible", title: `Demanda ${id}`, kind: "carousel", slideCount: 12, hasStoriesVersion: true, status: "production", columnId: "production", assigneeId: "ana", dueAt: "2026-09-25T12:00:00Z", notes: "", sourceUrl: "", sortOrder: 0, createdAt: now.toISOString(), updatedAt: now.toISOString(), slides: [], assets: [], attachments: [], references: [], ...fields };
 }
 function workspace(members: Member[], deliverables: Deliverable[]): WorkspaceData {
   return {
     agency: { id: "agency-visible", name: "Agência fixture", role: "manager" }, agencies: [], currentMember: members[0], members, deliverables,
-    clients: [], boards: [], clientMembers: [], memberPermissions: [], activity: [], annotations: [], invites: [], transactions: [], financeWorkers: [], workerCompetencies: [], financialDocuments: [], crmLeads: [], crmDeals: [], crmActivities: [],
+    clients: [], boards: [], kanbanBoards: [], clientMembers: [], memberPermissions: [], activity: [], annotations: [], invites: [], transactions: [], financeWorkers: [], workerCompetencies: [], financialDocuments: [], crmLeads: [], crmDeals: [], crmActivities: [],
   };
 }
 

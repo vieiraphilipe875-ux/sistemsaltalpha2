@@ -2,6 +2,8 @@
 
 ## Componentes
 
+Extensão de Kanban de 24/09: `postito.kanban_boards` armazena listas e revisão por cliente (demandas) ou agência/tipo (leads, oportunidades e clientes do CRM). `column_id` nos cartões separa organização de situação operacional/comercial. Defaults preservam IDs das situações anteriores; configuração vazia persistida continua vazia. Mutações de cartões e listas bloqueiam a configuração na mesma transação, antes do cartão; revisão desatualizada retorna 409. Remover lista realoca cartões sem alterar aprovação, resultado ou valores. A migração 0003 é aditiva, faz backfill e instala RLS/grants do papel privado existente. Decisões e QA em `KANBAN-2026-09-24.md`.
+
 Next.js 16 e React 19 na aplicação; Drizzle para acesso a PostgreSQL; PGlite somente para desenvolvimento e testes; `postgres` para a conexão de produção. Supabase hospeda PostgreSQL e arquivos privados. Os adaptadores de e-mail atendem confirmação, recuperação e convites; a configuração Brevo foi salva no Preview em 24/09/2026 e o usuário relatou recebimento. A confirmação apresentou falha após reenvio; sua correção passou na regressão local, foi publicada no Preview e a nova tela foi conferida. A confirmação real depende de novo código do usuário. A autenticação desta versão é própria, implementada no servidor; ela **não usa Supabase Auth**.
 
 O banco fica no schema `postito`, fora da API pública de dados. A migração ativa RLS nas tabelas e revoga acesso público, `anon` e `authenticated`. Na Vercel, a conexão usa `postito_runtime`, um papel exclusivo do backend com leitura e escrita nas tabelas da aplicação. Ele não é proprietário, não pode criar tabelas/papéis e não possui `BYPASSRLS` nem acesso aos dados de `auth`/`storage`.

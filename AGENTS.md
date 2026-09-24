@@ -1,5 +1,7 @@
 # Diretrizes permanentes do Postito
 
+- Kanbans, solicitação posterior de 24/09: permitir adicionar, renomear, recolorir, reordenar e remover todas as listas. Demandas usam configuração por cliente, compartilhada por suas pautas; leads, oportunidades e clientes do CRM usam configurações independentes por agência. Remoção preserva cartões, aprovações e resultados comerciais, transferindo para destino escolhido ou Sem lista. Um quadro salvo vazio não recebe o padrão novamente. Autorizar estrutura e movimentação no servidor e proteger edições concorrentes; situação operacional e posição na lista são campos distintos.
+
 Leia `docs/REQUISITOS.md`, `docs/DESIGN.md`, `docs/ARQUITETURA.md` e `docs/ENTREGA.md` antes de alterar a aplicação. Estes arquivos registram decisões do projeto; instruções explícitas futuras do usuário têm prioridade.
 
 - Organize a execução: reproduzir falha, corrigir, testar o fluxo afetado, revisar regressões, só então avançar.

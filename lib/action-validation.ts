@@ -1,3 +1,4 @@
+import { kanbanKinds } from "./kanban";
 import {validDateInput} from "./dates";
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
@@ -12,17 +13,20 @@ const status=z.enum(["briefing","production","review","changes","approved"]);
 const txStatus=z.enum(["predicted","open","partial","paid","overdue","cancelled"]);
 const url=z.string().max(2048).refine(v=>{try{return ["http:","https:"].includes(new URL(v).protocol);}catch{return false;}},"Link inválido");
 const stringDefault=text.default("");
+const columnId=z.string().min(1).max(80).regex(/^[a-zA-Z0-9_-]+$/);
+const kanbanColumn=z.object({id:columnId,name:z.string().trim().min(1).max(80),color:z.string().regex(/^#[0-9a-f]{6}$/i),status:z.string().max(40).nullable()});
 const schemas={
+ saveKanbanColumns:z.object({kind:z.enum(kanbanKinds),clientId:id.nullable().optional(),expectedRevision:z.number().int().min(0).max(2147483646),columns:z.array(kanbanColumn).max(50),moves:z.array(z.object({fromColumnId:columnId,toColumnId:columnId.nullable()})).max(50).default([])}).refine(p=>p.kind==="demands"?!!p.clientId:!p.clientId,"Escopo de quadro inválido"),
  createClient:z.object({requestId:id.optional(),name:title,handle:stringDefault,driveUrl:z.union([z.literal(""),url]).default(""),period:stringDefault,revenue:money.default(0),dueDay:z.number().int().min(1).max(31).default(5)}),
  updateClient:z.object({id,driveUrl:z.union([z.literal(""),url])}),
  updateClientStatus:z.object({id,status:z.enum(["active","inactive"])}),deleteClient:z.object({id}),
  createBoard:z.object({clientId:id,period:title}),
- createDeliverable:z.object({boardId:id,title,kind:z.enum(["carousel","reels","stories","static"]),slideCount:z.number().int().min(1).max(30),assigneeId:id.nullable(),dueAt:date,notes:stringDefault,hasStoriesVersion:z.boolean().default(false),slides:z.array(z.object({position:z.number().int().min(1).max(30),copy:text,direction:text})).max(30).optional()}),
- updateDeliverable:z.object({id,status:status.optional(),assigneeId:id.nullable().optional(),dueAt:date.optional(),title:title.optional(),notes:text.optional(),sortOrder:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).optional()}),deleteDeliverable:z.object({id}),
+ createDeliverable:z.object({boardId:id,columnId:columnId.nullable().optional(),title,kind:z.enum(["carousel","reels","stories","static"]),slideCount:z.number().int().min(1).max(30),assigneeId:id.nullable(),dueAt:date,notes:stringDefault,hasStoriesVersion:z.boolean().default(false),slides:z.array(z.object({position:z.number().int().min(1).max(30),copy:text,direction:text})).max(30).optional()}),
+ updateDeliverable:z.object({id,columnId:columnId.nullable().optional(),status:status.optional(),assigneeId:id.nullable().optional(),dueAt:date.optional(),title:title.optional(),notes:text.optional(),sortOrder:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).optional()}),deleteDeliverable:z.object({id}),
  saveSlides:z.object({deliverableId:id,expectedSlideIds:z.array(id).max(30),slides:z.array(z.object({position:z.number().int().min(1).max(30),copy:text,direction:text})).min(1).max(30)}),
  addAnnotation:z.object({assetId:id,slideNumber:z.number().int().min(1).max(30),x:z.number().min(0).max(100),y:z.number().min(0).max(100),comment:title}),
  resolveAnnotation:z.object({id,status:z.enum(["open","resolved"])}),
- updateClientCrm:z.object({id,status:z.enum(["prospecting","active","inactive"]).optional(),contactName:text.optional(),phone:text.optional(),email:z.union([z.literal(""),z.string().email()]).optional(),revenue:money.optional(),dueDay:z.number().int().min(1).max(31).optional(),notes:text.optional()}).refine(p=>Object.keys(p).length>1,"Informe uma alteração"),
+ updateClientCrm:z.object({id,columnId:columnId.nullable().optional(),status:z.enum(["prospecting","active","inactive"]).optional(),contactName:text.optional(),phone:text.optional(),email:z.union([z.literal(""),z.string().email()]).optional(),revenue:money.optional(),dueDay:z.number().int().min(1).max(31).optional(),notes:text.optional()}).refine(p=>Object.keys(p).length>1,"Informe uma alteração"),
  createTransaction:z.object({type:z.enum(["income","expense","transfer","contribution","withdrawal","reimbursement","reversal","fee","tax","adjustment"]),amount:money.refine(v=>v>0),paidAmount:money.optional(),category:title,costCenter:stringDefault,account:stringDefault,status:txStatus,competence:month,dueDate:date,paymentDate:date.nullable().optional(),clientId:id.nullable(),counterpart:stringDefault,paymentMethod:stringDefault,recurring:z.boolean(),recurrence:stringDefault,description:title,notes:stringDefault}),
  updateTransaction:z.object({id,status:txStatus.optional(),paidAmount:money.optional(),paymentDate:date.nullable().optional(),description:title.optional(),category:title.optional(),costCenter:text.optional(),account:title.optional(),dueDate:date.optional(),notes:text.optional()}),
  duplicateTransaction:z.object({id}),archiveTransaction:z.object({id}),
@@ -31,11 +35,11 @@ const schemas={
  createWorkerCompetency:z.object({workerId:id,competence:month,dueDate:date.optional(),expectedAmount:money.optional()}),
  updateWorkerCompetency:z.object({id,status:z.enum(["predicted","waiting_document","approved","paid","overdue"]).optional(),invoiceStatus:z.enum(["not_required","waiting","received","validated","divergent"]).optional(),adjustments:z.number().int().min(-2147483647).max(2147483647).optional(),notes:text.optional()}),
  createDeliverableReference:z.object({deliverableId:id,url,description:stringDefault}),
- createCrmLead:z.object({company:title,contactName:stringDefault,email:stringDefault,phone:stringDefault,source:stringDefault,potentialValue:money,nextAction:stringDefault,nextActionAt:date.optional(),notes:stringDefault,ownerId:id.nullable().optional()}),
- updateCrmLead:z.object({id,status:z.enum(["new","research","contacting","connected","qualifying","sql","nurture","disqualified"]).optional(),score:z.number().int().min(0).max(100).optional(),nextAction:text.optional(),nextActionAt:date.nullable().optional(),notes:text.optional()}),
+ createCrmLead:z.object({columnId:columnId.nullable().optional(),company:title,contactName:stringDefault,email:stringDefault,phone:stringDefault,source:stringDefault,potentialValue:money,nextAction:stringDefault,nextActionAt:date.optional(),notes:stringDefault,ownerId:id.nullable().optional()}),
+ updateCrmLead:z.object({id,columnId:columnId.nullable().optional(),status:z.enum(["new","research","contacting","connected","qualifying","sql","nurture","disqualified"]).optional(),score:z.number().int().min(0).max(100).optional(),nextAction:text.optional(),nextActionAt:date.nullable().optional(),notes:text.optional()}),
  convertCrmLead:z.object({id,value:money,closeDate:date.optional()}),
- createCrmDeal:z.object({company:title,contactName:stringDefault,value:money,nextAction:stringDefault,nextActionAt:date.optional(),closeDate:date.optional(),notes:stringDefault,ownerId:id.nullable().optional()}),
- updateCrmDeal:z.object({id,stage:z.enum(["discovery","solution","proposal","negotiation","decision","contract","won","lost"]).optional(),probability:z.number().int().min(0).max(100).optional(),nextAction:text.optional(),nextActionAt:date.nullable().optional(),lossReason:text.nullable().optional()}),
+ createCrmDeal:z.object({columnId:columnId.nullable().optional(),lossReason:text.nullable().optional(),company:title,contactName:stringDefault,value:money,nextAction:stringDefault,nextActionAt:date.optional(),closeDate:date.optional(),notes:stringDefault,ownerId:id.nullable().optional()}),
+ updateCrmDeal:z.object({id,columnId:columnId.nullable().optional(),stage:z.enum(["discovery","solution","proposal","negotiation","decision","contract","won","lost"]).optional(),probability:z.number().int().min(0).max(100).optional(),nextAction:text.optional(),nextActionAt:date.nullable().optional(),lossReason:text.nullable().optional()}),
  createCrmActivity:z.object({leadId:id.nullable().optional(),dealId:id.nullable().optional(),type:z.enum(["call","whatsapp","email","meeting","task","note"]),title,dueAt:date.optional(),notes:text.optional()}),completeCrmActivity:z.object({id}),
 };
 // Parsed payloads are discriminated at the legacy action boundary after runtime validation.
@@ -45,9 +49,17 @@ export function parseAction(raw:unknown):ActionPayload {
  if(!(action in schemas))throw new AppError("Ação inválida.");
  return {action,...schemas[action as keyof typeof schemas].parse(raw)} as ActionPayload;
 }
-type AuthorizationPayload={action:string;id?:string;clientId?:string|null;boardId?:string;deliverableId?:string;assigneeId?:string|null;ownerId?:string|null;status?:string;leadId?:string|null;dealId?:string|null;assetId?:string;revenue?:number;dueDay?:number};
+type AuthorizationPayload={action:string;kind?:string;columnId?:string|null;id?:string;clientId?:string|null;boardId?:string;deliverableId?:string;assigneeId?:string|null;ownerId?:string|null;status?:string;leadId?:string|null;dealId?:string|null;assetId?:string;revenue?:number;dueDay?:number};
 export async function authorizeAction(me:Member,p:AuthorizationPayload) {
  const db=getDb(),a=p.action as string;
+ if (a === "saveKanbanColumns") {
+  const fullScope = me.clientAccessMode === "all" || ["manager", "admin"].includes(me.role);
+  const allowed = p.kind === "demands"
+    ? me.permissions.includes("demands.create") && !!p.clientId && await canAccessClient(me, p.clientId, true)
+    : me.permissions.includes("crm.access") && (p.kind !== "crmClients" || me.permissions.includes("clients.manage") && fullScope);
+  if (!allowed) throw new AppError("Você não pode personalizar as listas deste quadro.", 403);
+  return;
+ }
  let required:PermissionKey;
  if(a.includes("Crm"))required="crm.access";
  else if(a==="createBoard")required="demands.create";
@@ -66,7 +78,7 @@ export async function authorizeAction(me:Member,p:AuthorizationPayload) {
   if(a!=="updateDeliverable" && !await canManageDeliverable(me.id,taskId,me.role))throw new AppError("Você não pode editar esta demanda.",403);
   if(a==="updateDeliverable" && !await canManageDeliverable(me.id,taskId,me.role)) {
     const [task]=await db.select().from(deliverables).where(eq(deliverables.id,taskId)).limit(1);
-    if(!me.permissions.includes("demands.execute") || task?.assigneeId!==me.id || !["production","review"].includes(p.status??"") || Object.keys(p).some(k=>!["action","id","status"].includes(k)))throw new AppError("Você pode iniciar ou enviar para revisão apenas suas demandas.",403);
+    if(!me.permissions.includes("demands.execute") || task?.assigneeId!==me.id || (p.status !== undefined && !["production","review"].includes(p.status)) || (p.status === undefined && p.columnId === undefined) || Object.keys(p).some(k=>!["action","id","status","columnId"].includes(k)))throw new AppError("Você pode organizar, iniciar ou enviar para revisão apenas suas demandas.",403);
   }
  }
  if(p.assetId && !await canAccessAsset(me.id,p.assetId)) throw new AppError("Arquivo não disponível.",403);

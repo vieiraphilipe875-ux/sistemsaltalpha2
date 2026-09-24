@@ -1,3 +1,4 @@
+import { lockDemandKanban, resolveKanbanPlacement } from "./kanban-server";
 import { and, eq, desc } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
@@ -127,11 +128,8 @@ export async function finishUpload(id: string, me: Member) {
       createdAt,
     };
     if (ticket.purpose === "asset") {
-      await db
-        .select({ id: deliverables.id })
-        .from(deliverables)
-        .where(eq(deliverables.id, ticket.targetId))
-        .for("update");
+      const { config, task } = await lockDemandKanban(db, me.agencyOwnerId!, ticket.targetId);
+      const placement = resolveKanbanPlacement(config, task, { status: "review" }, "briefing");
       const [latest] = await db
         .select()
         .from(assets)
@@ -147,7 +145,7 @@ export async function finishUpload(id: string, me: Member) {
         });
       await db
         .update(deliverables)
-        .set({ status: "review", updatedAt: createdAt })
+        .set({ status: "review", columnId: placement.columnId, updatedAt: createdAt })
         .where(eq(deliverables.id, ticket.targetId));
     } else if (ticket.purpose === "attachment") {
       await db

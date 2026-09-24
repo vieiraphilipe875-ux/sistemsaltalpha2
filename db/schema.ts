@@ -1,3 +1,4 @@
+import type { KanbanColumn, KanbanKind } from "../lib/kanban";
 import { index, integer, bigint, boolean, jsonb, primaryKey, real, pgSchema, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const postitoSchema = pgSchema("postito");
@@ -63,6 +64,7 @@ export const agencyInvites = sqliteTable("agency_invites", {
 export const clients = sqliteTable("clients", {
   agencyId: text("agency_id").notNull().references(() => agencies.id, {onDelete:"cascade"}),
   id: text("id").primaryKey(),
+  columnId: text("column_id"),
   name: text("name").notNull(),
   handle: text("handle").notNull().default(""),
   driveUrl: text("drive_url").notNull().default(""),
@@ -78,6 +80,16 @@ export const clients = sqliteTable("clients", {
   notes: text("notes").notNull().default(""),
   createdAt: text("created_at").notNull(),
 });
+
+export const kanbanBoards = sqliteTable("kanban_boards", {
+  id: text("id").primaryKey(),
+  agencyId: text("agency_id").notNull().references(() => agencies.id, { onDelete: "cascade" }),
+  kind: text("kind").$type<KanbanKind>().notNull(),
+  clientId: text("client_id").references(() => clients.id, { onDelete: "cascade" }),
+  revision: integer("revision").notNull().default(0),
+  columns: jsonb("columns").$type<KanbanColumn[]>().notNull(),
+  updatedAt: text("updated_at").notNull(),
+}, table => [index("kanban_boards_agency_idx").on(table.agencyId)]);
 
 export const clientMembers = sqliteTable("client_members", {
   clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
@@ -99,6 +111,7 @@ export const boards = sqliteTable("boards", {
 
 export const deliverables = sqliteTable("deliverables", {
   id: text("id").primaryKey(),
+  columnId: text("column_id"),
   boardId: text("board_id").notNull().references(() => boards.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   kind: text("kind", { enum: ["carousel", "reels", "stories", "static"] }).notNull(),
@@ -268,6 +281,7 @@ export const deliverableReferences = sqliteTable("deliverable_references", {
 
 export const crmLeads = sqliteTable("crm_leads", {
   id: text("id").primaryKey(),
+  columnId: text("column_id"),
   agencyOwnerId: text("agency_owner_id").notNull().references(() => agencies.id, {onDelete:"cascade"}),
   company: text("company").notNull(),
   contactName: text("contact_name").notNull().default(""),
@@ -290,6 +304,7 @@ export const crmLeads = sqliteTable("crm_leads", {
 
 export const crmDeals = sqliteTable("crm_deals", {
   id: text("id").primaryKey(),
+  columnId: text("column_id"),
   agencyOwnerId: text("agency_owner_id").notNull().references(() => agencies.id, {onDelete:"cascade"}),
   leadId: text("lead_id").references(() => crmLeads.id, { onDelete: "set null" }),
   company: text("company").notNull(),

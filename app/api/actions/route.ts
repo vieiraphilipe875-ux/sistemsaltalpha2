@@ -1,3 +1,4 @@
+import { lockKanbanBoard, lockDemandKanban, resolveKanbanPlacement, saveKanbanColumns } from "@/lib/kanban-server";
 import {dateInputToISO} from "@/lib/dates";
 import {futureMonthlyDates} from "@/lib/finance";
 import { bucket } from "@/lib/storage";
@@ -24,12 +25,16 @@ export async function POST(request: Request) {
     const member = authenticated;
     const payload = parseAction(raw);
     await authorizeAction(member,payload);
+    const managesTask = payload.action === "updateDeliverable" ? await canManageDeliverable(member.id, payload.id) : false;
     return await getDb().transaction(async (db) => {
     const can = (permission: PermissionKey) => member.permissions.includes(permission);
     const crmOwnerId = can("crm.access") ? member.agencyOwnerId : null;
     const financeOwnerId = can("finance.access") ? member.agencyOwnerId : null;
     let recordActivity = true;
     async function execute() {
+    if (payload.action === "saveKanbanColumns") {
+      return Response.json(await saveKanbanColumns(db, { agencyId: member.agencyOwnerId!, kind: payload.kind, clientId: payload.clientId }, payload));
+    }
     if (payload.action === "createClient") {
       const result = await createClientRecord(db, member, payload);
       recordActivity = !result.replayed;
@@ -51,7 +56,9 @@ export async function POST(request: Request) {
         const id = crypto.randomUUID();
         const createdAt = new Date().toISOString();
         const hasStoriesVersion = Boolean(payload.hasStoriesVersion);
-        await db.insert(deliverables).values({ id, boardId: payload.boardId, title, kind: payload.kind, slideCount, status: "briefing", assigneeId: payload.assigneeId, dueAt: dateInputToISO(payload.dueAt), notes: payload.notes?.trim() ?? "", sourceUrl: "", sortOrder: Date.now(), createdAt, updatedAt: createdAt, hasStoriesVersion });
+        const config = await lockKanbanBoard(db, { agencyId: member.agencyOwnerId!, kind: "demands", clientId: targetBoard.clientId });
+        const placement = resolveKanbanPlacement(config, null, payload, "briefing");
+        await db.insert(deliverables).values({ columnId: placement.columnId, id, boardId: payload.boardId, title, kind: payload.kind, slideCount, status: placement.status as typeof deliverables.$inferInsert.status, assigneeId: payload.assigneeId, dueAt: dateInputToISO(payload.dueAt), notes: payload.notes?.trim() ?? "", sourceUrl: "", sortOrder: Date.now(), createdAt, updatedAt: createdAt, hasStoriesVersion });
         const draftSlides = Array.from({ length: slideCount }, (_, index) => payload.slides?.find((slide: {position:number;copy:string;direction:string}) => slide.position === index + 1) ?? { position: index + 1, copy: "", direction: "" });
         await db.insert(slides).values(draftSlides.map((slide) => ({ id: crypto.randomUUID(), deliverableId: id, position: slide.position, copy: slide.copy?.trim() ?? "", direction: slide.direction?.trim() ?? "" })));
         return Response.json({ ok: true, id });
@@ -71,9 +78,11 @@ export async function POST(request: Request) {
 
     if (payload.action === "updateClientStatus") {
       if (!can("clients.manage") && !can("crm.access")) return Response.json({ error: "Você não pode alterar o status deste cliente." }, { status: 403 });
-      const [client] = await db.select().from(clients).where(eq(clients.id, payload.id)).limit(1);
+      const config = await lockKanbanBoard(db, { agencyId: member.agencyOwnerId!, kind: "crmClients" });
+      const [client] = await db.select().from(clients).where(eq(clients.id, payload.id)).limit(1).for("update");
       if (!client) return Response.json({ error: "Cliente não encontrado." }, { status: 404 });
-      await db.update(clients).set({ status: payload.status }).where(eq(clients.id, client.id));
+      const placement = resolveKanbanPlacement(config, client, payload, "active");
+      await db.update(clients).set({ status: payload.status, columnId: placement.columnId }).where(eq(clients.id, client.id));
       return Response.json({ ok: true });
     }
 
@@ -109,15 +118,13 @@ export async function POST(request: Request) {
     }
 
     if (payload.action === "updateDeliverable") {
-      const allowed = true;
-      if (!allowed) return Response.json({ error: "Você não pode editar esta demanda." }, { status: 403 });
-      if (!can("demands.create") && can("demands.execute")) {
-        const statusAllowed = payload.status === "production" || payload.status === "review";
-        const attemptedDetails = "assigneeId" in payload || payload.dueAt || payload.title || typeof payload.notes === "string";
-        if (!statusAllowed || attemptedDetails) return Response.json({ error: "Profissionais de produção só podem iniciar a demanda ou enviá-la para revisão." }, { status: 403 });
+      const { config, task } = await lockDemandKanban(db, member.agencyOwnerId!, payload.id);
+      const placement = resolveKanbanPlacement(config, task, payload, "briefing");
+      if (!managesTask) {
+        const destination = config.columns.find(column => column.id === payload.columnId);
+        if ((destination?.status && !["production", "review"].includes(destination.status)) || (payload.status && !["production", "review"].includes(payload.status))) throw new AppError("Profissionais de produção só podem iniciar, enviar para revisão ou organizar suas demandas em listas personalizadas.", 403);
       }
-      const update: Record<string, string | number | null> = { updatedAt: new Date().toISOString() };
-      if (payload.status) update.status = payload.status;
+      const update: Record<string, string | number | null> = { updatedAt: new Date().toISOString(), status: placement.status, columnId: placement.columnId };
       if (typeof payload.sortOrder === "number") update.sortOrder = payload.sortOrder;
       if ("assigneeId" in payload) update.assigneeId = payload.assigneeId ?? null;
       if (payload.dueAt) update.dueAt = dateInputToISO(payload.dueAt);
@@ -158,7 +165,9 @@ export async function POST(request: Request) {
 
       const [asset] = await db.select().from(assets).where(eq(assets.id, payload.assetId)).limit(1);
       if (asset) {
-        await db.update(deliverables).set({ status: "changes", updatedAt: new Date().toISOString() }).where(eq(deliverables.id, asset.deliverableId));
+        const { config, task } = await lockDemandKanban(db, member.agencyOwnerId!, asset.deliverableId);
+        const placement = resolveKanbanPlacement(config, task, { status: "changes" }, "briefing");
+        await db.update(deliverables).set({ status: "changes", columnId: placement.columnId, updatedAt: new Date().toISOString() }).where(eq(deliverables.id, asset.deliverableId));
       }
 
       return Response.json({ ok: true, annotation: row });
@@ -173,7 +182,11 @@ export async function POST(request: Request) {
     if (payload.action === "updateClientCrm") {
       if (!can("crm.access")) return Response.json({ error: "Você não tem acesso ao CRM." }, { status: 403 });
       const clientId = payload.id;
-      const changes = { status: payload.status, contactName: payload.contactName, phone: payload.phone, email: payload.email, notes: payload.notes, revenue: payload.revenue, dueDay: payload.dueDay };
+      const config = await lockKanbanBoard(db, { agencyId: member.agencyOwnerId!, kind: "crmClients" });
+      const [client] = await db.select().from(clients).where(eq(clients.id, clientId)).limit(1).for("update");
+      if (!client) throw new AppError("Cliente não disponível.", 404);
+      const placement = resolveKanbanPlacement(config, client, payload, "active");
+      const changes = { status: placement.status as typeof client.status, columnId: placement.columnId, contactName: payload.contactName, phone: payload.phone, email: payload.email, notes: payload.notes, revenue: payload.revenue, dueDay: payload.dueDay };
       await db.update(clients).set(changes).where(eq(clients.id, clientId));
       // Contact/status edits must never rewrite hidden financial values or forecasts.
       if (payload.revenue !== undefined || payload.dueDay !== undefined) {
@@ -324,7 +337,9 @@ export async function POST(request: Request) {
       const company = payload.company.trim();
       if (!company) return Response.json({ error: "Informe a empresa ou nome do lead." }, { status: 400 });
       const createdAt = new Date().toISOString();
-      const row = { id: crypto.randomUUID(), agencyOwnerId: crmOwnerId, company, contactName: payload.contactName.trim(), email: payload.email.trim(), phone: payload.phone.trim(), source: payload.source.trim() || "Manual", status: "new" as const, score: 0, potentialValue: Math.max(0, Number(payload.potentialValue) || 0), nextAction: payload.nextAction.trim(), nextActionAt: payload.nextActionAt ? dateInputToISO(payload.nextActionAt) : null, notes: payload.notes.trim(), ownerId: payload.ownerId || member.id, createdAt, updatedAt: createdAt };
+      const config = await lockKanbanBoard(db, { agencyId: crmOwnerId, kind: "crmLeads" });
+      const placement = resolveKanbanPlacement(config, null, payload, "new");
+      const row = { columnId: placement.columnId, id: crypto.randomUUID(), agencyOwnerId: crmOwnerId, company, contactName: payload.contactName.trim(), email: payload.email.trim(), phone: payload.phone.trim(), source: payload.source.trim() || "Manual", status: placement.status as typeof crmLeads.$inferInsert.status, score: 0, potentialValue: Math.max(0, Number(payload.potentialValue) || 0), nextAction: payload.nextAction.trim(), nextActionAt: payload.nextActionAt ? dateInputToISO(payload.nextActionAt) : null, notes: payload.notes.trim(), ownerId: payload.ownerId || member.id, createdAt, updatedAt: createdAt };
       await db.insert(crmLeads).values(row);
       if (row.nextAction) await db.insert(crmActivities).values({ id: crypto.randomUUID(), agencyOwnerId: crmOwnerId, leadId: row.id, dealId: null, type: "task", title: row.nextAction, dueAt: row.nextActionAt, status: "pending", notes: "", createdBy: member.id, createdAt });
       return Response.json({ ok: true, id: row.id });
@@ -332,10 +347,11 @@ export async function POST(request: Request) {
 
     if (payload.action === "updateCrmLead") {
       if (!crmOwnerId) return Response.json({ error: "Acesso negado." }, { status: 403 });
+      const config = await lockKanbanBoard(db, { agencyId: crmOwnerId, kind: "crmLeads" });
       const [lead] = await db.select().from(crmLeads).where(and(eq(crmLeads.id, payload.id), eq(crmLeads.agencyOwnerId, crmOwnerId))).limit(1).for("update");
       if (!lead) return Response.json({ error: "Lead não encontrado." }, { status: 404 });
-      const update: Record<string, unknown> = { updatedAt: new Date().toISOString() };
-      if (payload.status) update.status = payload.status;
+      const placement = resolveKanbanPlacement(config, lead, payload, "new");
+      const update: Record<string, unknown> = { updatedAt: new Date().toISOString(), status: placement.status, columnId: placement.columnId };
       if (typeof payload.score === "number") update.score = Math.max(0, Math.min(100, payload.score));
       if (typeof payload.nextAction === "string") update.nextAction = payload.nextAction.trim();
       if ("nextActionAt" in payload) update.nextActionAt = payload.nextActionAt ? dateInputToISO(payload.nextActionAt) : null;
@@ -346,21 +362,29 @@ export async function POST(request: Request) {
 
     if (payload.action === "convertCrmLead") {
       if (!crmOwnerId) return Response.json({ error: "Acesso negado." }, { status: 403 });
+      const leadConfig = await lockKanbanBoard(db, { agencyId: crmOwnerId, kind: "crmLeads" });
+      const dealConfig = await lockKanbanBoard(db, { agencyId: crmOwnerId, kind: "crmDeals" });
       const [lead] = await db.select().from(crmLeads).where(and(eq(crmLeads.id, payload.id), eq(crmLeads.agencyOwnerId, crmOwnerId))).limit(1).for("update");
       if (!lead) return Response.json({ error: "Lead não encontrado." }, { status: 404 });
       const [existingDeal] = await db.select().from(crmDeals).where(and(eq(crmDeals.leadId, lead.id),eq(crmDeals.agencyOwnerId,crmOwnerId))).limit(1);
       if(existingDeal) return Response.json({ok:true,dealId:existingDeal.id});
       const createdAt = new Date().toISOString();
       const dealId = crypto.randomUUID();
-      await db.insert(crmDeals).values({ id: dealId, agencyOwnerId: crmOwnerId, leadId: lead.id, company: lead.company, contactName: lead.contactName, value: Math.max(0, Number(payload.value) || lead.potentialValue), stage: "discovery", probability: 10, nextAction: lead.nextAction || "Agendar discovery", nextActionAt: lead.nextActionAt, closeDate: payload.closeDate ? dateInputToISO(payload.closeDate) : null, ownerId: lead.ownerId, notes: lead.notes, lossReason: null, createdAt, updatedAt: createdAt });
-      await db.update(crmLeads).set({ status: "sql", updatedAt: createdAt }).where(eq(crmLeads.id, lead.id));
+      const dealPlacement = resolveKanbanPlacement(dealConfig, null, {}, "discovery");
+      const leadPlacement = resolveKanbanPlacement(leadConfig, lead, { status: "sql" }, "new");
+      await db.insert(crmDeals).values({ columnId: dealPlacement.columnId, id: dealId, agencyOwnerId: crmOwnerId, leadId: lead.id, company: lead.company, contactName: lead.contactName, value: Math.max(0, Number(payload.value) || lead.potentialValue), stage: "discovery", probability: 10, nextAction: lead.nextAction || "Agendar discovery", nextActionAt: lead.nextActionAt, closeDate: payload.closeDate ? dateInputToISO(payload.closeDate) : null, ownerId: lead.ownerId, notes: lead.notes, lossReason: null, createdAt, updatedAt: createdAt });
+      await db.update(crmLeads).set({ status: "sql", columnId: leadPlacement.columnId, updatedAt: createdAt }).where(eq(crmLeads.id, lead.id));
       return Response.json({ ok: true, dealId });
     }
 
     if (payload.action === "createCrmDeal") {
       if (!crmOwnerId) return Response.json({ error: "Acesso negado." }, { status: 403 });
       const createdAt = new Date().toISOString();
-      const row = { id: crypto.randomUUID(), agencyOwnerId: crmOwnerId, leadId: null, company: payload.company.trim(), contactName: payload.contactName.trim(), value: Math.max(0, Number(payload.value) || 0), stage: "discovery" as const, probability: 10, nextAction: payload.nextAction.trim(), nextActionAt: payload.nextActionAt ? dateInputToISO(payload.nextActionAt) : null, closeDate: payload.closeDate ? dateInputToISO(payload.closeDate) : null, ownerId: payload.ownerId || member.id, notes: payload.notes.trim(), lossReason: null, createdAt, updatedAt: createdAt };
+      const config = await lockKanbanBoard(db, { agencyId: crmOwnerId, kind: "crmDeals" });
+      const placement = resolveKanbanPlacement(config, null, payload, "discovery");
+      const probabilities: Record<string, number> = { discovery: 10, solution: 35, proposal: 50, negotiation: 65, decision: 80, contract: 90, won: 100, lost: 0 };
+      if (placement.status === "lost" && !payload.lossReason?.trim()) throw new AppError("Informe o motivo da perda.");
+      const row = { columnId: placement.columnId, id: crypto.randomUUID(), agencyOwnerId: crmOwnerId, leadId: null, company: payload.company.trim(), contactName: payload.contactName.trim(), value: Math.max(0, Number(payload.value) || 0), stage: placement.status as typeof crmDeals.$inferInsert.stage, probability: probabilities[placement.status] ?? 10, nextAction: payload.nextAction.trim(), nextActionAt: payload.nextActionAt ? dateInputToISO(payload.nextActionAt) : null, closeDate: payload.closeDate ? dateInputToISO(payload.closeDate) : null, ownerId: payload.ownerId || member.id, notes: payload.notes.trim(), lossReason: placement.status === "lost" ? payload.lossReason?.trim() || null : null, createdAt, updatedAt: createdAt };
       if (!row.company) return Response.json({ error: "Informe a empresa." }, { status: 400 });
       await db.insert(crmDeals).values(row);
       return Response.json({ ok: true, id: row.id });
@@ -368,16 +392,18 @@ export async function POST(request: Request) {
 
     if (payload.action === "updateCrmDeal") {
       if (!crmOwnerId) return Response.json({ error: "Acesso negado." }, { status: 403 });
-      const [deal] = await db.select().from(crmDeals).where(and(eq(crmDeals.id, payload.id), eq(crmDeals.agencyOwnerId, crmOwnerId))).limit(1);
+      const config = await lockKanbanBoard(db, { agencyId: crmOwnerId, kind: "crmDeals" });
+      const [deal] = await db.select().from(crmDeals).where(and(eq(crmDeals.id, payload.id), eq(crmDeals.agencyOwnerId, crmOwnerId))).limit(1).for("update");
       if (!deal) return Response.json({ error: "Oportunidade não encontrada." }, { status: 404 });
       const probabilities: Record<string, number> = { discovery: 10, solution: 35, proposal: 50, negotiation: 65, decision: 80, contract: 90, won: 100, lost: 0 };
-      const update: Record<string, unknown> = { updatedAt: new Date().toISOString() };
-      if (payload.stage) { update.stage = payload.stage; update.probability = probabilities[payload.stage] ?? deal.probability; }
+      const placement = resolveKanbanPlacement(config, { columnId: deal.columnId, status: deal.stage }, { columnId: payload.columnId, status: payload.stage }, "discovery");
+      const update: Record<string, unknown> = { updatedAt: new Date().toISOString(), stage: placement.status, columnId: placement.columnId };
+      if (placement.status !== deal.stage || payload.stage) update.probability = probabilities[placement.status] ?? deal.probability;
       if (typeof payload.probability === "number") update.probability = Math.max(0, Math.min(100, payload.probability));
       if (typeof payload.nextAction === "string") update.nextAction = payload.nextAction.trim();
       if ("nextActionAt" in payload) update.nextActionAt = payload.nextActionAt ? dateInputToISO(payload.nextActionAt) : null;
       if ("lossReason" in payload) update.lossReason = payload.lossReason?.trim() || null;
-      if (payload.stage === "lost" && !update.lossReason) return Response.json({ error: "Informe o motivo da perda." }, { status: 400 });
+      if (placement.status === "lost" && !("lossReason" in update ? update.lossReason : deal.lossReason)) return Response.json({ error: "Informe o motivo da perda." }, { status: 400 });
       await db.update(crmDeals).set(update).where(eq(crmDeals.id, payload.id));
       return Response.json({ ok: true });
     }

@@ -43,3 +43,6 @@
 .member-picker-popover [data-slot="command-group"]{padding:0 10px 10px}
 .member-picker-popover [data-slot="command-item"]{padding:11px 10px;gap:10px}
 @media(max-width:760px){[data-slot="command-input-wrapper"] [data-slot="command-input"]{font-size:16px}}
+.customizable-kanban{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(245px,1fr);max-width:100%;min-width:0}
+.customizable-kanban .kanban-column-heading h2{overflow-wrap:anywhere}
+@media(max-width:767px){.customizable-kanban{grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:minmax(0,1fr)}}

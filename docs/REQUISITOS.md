@@ -65,6 +65,8 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 
 ## Ordem de execução
 
+- U44, solicitação posterior de 24/09: personalizar listas dos Kanbans de demandas/pautas e CRM. Oferecer nomes, cores, ordem, adição e remoção, inclusive remover todas e recomeçar. Preservar cartões ao remover listas, com destino escolhido ou Sem lista. Configuração por cliente nas demandas e por agência em cada quadro do CRM; persistência, permissões e conflitos de edição testados. Detalhes em `KANBAN-2026-09-24.md`. O vídeo de funcionalidades futuras será avaliado quando enviado, com custos separados desta implementação.
+
 1. Consolidar contexto, regras, repositório e serviços existentes.
 2. Reproduzir falhas da base e corrigir com testes.
 3. Preservar o acesso administrativo solicitado e remover a troca de senha pelo perfil sem e-mail, conforme a decisão mais recente do titular.

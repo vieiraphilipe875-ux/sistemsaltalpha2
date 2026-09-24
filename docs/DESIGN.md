@@ -104,6 +104,8 @@ Abas podem transicionar o indicador de seleção. Botões de gravação podem ex
 
 ## Regra para novas telas e verificação
 
+Kanbans personalizáveis: ação Personalizar listas junto aos controles do quadro; diálogo com nomes, paleta/cor livre, ordem, adição e remoção. A cor marca a borda e uma superfície suave, mantendo texto escuro legível. Oferecer seletor de lista por cartão além do arraste. Quadros vazios explicam como começar e Sem lista mantém os cartões sem destino. No editor, informar o efeito de uma lista padrão sobre a situação do cartão e o destino das listas removidas; conflitos conservam o rascunho. Não esconder aprovações/resultados ao renomear uma lista.
+
 Antes de desenhar, escrever: quem usa, que decisão precisa tomar, qual ação principal, quais informações são necessárias e quais estados podem ocorrer. Reutilizar a paleta e a tipografia, escolhendo a estrutura adequada ao conteúdo. Conferir vazio, carregamento, erro, acesso negado, texto longo, foco por teclado e tela estreita. Guardar capturas e resultados da versão testada.
 
 Este documento, `docs/REDESIGN-2026-09-24.md` e `AGENTS.md` registram a direção vigente. `docs/REDESIGN-2026-09-23.md` preserva o histórico. A conclusão dos testes deve ser preenchida no registro da rodada com evidência real, sem herdar automaticamente a aprovação de versões anteriores.

@@ -1,3 +1,4 @@
+import { lockKanbanBoard, resolveKanbanPlacement } from "./kanban-server";
 import { createHash, randomUUID } from "node:crypto";
 import { and, asc, eq } from "drizzle-orm";
 import type { PgliteDatabase } from "drizzle-orm/pglite";
@@ -42,8 +43,10 @@ export async function createClientRecord(db: Transaction, member: Member, payloa
   const createdAt = new Date().toISOString();
   const revenue = Math.max(0, Math.round(Number(payload.revenue) || 0));
   const dueDay = Math.max(1, Math.min(31, Math.round(Number(payload.dueDay) || 5)));
+  const config = await lockKanbanBoard(db, { agencyId, kind: "crmClients" });
+  const placement = resolveKanbanPlacement(config, null, {}, "active");
   const [inserted] = await db.insert(clients).values({
-    id: clientId, agencyId, name, handle: payload.handle.trim(), driveUrl: payload.driveUrl.trim(),
+    id: clientId, agencyId, columnId: placement.columnId, name, handle: payload.handle.trim(), driveUrl: payload.driveUrl.trim(),
     accent: ["#64745d", "#ae805b", "#6b8183", "#978362"][name.length % 4], revenue, dueDay, createdAt,
   }).onConflictDoNothing({ target: clients.id }).returning({ id: clients.id });
 

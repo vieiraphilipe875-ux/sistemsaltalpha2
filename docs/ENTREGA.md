@@ -1,5 +1,15 @@
 # Postito — entrega e verificação
 
+## Kanbans personalizáveis em 24/09/2026: QA local aprovado, publicação pendente
+
+Demandas dentro do cliente e quadros de leads, oportunidades e clientes do CRM agora oferecem Personalizar listas: adicionar, renomear, colorir, ordenar e remover inclusive todas as listas padrão. As configurações persistem por cliente ou agência. Remoções realocam os cartões para o destino escolhido ou Sem lista, preservando conteúdos, histórico, aprovações e resultados comerciais. Permissões continuam verificadas no servidor; conflitos conservam o rascunho e impedem sobrescrita silenciosa.
+
+**93 testes unitários e 94 cenários de API/navegador passaram (38 API e 56 navegador).** Lint: zero erros e 31 avisos preexistentes. A cobertura nova inclui dois testes de migração sobre dados anteriores, nove cenários de API e sete de navegador, com teclado e telas de 390/320 px. As cinco capturas foram inspecionadas. TypeScript e build aprovados (compilação 3,3 s, TypeScript 8,7 s), com o aviso preexistente de file tracing. Migração remota aplicada e conferida; publicação direcionada ao Preview existente. A operação autenticada hospedada não integra esta verificação.
+
+A primeira tentativa parou por campos obrigatórios omitidos na fixture de API; a segunda, por falta da seleção de responsável na nova fixture de interface. Ambos os testes foram corrigidos e a terceira regressão completa passou. Não foi necessário alterar o produto por essas falhas de teste. Detalhes em `docs/KANBAN-2026-09-24.md`; execução em `evidence/kanban-regression-20260924.json`.
+
+Validação com contas/agências, banco, arquivos e e-mails locais isolados. Não comprova entrega real do convite nem uso autenticado hospedado. O relato de convite ausente continua separado desta função; não houve novo envio real na regressão.
+
 ## Landing v5 e ajustes pendentes: publicada no Preview
 
 Reformulação da landing com abertura centralizada, colagem de telas em expansão, leitura progressiva e três capítulos horizontais ligados ao scroll. Movimento restrito à LP, com leitura vertical/toque nativo no celular e fallback estático. Inclui omissão das mensalidades/vencimentos sem finance.access, abas financeiras responsivas, foco integral na busca de colaboradores e orientação de localização do convite.

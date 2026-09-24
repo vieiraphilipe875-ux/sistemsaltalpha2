@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-24",
+  "scope": [
+    "demandas por cliente",
+    "CRM leads",
+    "CRM oportunidades",
+    "CRM clientes"
+  ],
+  "qa": {
+    "unit": 93,
+    "api": 38,
+    "browser": 56,
+    "typecheck": "passed",
+    "build": "passed",
+    "lint": {
+      "errors": 0,
+      "preexisting_warnings": 31
+    },
+    "viewport_widths": [
+      1440,
+      390,
+      320
+    ]
+  },
+  "database": {
+    "migration": "0003_outstanding_toad",
+    "sha256": "84a9cb093fba713c465ae05aee92257c06dbfecc7b30fe22e0c736cf595f4240",
+    "applied": true,
+    "previous_rows_unchanged_except_new_column": true,
+    "backfill_verified": true,
+    "rls_enabled": true,
+    "public_grants": false,
+    "runtime_policy": "postito_backend_access",
+    "advisors": "Nenhum achado na tabela nova; INFO preexistente no histórico privado Drizzle."
+  },
+  "publishing_target": "Preview postito/release-0.2.0",
+  "limits": [
+    "Sem homologação autenticada hospedada",
+    "Convite ausente continua em investigação; nenhuma mensagem real foi enviada nesta rodada",
+    "Chromium local; Safari/Firefox e concorrência entre conexões remotas não homologados"
+  ],
+  "captures": [
+    "kanban-custom-desktop.png",
+    "kanban-empty-preserved.png",
+    "kanban-conflict.png",
+    "kanban-editor-mobile.png",
+    "kanban-crm-clients.png"
+  ],
+  "regression": "kanban-regression-20260924.json"
+}

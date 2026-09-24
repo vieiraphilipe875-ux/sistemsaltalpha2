@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {readdir,readFile} from 'node:fs/promises';
+import {runKanbanFlows} from './kanban-flows.mjs';
 export async function runFlows({base,mailDir,check}){
  await check('Saúde do banco sem exposição de dados ou cache',async()=>{
   const response=await fetch(base+'/api/health');
@@ -429,5 +430,6 @@ export async function runFlows({base,mailDir,check}){
   assert.notEqual((await owner.workspace()).clients.find(c=>c.id===c1.clientId).avatarUrl,first.avatarUrl);
   for(const kind of ['avatar','banner'])await owner.req(`/api/clients/${c1.clientId}/media?kind=${kind}`,null,200,'DELETE');
  });
- return {owner,editor,reader,outside,agency,c1,task,password,emailFor};
+ const kanban=await runKanbanFlows({Actor,register,check,outside,foreignClientId:c1.clientId});
+ return {owner,editor,reader,outside,agency,c1,task,password,emailFor,kanban};
 }

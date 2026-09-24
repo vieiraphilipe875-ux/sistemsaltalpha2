@@ -12,6 +12,7 @@ export type Member = {
 };
 
 export type Client = {
+  columnId: string | null;
   id: string;
   name: string;
   handle: string;
@@ -89,6 +90,7 @@ export type Annotation = {
 };
 
 export type Deliverable = {
+  columnId: string | null;
   id: string;
   boardId: string;
   title: string;
@@ -118,6 +120,7 @@ export type DeliverableReference = {
 };
 
 export type WorkspaceData = {
+  kanbanBoards: import("./kanban").KanbanBoardConfig[];
   agency: {id:string;name:string;role:string};
   agencies: {id:string;name:string;role:string}[];
   invites: {id:string;email:string|null;role:string;clientIds:string[];expiresAt:string;usedAt:string|null;revokedAt:string|null}[];
@@ -140,12 +143,14 @@ export type WorkspaceData = {
 };
 
 export type CrmLead = {
+  columnId: string | null;
   id: string; agencyOwnerId: string; company: string; contactName: string; email: string; phone: string; source: string;
   status: "new" | "research" | "contacting" | "connected" | "qualifying" | "sql" | "nurture" | "disqualified";
   score: number; potentialValue: number; nextAction: string; nextActionAt: string | null; notes: string; ownerId: string | null; createdAt: string; updatedAt: string;
 };
 
 export type CrmDeal = {
+  columnId: string | null;
   id: string; agencyOwnerId: string; leadId: string | null; company: string; contactName: string; value: number;
   stage: "discovery" | "solution" | "proposal" | "negotiation" | "decision" | "contract" | "won" | "lost";
   probability: number; nextAction: string; nextActionAt: string | null; closeDate: string | null; ownerId: string | null; notes: string; lossReason: string | null; createdAt: string; updatedAt: string;

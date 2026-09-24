@@ -5,6 +5,8 @@ import {parseMoney} from "@/lib/finance";
 import { CLIENT_IMAGE_ACCEPT, CLIENT_IMAGE_HINT, clientImageError } from "@/lib/client-media-policy";
 import { CLIENT_IMAGE_CROP_SPECS } from "@/lib/client-image-crop";
 import { ClientImageCropDialog } from "@/components/client-image-crop-dialog";
+import { KanbanColumnsEditor, KanbanMoveSelect } from "@/components/kanban-columns-editor";
+import { getKanbanBoard } from "@/lib/kanban";
 
 import {
   canPlanClient,
@@ -102,7 +104,6 @@ import {
 } from "@/components/ui/attachment";
 import type {
   Annotation,
-  CrmDeal,
   CrmLead,
   Deliverable,
   Member,
@@ -1198,7 +1199,7 @@ function ClientBoard({
   onRefresh(): Promise<void>;
 }) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [overStatus, setOverStatus] = useState<Deliverable["status"] | null>(
+  const [overStatus, setOverStatus] = useState<string | null>(
     null,
   );
   const [driveOpen, setDriveOpen] = useState(false);
@@ -1226,25 +1227,29 @@ function ClientBoard({
   );
   const currentPermissions = permissionsFor(data, data.currentMember);
   const canManageClient = currentPermissions.includes("clients.manage");
-  const groups: { key: Deliverable["status"]; label: string }[] = [
-    { key: "briefing", label: "Briefing" },
-    { key: "production", label: "Em produção" },
-    { key: "review", label: "Em revisão" },
-    { key: "changes", label: "Alterações" },
-    ...(!currentPermissions.includes("demands.execute") ||
-    currentPermissions.includes("demands.create")
-      ? [{ key: "approved" as const, label: "Aprovadas" }]
+  const kanban = getKanbanBoard(data.kanbanBoards, "demands", client.id);
+  const canManageLists = canPlanClient(data, client.id);
+  const allClientTasks = data.deliverables.filter(item => boards.some(board => board.id === item.boardId));
+  const columnCounts = Object.fromEntries(kanban.columns.map(column => [column.id, allClientTasks.filter(item => item.columnId === column.id).length]));
+  const groups = [
+    ...kanban.columns,
+    ...(tasks.some(item => !item.columnId || !kanban.columns.some(column => column.id === item.columnId))
+      ? [{id: "__unassigned", name: "Sem lista", color: "#E8EBEF", status: null}]
       : []),
   ];
 
   const [createBoardOpen, setCreateBoardOpen] = useState(false);
 
-  async function move(status: Deliverable["status"]) {
+  async function move(columnId: string) {
     if (!draggingId) return;
+    const target = groups.find(group => group.id === columnId);
+    const task = tasks.find(item => item.id === draggingId);
+    if (!target || !task || !canExecuteTask(data, task)) return;
+    if (!canPlanTask(data, task) && target.status && !["production", "review"].includes(target.status)) return;
     try {
       await postAction(
-        { action: "updateDeliverable", id: draggingId, status },
-        `Demanda movida para ${statusMeta[status].label}`,
+        { action: "updateDeliverable", id: draggingId, columnId: columnId === "__unassigned" ? null : columnId },
+        `Demanda movida para ${target.name}`,
       );
     } catch (error) {
       toast.error(
@@ -1402,39 +1407,45 @@ function ClientBoard({
               <Plus className="size-4 mr-1" /> Nova Pasta
             </Button>
           )}
+          {canManageLists && <KanbanColumnsEditor config={kanban} postAction={postAction} counts={columnCounts} />}
         </div>
         <p className="hidden items-center gap-2 text-xs font-medium text-slate-500 sm:flex">
           <GripVertical className="size-4" />
-          Arraste as demandas para atualizar o status.
+          Arraste as demandas entre as listas.
         </p>
-        <p className="text-xs text-slate-500 sm:hidden">Abra uma demanda para atualizar o status.</p>
+        <p className="text-xs text-slate-500 sm:hidden">Escolha a lista no cartão para mover a demanda.</p>
       </div>
 
-      <div className="client-kanban mt-5">
+      {!kanban.columns.length && <div className="mt-5 rounded-2xl border border-dashed bg-white p-5"><h2 className="font-semibold">Monte seu fluxo</h2><p className="mt-1 text-sm text-muted-foreground">Este quadro está sem listas. {canManageLists ? "Use Personalizar listas para adicionar a primeira." : "Quem organiza este cliente pode adicionar as listas."} As demandas existentes continuam em Sem lista.</p></div>}
+      <div className="client-kanban customizable-kanban mt-5">
         {groups.map((group) => {
-          const items = tasks.filter((item) => item.status === group.key);
+          const items = tasks.filter((item) => group.id === "__unassigned" ? !item.columnId || !kanban.columns.some(column => column.id === item.columnId) : item.columnId === group.id);
+          const draggedTask = tasks.find(item => item.id === draggingId);
+          const acceptsDrop = !!draggedTask && canExecuteTask(data, draggedTask) && (canPlanTask(data, draggedTask) || !group.status || ["production", "review"].includes(group.status));
           return (
             <section
-              key={group.key}
+              key={group.id}
               onDragOver={(event) => {
+                if (!acceptsDrop) return;
                 event.preventDefault();
-                setOverStatus(group.key);
+                setOverStatus(group.id);
               }}
               onDragLeave={() =>
                 setOverStatus((current) =>
-                  current === group.key ? null : current,
+                  current === group.id ? null : current,
                 )
               }
               onDrop={(event) => {
                 event.preventDefault();
-                void move(group.key as "production" | "review");
+                if (acceptsDrop) void move(group.id);
               }}
-              data-status={group.key}
-              data-drag-over={overStatus === group.key}
+              data-status={group.status ?? "custom"}
+              data-column-id={group.id}
+              data-drag-over={overStatus === group.id}
               className="kanban-column min-w-0 transition"
             >
-              <div className="kanban-column-heading flex items-center justify-between">
-                <h2 className="text-sm font-bold">{group.label}</h2>
+              <div className="kanban-column-heading flex items-center justify-between gap-2" style={{background: `${group.color}35`, borderTop: `3px solid ${group.color}`}}>
+                <h2 className="min-w-0 break-words text-sm font-bold">{group.name}</h2>
                 <span className="rounded-md bg-white/70 px-2 py-0.5 text-xs font-semibold text-foreground">
                   {items.length}
                 </span>
@@ -1746,6 +1757,9 @@ function CompactTask({
 }) {
   const assignee = data.members.find((member) => member.id === item.assigneeId);
   const due = deadline(item);
+  const taskClientId = data.boards.find(board => board.id === item.boardId)?.clientId;
+  const columns = getKanbanBoard(data.kanbanBoards, "demands", taskClientId).columns;
+  const [moving, setMoving] = useState(false);
   return (
     <article
       draggable={draggable}
@@ -1795,6 +1809,17 @@ function CompactTask({
           />
         </div>
       )}
+      {postAction && canExecuteTask(data, item) && <div className="border-t px-3 pb-3">
+        <KanbanMoveSelect columns={columns} value={item.columnId ?? null} label={`Lista de ${item.title}`} disabled={moving}
+          disabledColumnIds={canPlanTask(data,item) ? [] : columns.filter(column => column.status && !["production","review"].includes(column.status)).map(column => column.id)}
+          onChange={async columnId => {
+            if (moving) return;
+            setMoving(true);
+            try { await postAction({action:"updateDeliverable",id:item.id,columnId},"Demanda movida"); }
+            catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível mover a demanda"); }
+            finally { setMoving(false); }
+          }}/>
+      </div>}
     </article>
   );
 }
@@ -2030,6 +2055,7 @@ function TaskSheet({
   const canPlan = canPlanTask(data, item);
   const canExecute = canExecuteTask(data, item);
   const canDelete = canPlan;
+  const taskColumns = getKanbanBoard(data.kanbanBoards, "demands", board?.clientId).columns;
 
   const navigationBusy = saving || uploadingSlide !== null || removingAttachmentId !== null;
 
@@ -2605,6 +2631,12 @@ function TaskSheet({
                   )}
                 </div>
               </div>
+              {canExecute && <div className="max-w-sm px-1 pb-3"><KanbanMoveSelect columns={taskColumns} value={item.columnId ?? null} label="Lista da demanda" disabled={navigationBusy}
+                disabledColumnIds={canPlan ? [] : taskColumns.filter(column => column.status && !["production","review"].includes(column.status)).map(column => column.id)}
+                onChange={async columnId => {
+                  try { await postAction({action:"updateDeliverable",id:item.id,columnId},"Lista atualizada"); }
+                  catch(error) { toast.error(error instanceof Error ? error.message : "Não foi possível mover a demanda"); }
+                }}/></div>}
               <div className="sticky bottom-0 -mx-5 mt-2 flex items-center justify-between gap-3 border-t border-slate-200 bg-white/95 px-5 py-4  sm:-mx-7 sm:px-7">
                 {canPlan ? (
                   <>
@@ -3960,25 +3992,7 @@ function CreateClientDialog({
   );
 }
 
-const crmLeadStages: { key: CrmLead["status"]; label: string }[] = [
-  { key: "new", label: "Novo" },
-  { key: "research", label: "Pesquisando" },
-  { key: "contacting", label: "Tentando contato" },
-  { key: "connected", label: "Conectado" },
-  { key: "qualifying", label: "Qualificando" },
-];
-const crmDealStages: {
-  key: CrmDeal["stage"];
-  label: string;
-  probability: number;
-}[] = [
-  { key: "discovery", label: "Discovery", probability: 10 },
-  { key: "solution", label: "Solução", probability: 35 },
-  { key: "proposal", label: "Proposta", probability: 50 },
-  { key: "negotiation", label: "Negociação", probability: 65 },
-  { key: "decision", label: "Decisão", probability: 80 },
-  { key: "contract", label: "Contrato", probability: 90 },
-];
+const crmLeadStatusLabels: Record<CrmLead["status"], string> = { new: "Novo", research: "Pesquisando", contacting: "Tentando contato", connected: "Conectado", qualifying: "Qualificando", sql: "Qualificado", nurture: "Nutrição", disqualified: "Desqualificado" };
 const money = (value: number) =>
   new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -4002,6 +4016,14 @@ function CrmWorkspace({
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [dragLead, setDragLead] = useState<string | null>(null);
   const [dragDeal, setDragDeal] = useState<string | null>(null);
+  const [movingCard, setMovingCard] = useState<string | null>(null);
+  const [pendingLoss, setPendingLoss] = useState<{ id: string; columnId?: string } | null>(null);
+  const [lossReason, setLossReason] = useState("");
+  const [lossError, setLossError] = useState("");
+  const leadBoard = getKanbanBoard(data.kanbanBoards, "crmLeads");
+  const dealBoard = getKanbanBoard(data.kanbanBoards, "crmDeals");
+  const leadColumns = [...leadBoard.columns, { id: null, name: "Sem lista", color: "#E7EBEF", status: null }];
+  const dealColumns = [...dealBoard.columns, { id: null, name: "Sem lista", color: "#E7EBEF", status: null }];
   const selectedLead =
     data.crmLeads.find((lead) => lead.id === selectedLeadId) ?? null;
   const leads = data.crmLeads.filter((lead) =>
@@ -4027,24 +4049,30 @@ function CrmWorkspace({
     (total, deal) => total + (deal.value * deal.probability) / 100,
     0,
   );
-  async function moveLead(status: CrmLead["status"]) {
-    if (!dragLead) return;
+  async function moveLead(columnId: string | null, id = dragLead) {
+    if (!id || movingCard) return;
+    setMovingCard(id);
     try {
       await postAction(
-        { action: "updateCrmLead", id: dragLead, status },
+        { action: "updateCrmLead", id, columnId },
         "Lead movido",
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao mover lead");
     } finally {
       setDragLead(null);
+      setMovingCard(null);
     }
   }
-  async function moveDeal(stage: CrmDeal["stage"]) {
-    if (!dragDeal) return;
+  async function moveDeal(columnId: string | null, id = dragDeal) {
+    if (!id || movingCard) return;
+    if (dealBoard.columns.find((column) => column.id === columnId)?.status === "lost" && data.crmDeals.find((deal) => deal.id === id)?.stage !== "lost") {
+      setPendingLoss({ id, columnId: columnId! }); setLossReason(""); setLossError(""); setDragDeal(null); return;
+    }
+    setMovingCard(id);
     try {
       await postAction(
-        { action: "updateCrmDeal", id: dragDeal, stage },
+        { action: "updateCrmDeal", id, columnId },
         "Oportunidade movida",
       );
     } catch (e) {
@@ -4053,7 +4081,24 @@ function CrmWorkspace({
       );
     } finally {
       setDragDeal(null);
+      setMovingCard(null);
     }
+  }
+  async function setDealOutcome(id: string, stage: "won" | "lost" | "discovery") {
+    if (movingCard) return;
+    if (stage === "lost") { setPendingLoss({ id }); setLossReason(""); setLossError(""); return; }
+    setMovingCard(id);
+    try { await postAction({ action: "updateCrmDeal", id, stage, lossReason: null }, stage === "won" ? "Venda marcada como ganha" : "Oportunidade reaberta"); }
+    catch (error) { notifyActionError(error); }
+    finally { setMovingCard(null); }
+  }
+  async function confirmLoss() {
+    if (!pendingLoss || movingCard) return;
+    if (!lossReason.trim()) { setLossError("Informe o motivo da perda."); return; }
+    setMovingCard(pendingLoss.id);
+    try { await postAction({ action: "updateCrmDeal", id: pendingLoss.id, ...(pendingLoss.columnId ? { columnId: pendingLoss.columnId } : { stage: "lost" }), lossReason: lossReason.trim() }, "Oportunidade marcada como perdida"); setPendingLoss(null); }
+    catch (error) { setLossError(error instanceof Error ? error.message : "Não foi possível atualizar a oportunidade."); }
+    finally { setMovingCard(null); }
   }
   return (
     <div className="crm-workspace">
@@ -4238,10 +4283,11 @@ function CrmWorkspace({
                 className="rounded-xl bg-white pl-9"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Badge variant="secondary" className="rounded-lg px-3">
                 {data.crmLeads.length} leads
               </Badge>
+              <KanbanColumnsEditor config={leadBoard} postAction={postAction} counts={Object.fromEntries(leadBoard.columns.map((column) => [column.id, data.crmLeads.filter((lead) => lead.columnId === column.id).length]))} />
               <Button
                 onClick={() => setNewLead(true)}
                 className="rounded-xl bg-primary"
@@ -4251,19 +4297,22 @@ function CrmWorkspace({
               </Button>
             </div>
           </div>
-          <div className="crm-kanban grid gap-3 overflow-x-auto pb-3 xl:grid-cols-5">
-            {crmLeadStages.map((stage) => {
-              const items = leads.filter((lead) => lead.status === stage.key);
+          {!leadBoard.columns.length && <p className="mb-3 text-sm text-slate-500">Crie suas listas em Personalizar listas. Todos os leads continuam disponíveis em Sem lista.</p>}
+          <div className="crm-kanban grid grid-flow-col auto-cols-[minmax(250px,1fr)] gap-3 overflow-x-auto pb-3" data-kanban-board="crmLeads">
+            {leadColumns.map((stage) => {
+              const items = leads.filter((lead) => lead.columnId === stage.id);
               return (
                 <section
-                  key={stage.key}
+                  key={stage.id ?? "unassigned"}
+                  data-kanban-column={stage.id ?? "unassigned"}
                   onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => moveLead(stage.key)}
-                  className="crm-stage min-w-[240px] rounded-[18px] bg-muted p-3"
+                  onDrop={(event) => { event.preventDefault(); void moveLead(stage.id); }}
+                  className="crm-stage min-w-0 rounded-[18px] border-t-4 p-3"
+                  style={{ backgroundColor: `${stage.color}35`, borderTopColor: stage.color }}
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                      {stage.label}
+                      {stage.name}
                     </h3>
                     <span className="text-xs font-bold text-slate-400">
                       {items.length}
@@ -4271,13 +4320,14 @@ function CrmWorkspace({
                   </div>
                   <div className="mt-3 space-y-3">
                     {items.map((lead) => (
-                      <button
+                      <article
                         key={lead.id}
-                        draggable
-                        onDragStart={() => setDragLead(lead.id)}
-                        onClick={() => setSelectedLeadId(lead.id)}
+                        draggable={!movingCard}
+                        onDragStart={(event) => { setDragLead(lead.id); event.dataTransfer.setData("text/plain", lead.id); }}
+                        onDragEnd={() => setDragLead(null)}
                         className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-primary"
                       >
+                        <button onClick={() => setSelectedLeadId(lead.id)} className="block w-full rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Abrir lead ${lead.company}`}>
                         <div className="flex items-start justify-between gap-2">
                           <strong className="text-sm">{lead.company}</strong>
                           <Badge className="rounded-md bg-muted text-primary">
@@ -4303,7 +4353,9 @@ function CrmWorkspace({
                             </span>
                           )}
                         </div>
-                      </button>
+                        </button>
+                        <KanbanMoveSelect columns={leadBoard.columns} value={lead.columnId} label={`Mover lead ${lead.company}`} disabled={Boolean(movingCard)} onChange={(columnId) => void moveLead(columnId, lead.id)} />
+                      </article>
                     ))}
                     {!items.length && (
                       <div className="rounded-xl border border-dashed border-slate-200 py-8 text-center text-xs text-slate-400">
@@ -4317,7 +4369,7 @@ function CrmWorkspace({
           </div>
         </TabsContent>
         <TabsContent value="deals" className="mt-5">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-black">Pipeline comercial</h2>
               <p className="text-sm text-slate-500">
@@ -4325,6 +4377,8 @@ function CrmWorkspace({
                 oportunidades abertas.
               </p>
             </div>
+            <div className="flex flex-wrap gap-2">
+            <KanbanColumnsEditor config={dealBoard} postAction={postAction} counts={Object.fromEntries(dealBoard.columns.map((column) => [column.id, data.crmDeals.filter((deal) => deal.columnId === column.id).length]))} />
             <Button
               onClick={() => setNewDeal(true)}
               className="rounded-xl bg-primary"
@@ -4332,20 +4386,24 @@ function CrmWorkspace({
               <Plus />
               Oportunidade
             </Button>
+            </div>
           </div>
-          <div className="crm-kanban grid gap-3 overflow-x-auto pb-3 xl:grid-cols-6">
-            {crmDealStages.map((stage) => {
-              const items = openDeals.filter((d) => d.stage === stage.key);
+          {!dealBoard.columns.length && <p className="mb-3 text-sm text-slate-500">Crie suas listas em Personalizar listas. As oportunidades continuam em Sem lista.</p>}
+          <div className="crm-kanban grid grid-flow-col auto-cols-[minmax(250px,1fr)] gap-3 overflow-x-auto pb-3" data-kanban-board="crmDeals">
+            {dealColumns.map((stage) => {
+              const items = data.crmDeals.filter((deal) => deal.columnId === stage.id);
               return (
                 <section
-                  key={stage.key}
+                  key={stage.id ?? "unassigned"}
+                  data-kanban-column={stage.id ?? "unassigned"}
                   onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => moveDeal(stage.key)}
-                  className="crm-stage min-w-[220px] rounded-[18px] bg-muted p-3"
+                  onDrop={(event) => { event.preventDefault(); void moveDeal(stage.id); }}
+                  className="crm-stage min-w-0 rounded-[18px] border-t-4 p-3"
+                  style={{ backgroundColor: `${stage.color}35`, borderTopColor: stage.color }}
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                      {stage.label}
+                      {stage.name}
                     </h3>
                     <span className="text-xs text-slate-400">
                       {money(items.reduce((t, d) => t + d.value, 0))}
@@ -4355,8 +4413,9 @@ function CrmWorkspace({
                     {items.map((deal) => (
                       <article
                         key={deal.id}
-                        draggable
-                        onDragStart={() => setDragDeal(deal.id)}
+                        draggable={!movingCard}
+                        onDragStart={(event) => { setDragDeal(deal.id); event.dataTransfer.setData("text/plain", deal.id); }}
+                        onDragEnd={() => setDragDeal(null)}
                         className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -4373,6 +4432,9 @@ function CrmWorkspace({
                         >
                           {deal.nextAction || "Sem próxima ação"}
                         </p>
+                        <KanbanMoveSelect columns={dealBoard.columns} value={deal.columnId} label={`Mover oportunidade ${deal.company}`} disabled={Boolean(movingCard)} onChange={(columnId) => void moveDeal(columnId, deal.id)} />
+                        <label className="mt-3 block text-xs font-medium text-slate-600"><span className="mb-1 block">Resultado</span><select aria-label={`Resultado de ${deal.company}`} disabled={Boolean(movingCard)} value={["won", "lost"].includes(deal.stage) ? deal.stage : "discovery"} onChange={(event) => void setDealOutcome(deal.id, event.target.value as "won" | "lost" | "discovery")} className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"><option value="discovery">Em aberto</option><option value="won">Ganha</option><option value="lost">Perdida</option></select></label>
+                        {deal.stage === "lost" && deal.lossReason && <p className="mt-2 text-xs text-slate-500">Motivo: {deal.lossReason}</p>}
                       </article>
                     ))}
                     {!items.length && (
@@ -4442,6 +4504,9 @@ function CrmWorkspace({
         onOpenChange={setNewLead}
         postAction={postAction}
       />
+      <Dialog open={Boolean(pendingLoss)} onOpenChange={(open) => { if (!open && !movingCard) setPendingLoss(null); }}>
+        <DialogContent><DialogHeader><DialogTitle>Marcar oportunidade como perdida</DialogTitle><DialogDescription>Registre o motivo para manter o histórico da negociação.</DialogDescription></DialogHeader><label className="space-y-2 text-sm font-medium">Motivo da perda<Textarea aria-label="Motivo da perda" value={lossReason} maxLength={2000} disabled={Boolean(movingCard)} onChange={(event) => setLossReason(event.target.value)} /></label>{lossError && <p role="alert" className="text-sm text-red-700">{lossError}</p>}<DialogFooter><Button variant="outline" disabled={Boolean(movingCard)} onClick={() => setPendingLoss(null)}>Cancelar</Button><Button disabled={Boolean(movingCard)} onClick={() => void confirmLoss()}>{movingCard ? "Salvando…" : "Confirmar perda"}</Button></DialogFooter></DialogContent>
+      </Dialog>
       <NewCrmDealDialog
         open={newDeal}
         onOpenChange={setNewDeal}
@@ -4482,9 +4547,8 @@ function CrmWorkspace({
                   ["Potencial", money(selectedLead.potentialValue)],
                   ["Origem", selectedLead.source],
                   [
-                    "Status",
-                    crmLeadStages.find((s) => s.key === selectedLead.status)
-                      ?.label || selectedLead.status,
+                    "Lista",
+                    leadBoard.columns.find((column) => column.id === selectedLead.columnId)?.name || "Sem lista",
                   ],
                 ].map(([label, value]) => (
                   <div
@@ -4496,6 +4560,8 @@ function CrmWorkspace({
                   </div>
                 ))}
               </div>
+              <div className="text-sm text-slate-500">Status comercial: {crmLeadStatusLabels[selectedLead.status]}</div>
+              <KanbanMoveSelect columns={leadBoard.columns} value={selectedLead.columnId} label={`Mover lead ${selectedLead.company}`} disabled={Boolean(movingCard)} onChange={(columnId) => void moveLead(columnId, selectedLead.id)} />
               <div>
                 <h3 className="font-bold">Contexto</h3>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
@@ -4854,32 +4920,33 @@ function CrmView({
   const [editingClient, setEditingClient] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [overStatus, setOverStatus] = useState<string | null>(null);
-
-  const statuses = [
-    { key: "prospecting", label: "Prospecção" },
-    { key: "active", label: "Ativos" },
-    { key: "inactive", label: "Inativos" },
-  ];
+  const [moving, setMoving] = useState(false);
+  const board = getKanbanBoard(data.kanbanBoards, "crmClients");
+  const columns = [...board.columns, { id: null, name: "Sem lista", color: "#E7EBEF", status: null }];
+  const canCustomize = data.currentMember.permissions.includes("clients.manage") && (["manager", "admin"].includes(data.currentMember.role) || data.currentMember.clientAccessMode === "all");
 
   async function moveClient(
     clientId: string,
-    newStatus: "prospecting" | "active" | "inactive",
+    columnId: string | null,
   ) {
+    if (moving) return;
+    setMoving(true);
     try {
       const client = data.clients.find((c) => c.id === clientId);
-      if (!client || client.status === newStatus) return;
+      if (!client || client.columnId === columnId) return;
       await postAction(
         {
           action: "updateClientCrm",
           id: client.id,
-          status: newStatus,
+          columnId,
         },
-        `Cliente movido para ${statuses.find((s) => s.key === newStatus)?.label}`,
+        `Cliente movido para ${board.columns.find((column) => column.id === columnId)?.name || "Sem lista"}`,
       );
     } catch (e) {
       notifyActionError(e);
     } finally {
       setOverStatus(null);
+      setMoving(false);
     }
   }
 
@@ -4891,27 +4958,34 @@ function CrmView({
 
   return (
     <div className="crm-workspace">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-black tracking-tight text-slate-900">
           CRM de Clientes
         </h1>
-        <div className="relative">
+        <div className="flex w-full flex-wrap gap-3 sm:w-auto">
+        {canCustomize && <KanbanColumnsEditor config={board} postAction={postAction} counts={Object.fromEntries(board.columns.map((column) => [column.id, data.clients.filter((client) => client.columnId === column.id).length]))} />}
+        <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Buscar cliente..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-xl pl-9 w-64 bg-white shadow-sm"
+            className="w-full rounded-xl bg-white pl-9 shadow-sm"
           />
         </div>
+        </div>
       </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        {statuses.map(({ key, label }) => {
-          const clients = filteredClients.filter((c) => c.status === key);
+      {!board.columns.length && <p className="mb-3 text-sm text-slate-500">Nenhuma lista criada. Os clientes e seus dados permanecem em Sem lista.</p>}
+      <div className="crm-kanban grid grid-flow-col auto-cols-[minmax(250px,1fr)] gap-4 overflow-x-auto pb-3" data-kanban-board="crmClients">
+        {columns.map((column) => {
+          const key = column.id ?? "unassigned";
+          const clients = filteredClients.filter((client) => client.columnId === column.id);
           return (
             <div
               key={key}
-              className={`flex flex-col gap-3 rounded-2xl p-4 shadow-sm transition ${overStatus === key ? "bg-primary/10 ring-2 ring-primary/30" : "bg-white"}`}
+              data-kanban-column={key}
+              className={`min-w-0 flex flex-col gap-3 rounded-2xl border-t-4 p-4 shadow-sm transition ${overStatus === key ? "ring-2 ring-primary/30" : ""}`}
+              style={{ backgroundColor: `${column.color}35`, borderTopColor: column.color }}
               onDragOver={(e) => {
                 e.preventDefault();
                 setOverStatus(key);
@@ -4922,16 +4996,16 @@ function CrmView({
               onDrop={(e) => {
                 e.preventDefault();
                 const clientId = e.dataTransfer.getData("text/plain");
-                if (clientId) moveClient(clientId, key as "prospecting" | "active" | "inactive");
+                if (clientId) void moveClient(clientId, column.id);
               }}
             >
               <h2 className="font-bold uppercase tracking-wide text-slate-500 text-xs">
-                {label} ({clients.length})
+                {column.name} ({clients.length})
               </h2>
               {clients.map((client) => (
                 <div
                   key={client.id}
-                  draggable
+                  draggable={!moving}
                   onDragStart={(e) =>
                     e.dataTransfer.setData("text/plain", client.id)
                   }
@@ -4959,6 +5033,8 @@ function CrmView({
                   <span className="mt-1 block pl-5 text-xs text-slate-500">
                     {client.email || "Sem e-mail"}
                   </span>
+                  <span className="mt-2 block pl-5 text-xs text-slate-500">{client.status === "active" ? "Cliente ativo" : client.status === "inactive" ? "Cliente inativo" : "Em prospecção"}</span>
+                  <KanbanMoveSelect columns={board.columns} value={client.columnId} label={`Mover cliente ${client.name}`} disabled={moving} onChange={(columnId) => void moveClient(client.id, columnId)} />
                 </div>
               ))}
               {!clients.length && (
@@ -5011,7 +5087,7 @@ function CrmEditDialog({
         {
           action: "updateClientCrm",
           id: client.id,
-          status,
+          ...(status !== client.status ? { status } : {}),
           contactName,
           phone,
           email,

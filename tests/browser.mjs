@@ -1,5 +1,6 @@
 import {chromium,expect} from '@playwright/test';
 import {runFinanceVisibilityBrowser} from './finance-visibility-browser.mjs';
+import {runKanbanBrowser} from './kanban-browser.mjs';
 import {runMarketingBrowser} from './marketing-browser.mjs';
 import {runFinancialDocumentsBrowser,runAssigneeEligibilityBrowser} from './financial-documents-browser.mjs';
 import assert from 'node:assert/strict';
@@ -20,6 +21,7 @@ export async function runBrowser({base,state,check}){
  async function snapshot(name){await page.screenshot({path:'evidence/'+name+'.png',fullPage:true,animations:'disabled',caret:'initial'});}
  async function closeDialog(){await page.keyboard.press('Escape');}
  try{
+  await runKanbanBrowser({browser,state,check,base});
   await runMarketingBrowser({browser,base,state,check});
   await runFinanceVisibilityBrowser({browser,base,state,check});
   await check('Navegador: login, logo, navegação e busca de clientes',async()=>{
