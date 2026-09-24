@@ -2,7 +2,7 @@
 
 ## Componentes
 
-Next.js 16 e React 19 na aplicação; Drizzle para acesso a PostgreSQL; PGlite somente para desenvolvimento e testes; `postgres` para a conexão de produção. Supabase hospeda PostgreSQL e arquivos privados. Os adaptadores de e-mail foram preparados para confirmação, recuperação e convites; a entrega real permanece adiada. A autenticação desta versão é própria, implementada no servidor; ela **não usa Supabase Auth**.
+Next.js 16 e React 19 na aplicação; Drizzle para acesso a PostgreSQL; PGlite somente para desenvolvimento e testes; `postgres` para a conexão de produção. Supabase hospeda PostgreSQL e arquivos privados. Os adaptadores de e-mail atendem confirmação, recuperação e convites; a configuração Brevo foi retomada e salva no Preview em 24/09/2026, com redeploy READY e entrega real ainda não homologada. A autenticação desta versão é própria, implementada no servidor; ela **não usa Supabase Auth**.
 
 O banco fica no schema `postito`, fora da API pública de dados. A migração ativa RLS nas tabelas e revoga acesso público, `anon` e `authenticated`. Na Vercel, a conexão usa `postito_runtime`, um papel exclusivo do backend com leitura e escrita nas tabelas da aplicação. Ele não é proprietário, não pode criar tabelas/papéis e não possui `BYPASSRLS` nem acesso aos dados de `auth`/`storage`.
 
@@ -32,14 +32,16 @@ Trocar agência altera a agência ativa da sessão. Desativar uma associação i
 - Código aleatório de seis dígitos: validade de 15 minutos, cinco tentativas por desafio e limites adicionais por conta.
 - Recuperação usa token aleatório de 256 bits, expiração de 30 minutos e consumo único.
 - Redefinição de senha encerra todas as sessões da conta.
-- A troca de senha pelo perfil sem e-mail foi removida por decisão do titular em 23/09/2026. Não manter interface ou operação de servidor para esse fluxo. Cadastro, confirmação, recuperação de senha e envio de e-mails serão retomados após finalizar o restante do sistema; os fluxos existentes por e-mail continuam preparados, sem afirmar entrega real homologada.
-- O provisionamento manual de uma conta pelo titular não instala credenciais padrão nem concede administração global. A ativação individual permite operar enquanto a entrega de e-mails estiver adiada; os fluxos públicos mantêm a confirmação obrigatória.
+- A troca de senha pelo perfil sem e-mail foi removida por decisão do titular em 23/09/2026. Não manter interface ou operação de servidor para esse fluxo. O titular retomou cadastro, confirmação, recuperação de senha e envio de e-mails; os fluxos existentes devem ser homologados com conta de teste controlada, sem afirmar entrega antes da evidência real.
+- O provisionamento manual de uma conta pelo titular não instala credenciais padrão nem concede administração global. A ativação individual permitiu operar durante a postergação de e-mails; os fluxos públicos mantêm a confirmação obrigatória.
 - A remoção da troca de senha pelo perfil preserva o acesso ADM já provisionado, suas credenciais e seus dados.
 - Sessão opaca guardada em cookie HttpOnly, SameSite=Lax, Secure em produção. No banco é guardado somente o hash do token, com validade de sete dias.
 - Código e token de recuperação são armazenados como hashes; não constam no payload da área de trabalho.
 - Limites persistidos em banco reduzem abuso de login, cadastro, convites e envio de e-mails. Na Vercel há também limite de envio por IP informado pela plataforma.
 
 Convites expiram em sete dias, aceitam uma pessoa e podem ser revogados. Um convite com e-mail exige a conta correspondente. A permissão fica no registro do convite, não em parâmetros editáveis do link. A aceitação verifica se quem convidou continua autorizado.
+
+O provedor é selecionado por `MAIL_PROVIDER`; a configuração Brevo exige `BREVO_API_KEY`, `BREVO_FROM_EMAIL` e `APP_URL`. A chave **Postito Preview**, criada em 24/09/2026 e válida até 24/12/2026, foi salva como Secret somente no Preview da branch `postito/release-0.2.0`, preservando variáveis anteriores, código e dados. Seu valor não integra o repositório. A implantação e a entrega são verificações distintas; estado atual em `docs/EMAIL.md` e `evidence/brevo-preview-20260924.json`.
 
 ## Arquivos
 

@@ -1,0 +1,49 @@
+{
+  "date": "2026-09-24",
+  "scope": "Brevo Preview configuration; real delivery pending",
+  "environment": "preview",
+  "branch": "postito/release-0.2.0",
+  "code_commit": "3d5bdcf8e51aca996124bfd1841281e390beb503",
+  "provider": "brevo",
+  "key": {
+    "name": "Postito Preview",
+    "created_date": "2026-09-24",
+    "expiration_date": "2026-12-24",
+    "transfer_method": "Browser UI copy and paste directly into Vercel Secret",
+    "value_read_by_model": false,
+    "value_logged_or_committed": false
+  },
+  "sender_verified": true,
+  "vercel_environment_confirmed": {
+    "BREVO_API_KEY": "Secret",
+    "MAIL_PROVIDER": {
+      "type": "Config",
+      "value": "brevo"
+    },
+    "BREVO_FROM_EMAIL": "Config; verified sender address intentionally omitted"
+  },
+  "environment_variable_scope": "Preview branch postito/release-0.2.0 only",
+  "previous_environment_variables_preserved": true,
+  "deployment": {
+    "id": "dpl_FaPmSUxSQog7UNHgRp5zsYkFVJro",
+    "status": "READY",
+    "url": "https://postito-312dxzqyp-vieiraphilipe875-7609s-projects.vercel.app",
+    "stable_alias": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app"
+  },
+  "application_code_changed": false,
+  "admin_account_changed": false,
+  "application_data_changed": false,
+  "postito_transactional_email_sent_this_configuration": false,
+  "real_delivery_verified": false,
+  "account_confirmation_verified": false,
+  "password_reset_verified": false,
+  "invitation_delivery_verified": false,
+  "production_promoted": false,
+  "next_step": "Use a user-controlled test account separate from ADM for actual delivery and authentication verification on the ready Preview.",
+  "limits": [
+    "Saved provider configuration and a completed deployment do not prove message acceptance or delivery.",
+    "No recipient address, secret, message body, authentication code or token is recorded here.",
+    "Earlier local mock tests are separate evidence and were not rerun for this configuration-only operation.",
+    "The key must be renewed before expiration to avoid interrupting email delivery."
+  ]
+}

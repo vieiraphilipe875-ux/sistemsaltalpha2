@@ -1,5 +1,13 @@
 # Postito — entrega e verificação
 
+## Retomada do e-mail em 24/09/2026
+
+O titular retomou o envio de e-mails para testar cadastros. A chave Brevo **Postito Preview**, criada em 24/09 e válida até **24/12/2026**, foi transferida pela interface para a Vercel sem leitura pelo modelo nem exposição de seu valor. Foram confirmados `BREVO_API_KEY` como Secret, `MAIL_PROVIDER=brevo` e `BREVO_FROM_EMAIL` como Config, com remetente já verificado e escopo exclusivo ao Preview da branch `postito/release-0.2.0`.
+
+O redeploy `dpl_FaPmSUxSQog7UNHgRp5zsYkFVJro`, do commit `3d5bdcf8e51aca996124bfd1841281e390beb503`, concluiu em **READY**. Variáveis anteriores, código, ADM e dados foram preservados. **Não houve teste de entrega real nesta configuração**; a próxima etapa depende de conta de teste controlada pelo usuário, separada do ADM. Configuração e build não comprovam entrega. Consulte `evidence/brevo-preview-20260924.json` e `docs/EMAIL.md`.
+
+Esta retomada substitui a postergação de e-mail registrada em 23/09. A remoção da troca de senha pelo perfil sem e-mail permanece vigente; produção, planos e checkout não foram antecipados.
+
 ## Reformulação visual de 23/09/2026
 
 A direção vigente é moderna e pastel: branco frio, grafite, lilás, azul, menta e rosa, com DM Sans. Entrada, onboarding, navegação, dashboard, clientes, Kanban, CRM, financeiro, equipe e diálogos foram reformulados. Foram acrescentadas busca por `Ctrl+K`/`Cmd+K`, navegação de resultados por teclado e ações rápidas de criação respeitando as permissões.
@@ -9,7 +17,7 @@ Validação desta versão: **36 cenários de API/navegador e 19 testes unitário
 Entrega na mesma branch de Preview e no PR de acompanhamento. Esta rodada preserva a decisão abaixo sobre autenticação, o acesso ADM existente e a postergação de e-mail, cadastro e planos.
 
 
-## Decisão atual de 23/09/2026: autenticação e e-mail
+## Histórico de 23/09/2026: autenticação e e-mail
 
 Por solicitação explícita do titular, a opção **Seu perfil → Alterar senha** sem e-mail foi removida, junto com sua operação no servidor. O acesso ADM já provisionado, suas credenciais e seus dados permanecem preservados. Cadastro, confirmação, recuperação de senha e envio de e-mails serão retomados após finalizar o restante do sistema.
 
@@ -125,7 +133,7 @@ Isso é uma auditoria com escopo e evidências, não uma garantia de inexistênc
 ## O que falta para operação real
 
 1. Finalizar as demais funções do sistema e suas correções, preservando o acesso ADM temporário e a remoção da troca de senha pelo perfil.
-2. Depois, retomar cadastro, confirmação, recuperação de senha e envio de e-mails; ativar e validar o serviço escolhido, conforme `docs/EMAIL.md`, e preparar domínio autenticado para o envio definitivo.
+2. Concluir a ativação Brevo retomada em 24/09 e homologar cadastro, confirmação, recuperação de senha e envio de e-mails, conforme `docs/EMAIL.md`; preparar domínio autenticado para o envio definitivo.
 3. Homologar esses fluxos, convites, upload direto grande, persistência e isolamento com os serviços reais.
 4. Configurar o ambiente de produção, sua URL definitiva e credenciais próprias antes da promoção.
 5. Promover somente a versão homologada.

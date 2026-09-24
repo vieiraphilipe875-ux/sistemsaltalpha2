@@ -1,6 +1,12 @@
 # Postito — infraestrutura provisionada
 
-Atualizado em 21/09/2026. O Preview está publicado. O remetente de teste do Resend foi configurado. A pedido do usuário, foi preparada uma integração alternativa com Brevo para testar envio sem domínio próprio; a conta, o remetente e a entrega real ainda precisam ser validados.
+Atualizado em 24/09/2026. O Preview está publicado; a configuração Brevo foi salva e seu redeploy concluiu em READY. A entrega real permanece pendente. Os registros de 21/09 abaixo preservam o histórico do provisionamento.
+
+## Configuração Brevo em 24/09/2026
+
+Com autorização do titular, foi criada a chave **Postito Preview**, com expiração em **24/12/2026**, e transferida pela interface para a Vercel sem leitura pelo modelo ou registro de seu valor. A Vercel confirmou `BREVO_API_KEY` como Secret e `MAIL_PROVIDER=brevo`/`BREVO_FROM_EMAIL` como Config, usando o remetente já verificado. Escopo: somente Preview da branch `postito/release-0.2.0`.
+
+Todas as variáveis anteriores foram preservadas, inclusive as do Resend. O código, o acesso ADM e os dados não foram alterados nesta operação. O redeploy `dpl_FaPmSUxSQog7UNHgRp5zsYkFVJro`, do commit `3d5bdcf8e51aca996124bfd1841281e390beb503`, concluiu em **READY**. Testar o fluxo com uma conta controlada pelo usuário, separada do ADM. Nenhum e-mail transacional do Postito foi enviado nesta configuração. Evidência: `evidence/brevo-preview-20260924.json`.
 
 ## Recursos criados
 
@@ -52,9 +58,9 @@ O login pelo navegador foi concluído em 21/09/2026. O acesso à conta, à equip
 | Framework | Next.js |
 | Node.js | 24.x |
 | Diretório raiz | Raiz do repositório |
-| Variáveis de ambiente | Sete configuradas exclusivamente para a branch de Preview |
+| Variáveis de ambiente | Sete originais preservadas; três variáveis Brevo acrescentadas em 24/09, exclusivamente para a branch de Preview |
 | Repositório vinculado | `vieiraphilipe875-ux/sistemsaltalpha2`, branch `postito/release-0.2.0` |
-| Publicação | Preview READY; produção ainda não promovida |
+| Publicação | Preview com Brevo READY; produção não promovida |
 
 [Abrir configurações do Postito na Vercel](https://vercel.com/vieiraphilipe875-7609s-projects/postito/settings/general).
 
@@ -71,6 +77,9 @@ O login no painel Supabase foi concluído. A credencial privada do Storage e a c
 | `SUPABASE_STORAGE_BUCKET` | Config, `postito-private` |
 | `RESEND_API_KEY` | Secret, chave exclusiva do Preview com permissão `sending_access` |
 | `RESEND_FROM_EMAIL` | Config, `Postito <onboarding@resend.dev>` para testes |
+| `MAIL_PROVIDER` | Config, `brevo`, salvo em 24/09 |
+| `BREVO_API_KEY` | Secret, chave Postito Preview com validade até 24/12/2026 |
+| `BREVO_FROM_EMAIL` | Config, remetente verificado na Brevo; endereço privado não registrado aqui |
 
 Todos os valores cadastrados estão restritos a Preview da branch `postito/release-0.2.0`. O nome legado `SUPABASE_SERVICE_ROLE_KEY` armazena uma chave moderna `sb_secret_…`, aceita pelo SDK fixado no projeto; ela não vai para o navegador.
 
@@ -84,7 +93,7 @@ No commit `9147481ec791fd4cdf9c58a7ad78f5317bb87bb8`, a [implantação de teste]
 
 Persistem pendentes escrita por fluxos autenticados, entrega real de e-mail, upload real e homologação completa online. A suíte local de API e navegador é evidência separada. A verificação desta ativação está em `evidence/activation-20260921.json`.
 
-## E-mail sem domínio próprio
+## Histórico de 21/09: e-mail sem domínio próprio
 
 O usuário informou que ainda não possui domínio. O sistema pode continuar no endereço gerado pela Vercel. A conexão do Resend respondeu às consultas de domínios e chaves; havia duas chaves anteriores, que foram preservadas. Foi criada uma chave separada, `Postito Preview 2026-09-21`, limitada ao envio, e salva como Secret na branch de Preview. O valor não consta no repositório.
 
@@ -98,17 +107,17 @@ Na tentativa seguinte, o cadastro chegou ao envio e a Function retornou 502. O l
 
 O tratamento em `lib/mail.ts` passou a explicar a restrição do remetente de teste, sem revelar o endereço privado da conta na tela pública. O diagnóstico do servidor registra apenas provedor, categoria e status disponível. O SDK pode devolver o erro sem `statusCode`; a identificação usa a categoria e a mensagem oficial, com teste específico para esse formato. As demais falhas mantêm a mensagem genérica. A restrição do provedor continua respeitada: o próximo cadastro de teste deve usar o endereço permitido, indicado ao usuário na conversa.
 
-## Alternativa Brevo solicitada pelo usuário
+## Histórico de 21/09: preparação da alternativa Brevo
 
 A pesquisa oficial confirmou 300 mensagens gratuitas por dia e substituição temporária do remetente para envio sem domínio autenticado. A integração está em `lib/mail.ts`, selecionada por `MAIL_PROVIDER=brevo`, `BREVO_API_KEY` e `BREVO_FROM_EMAIL`. As condições e fontes estão em `docs/EMAIL.md`.
 
-Nenhuma variável Brevo foi salva na Vercel nesta etapa; as sete existentes foram preservadas. O cadastro gratuito foi aberto, mas a conta e seu remetente ainda dependem da validação do usuário. Respostas simuladas da API e caixa de e-mail local são evidências de implementação, não de entrega real.
+Em 21/09, nenhuma variável Brevo havia sido salva na Vercel; as sete existentes foram preservadas. O cadastro gratuito foi aberto e a conta/remetente ainda dependiam da validação do usuário. A configuração posterior está registrada na seção de 24/09. Respostas simuladas da API e caixa de e-mail local são evidências de implementação, não de entrega real.
 
 A tela de confirmação passou a usar linguagem neutra, com atalhos para solicitar código e iniciar cadastro. O servidor informa explicitamente quando o pedido de cadastro não gerou novo envio. Um cadastro repetido não altera as credenciais armazenadas.
 
 ## Pendências para publicar
 
-1. Conectar a conta gratuita da Brevo, verificar o remetente, conferir a ativação transacional, salvar suas variáveis apenas no Preview e republicar.
+1. Validar o aceite transacional real no Preview com as variáveis Brevo.
 2. Validar entrega e confirmação com o endereço controlado pelo usuário. Preparar um domínio autenticado para a operação definitiva; a substituição temporária do remetente não garante entrega.
 3. Homologar cadastro, confirmação, recuperação, convites, múltiplas agências e arquivos privados com contas controladas.
 4. Configurar produção, URL definitiva e credenciais próprias, e promover a versão homologada.

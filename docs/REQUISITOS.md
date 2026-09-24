@@ -2,6 +2,8 @@
 
 Consolidação de 23/09/2026 da mensagem principal enviada pelo usuário nesta conversa, do plano anterior e das decisões recuperadas do chat “Aprimorar sistema CRM”. A mensagem principal está disponível integralmente; não se afirma ter uma transcrição integral de todas as demais mensagens antigas. Esta consolidação permite continuar o trabalho sem solicitar novamente as instruções já recebidas.
 
+Atualização de 24/09/2026: o titular retomou e-mail/cadastro para viabilizar testes e autorizou a chave Brevo **Postito Preview**, com validade de três meses, salva como segredo na Vercel. A configuração está salva apenas no Preview da branch `postito/release-0.2.0`; redeploy READY e entrega real ainda pendente. Detalhes e limites em `docs/EMAIL.md` e `evidence/brevo-preview-20260924.json`.
+
 ## Objetivo e método
 
 Evoluir o sistema original de gerenciamento de agência para Postito: demandas, CRM e financeiro, com banco de dados e hospedagem Vercel. Preservar o trabalho existente. Antes da execução, organizar sessões, etapas e tarefas na ordem de dependência; corrigir a base antes de ampliar funções. Verificar elementos ausentes, navegação, cliques, todos os botões, persistência e erros. Para cada criação/correção: testar, corrigir falhas, repetir o cenário afetado e a regressão prevista em AGENTS.md. Registrar cobertura e pendências sem prometer ausência de todo bug possível.
@@ -37,6 +39,7 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 | U25 | Continuar as alterações pendentes | Corrigir pendências verificadas e repetir a regressão |
 | U26 | Remover a troca de senha sem e-mail e retomar cadastro/e-mail após finalizar o restante do sistema | Remover a opção do perfil e sua operação no servidor; preservar o acesso ADM, suas credenciais e seus dados; manter cadastro, confirmação e recuperação por e-mail no roteiro posterior |
 | U27 | Reformular todo o design com cores pastéis, moderno e sem aparência rústica; pesquisar Awwwards, Design Spells desktop e o preview Monologue do Mobbin | Aplicar DESIGN.md versão 3 a navegação, dashboard, clientes, demandas, Kanban, CRM, financeiro, formulários e entrada; DM Sans sem serif, canvas frio, grafite e pastéis; verificar desktop/celular, teclado, estados e permissões; registrar referências efetivamente observadas e limitações de acesso, sem afirmar que a captura do Mobbin foi vista |
+| U28 | Retomar envio de e-mails e cadastro para testes; autorizar chave Brevo Postito Preview por três meses e seu armazenamento seguro na Vercel | Configurar apenas a branch de Preview, preservar ADM/dados e variáveis anteriores; validar entrega, código e recuperação com conta controlada pelo usuário; não confundir configuração/build com envio homologado |
 
 ## Ordem de execução
 
@@ -47,10 +50,12 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 5. Conferir a operação de clientes, pastas, demandas, pauta e revisão.
 6. Conferir CRM e financeiro, dados e permissões.
 7. Reformular integralmente UI/UX conforme U27 e DESIGN.md versão 3: direção moderna pastel, substituindo papel e tons terrosos; verificar fluxos e registrar evidências em REDESIGN-2026-09-23.md.
-8. Após finalizar as demais funções do sistema, retomar cadastro, confirmação, recuperação de senha e envio de e-mails; executar regressão final, Preview e homologação hospedada.
+8. Conforme a retomada U28, concluir a configuração Brevo e homologar cadastro, confirmação, recuperação de senha e envio real com conta de teste; executar a regressão pertinente e registrar o resultado hospedado.
 9. Conversa futura sobre planos, limites, preços e checkout.
 
 A homologação de e-mail foi adiada pelo titular em 23/09/2026 para avançar na operação. Em seguida, ele decidiu remover a troca de senha pelo perfil sem e-mail e retomar cadastro, confirmação, recuperação e envio de e-mails somente após finalizar o restante do sistema. A ativação manual de uma conta indicada é uma ação administrativa individual; não comprova propriedade da caixa postal nem elimina a confirmação dos cadastros públicos. O acesso ADM, suas credenciais e seus dados permanecem preservados. Testes isolados de mensagens continuam sem comprovar entrega real.
+
+A retomada registrada em U28 substitui apenas a postergação de e-mail/cadastro. Não autoriza reintroduzir a troca de senha pelo perfil sem e-mail, alterar ADM/dados ou antecipar planos e checkout.
 
 ## Sugestões e decisões de produto
 
@@ -59,7 +64,7 @@ A homologação de e-mail foi adiada pelo titular em 23/09/2026 para avançar na
 - Próximas sugestões: “Meu trabalho” entre agências, filtros salvos, modelos/checklists de demanda e notificações configuráveis. A visualização deve preservar a agência de origem e o acesso do usuário.
 - Depois da homologação: papel de cliente aprovador com aprovação/pedido de ajustes, diferente do leitor interno.
 - Na conversa de monetização: avaliar assinatura por agência, mantendo uma conta para colaboradores convidados. Faixas, valores, limites e checkout não foram decididos.
-- E-mail e cadastro, após finalizar o restante do sistema: resolver autenticação/ativação do serviço escolhido ou avaliar um domínio próprio verificado; homologar confirmação e recuperação. Não comprar domínio, reenviar testes ou reativar credenciais desativadas automaticamente.
+- E-mail e cadastro retomados: concluir ativação Brevo e homologar confirmação e recuperação com conta controlada; depois avaliar domínio próprio verificado. Não comprar domínio, repetir envios incertos ou reativar credenciais desativadas automaticamente.
 
 ## Fontes e memória
 
