@@ -3,6 +3,7 @@ import {futureMonthlyDates} from "@/lib/finance";
 import { bucket } from "@/lib/storage";
 import { assertSameOrigin, errorResponse, AppError } from "@/lib/http";
 import { parseAction, authorizeAction } from "@/lib/action-validation";
+import { createClientRecord } from "@/lib/client-creation";
 import { agencyAction, agencyActionNames } from "@/lib/agency-actions";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
@@ -25,36 +26,14 @@ export async function POST(request: Request) {
     await authorizeAction(member,payload);
     return await getDb().transaction(async (db) => {
     const can = (permission: PermissionKey) => member.permissions.includes(permission);
-    const workspaceOwnerId = member.agencyOwnerId;
     const crmOwnerId = can("crm.access") ? member.agencyOwnerId : null;
     const financeOwnerId = can("finance.access") ? member.agencyOwnerId : null;
+    let recordActivity = true;
     async function execute() {
     if (payload.action === "createClient") {
-      if (!can("clients.manage")) return Response.json({ error: "Você não tem permissão para criar clientes." }, { status: 403 });
-      const name = payload.name.trim();
-      if (!name) return Response.json({ error: "Informe o nome do cliente." }, { status: 400 });
-      const clientId = crypto.randomUUID();
-      const boardId = crypto.randomUUID();
-      const createdAt = new Date().toISOString();
-      const revenue = Math.max(0, Math.round(Number(payload.revenue) || 0));
-      const dueDay = Math.max(1, Math.min(31, Math.round(Number(payload.dueDay) || 5)));
-      await db.insert(clients).values({ id: clientId, agencyId: member.agencyOwnerId!, name, handle: payload.handle.trim(), driveUrl: payload.driveUrl.trim(), accent: ["#64745d","#ae805b","#6b8183","#978362"][name.length % 4], revenue, dueDay, createdAt });
-      await db.insert(clientMembers).values({ clientId, memberId: member.id });
-      await db.insert(boards).values({ id: boardId, clientId, title: "Planejamento de Mídia Social", period: payload.period.trim() || "Pauta atual", status: "active", createdBy: member.id, createdAt });
-      if (revenue > 0 && workspaceOwnerId) {
-        const today = new Date();
-        const forecasts = Array.from({ length: 12 }, (_, offset) => {
-          const year = today.getFullYear();
-          const monthIndex = today.getMonth() + offset;
-          const monthStart = new Date(year, monthIndex, 1);
-          const lastDay = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
-          const dueDate = new Date(monthStart.getFullYear(), monthStart.getMonth(), Math.min(dueDay, lastDay), 12);
-          const competence = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}`;
-          return { id: crypto.randomUUID(), agencyOwnerId: workspaceOwnerId, type: "income" as const, amount: revenue, paidAmount: 0, category: "Mensalidades", costCenter: "Clientes", account: "Conta principal", status: "predicted" as const, competence, dueDate: dueDate.toISOString(), paymentDate: null, clientId, counterpart: name, paymentMethod: "", recurring: true, recurrence: "monthly", description: `Mensalidade — ${name}`, notes: "Previsão gerada automaticamente no cadastro do cliente.", createdBy: member.id, createdAt, updatedAt: createdAt, archivedAt: null };
-        });
-        await db.insert(transactions).values(forecasts);
-      }
-      return Response.json({ ok: true, clientId, boardId });
+      const result = await createClientRecord(db, member, payload);
+      recordActivity = !result.replayed;
+      return Response.json(result);
     }
 
     if (payload.action === "createDeliverable") {
@@ -419,7 +398,7 @@ export async function POST(request: Request) {
     }
     const result = await execute();
     if (!result.ok) throw new AppError((await result.json()).error, result.status);
-    await db.insert(activityLog).values({id:crypto.randomUUID(),agencyId:member.agencyOwnerId!,memberId:member.id,action:payload.action,entityId:"id" in payload ? payload.id : "deliverableId" in payload ? payload.deliverableId : null,createdAt:new Date().toISOString()});
+    if (recordActivity) await db.insert(activityLog).values({id:crypto.randomUUID(),agencyId:member.agencyOwnerId!,memberId:member.id,action:payload.action,entityId:"id" in payload ? payload.id : "deliverableId" in payload ? payload.deliverableId : null,createdAt:new Date().toISOString()});
     return result;
     });
   } catch (error) {

@@ -1,0 +1,180 @@
+{
+  "date": "2026-09-24",
+  "scope": "Client creation retries, avatar/banner persistence, email invites and current-client bulk selection",
+  "branch": "postito/release-0.2.0",
+  "status": "validated_locally_ready_for_preview",
+  "client_creation": {
+    "user_report": "A file warning after creation suggested failure; resubmitting created a second client and images were not shown.",
+    "confirmed_code_causes": [
+      "Client creation ran before media validation and upload.",
+      "The created client identifier was not retained to retry failed uploads.",
+      "Storage.info() was read through custom metadata instead of root-level size and contentType from the installed SDK."
+    ],
+    "remote_inspection": {
+      "mode": "read_only",
+      "matching_name_client_count": 2,
+      "creation_interval_seconds": 14.534,
+      "per_client": {
+        "linked_images": 0,
+        "boards": 1,
+        "tasks": 0,
+        "forecasts": 12
+      },
+      "newer_client_media": {
+        "objects_found_in_storage": 2,
+        "mime_type": "image/png",
+        "approximate_file_size_range_mb": [
+          7,
+          9
+        ],
+        "size_and_mime_validated": true,
+        "upload_completion_consumed": false,
+        "images_linked_to_client": false
+      },
+      "real_names_ids_recipients_and_commercial_amounts_recorded": false
+    },
+    "policy": {
+      "validate_all_selected_images_before_creating_client": true,
+      "maximum_size_per_client_image_mb": 20,
+      "accepted_image_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif"
+      ],
+      "other_upload_limits_mb_unchanged": 50,
+      "shared_browser_and_api_image_policy": true,
+      "retain_created_client_id_for_upload_retry": true,
+      "idempotency_request_id": "Optional UUID, reused for the same logical attempt",
+      "idempotency_scope": [
+        "authenticated_member",
+        "agency"
+      ],
+      "database_guard": "Namespaced UUID primary key and INSERT ON CONFLICT DO NOTHING inside the compound transaction",
+      "replay_repeats_board_grant_forecasts_or_activity": false,
+      "replay_overwrites_client_data": false,
+      "replay_restores_revoked_client_access": false,
+      "deduplicate_by_name": false,
+      "authoritative_storage_info_fields": [
+        "size",
+        "contentType"
+      ],
+      "trust_uploader_custom_metadata_for_size_or_mime": false
+    },
+    "real_data_recovery": {
+      "image_recovery": "pending_precondition_review",
+      "duplicate_reconciliation": "pending_precondition_review",
+      "remote_repairs_performed": false,
+      "remote_data_deleted": false
+    }
+  },
+  "invites": {
+    "user_report": "Invite email did not arrive; current-client Select all control requested for editor and viewer roles.",
+    "investigation": "Default link-generation mode could be confused with email sending. The provider dashboard reports sent and delivered for the latest existing invite; no SMTP failure has been established. Explicit channel/status handling is implemented and tested locally.",
+    "provider_failure_confirmed": false,
+    "bulk_selection_policy": {
+      "surface": "Current clients allowed in invite/access for editor and viewer",
+      "scope_remains": "selected",
+      "includes_future_clients_automatically": false,
+      "select_clear_and_partial_state_required": true,
+      "server_permission_and_agency_checks_preserved": true,
+      "arbitrary_100_client_cap_removed": true,
+      "authorization_batches": 1000,
+      "selection_size_tests": [
+        150,
+        1001
+      ]
+    },
+    "real_email_delivery_after_fix": "pending",
+    "real_invite_acceptance_after_fix": "pending",
+    "observed_before_fix": {
+      "source": "Read-only application metadata and Brevo dashboard",
+      "database_invites": [
+        {
+          "created_at_utc": "2026-09-24T09:39:08Z",
+          "revoked": false,
+          "provider_send_event_observed": false
+        },
+        {
+          "created_at_utc": "2026-09-24T09:40:25Z",
+          "revoked": false,
+          "provider_send_event_observed": true,
+          "provider_delivery_event_observed": true
+        }
+      ],
+      "latest_delivery_dashboard_time": "06:40 BRT",
+      "primary_inbox_placement_confirmed": false,
+      "new_email_sent_during_inspection": false,
+      "recipient_and_private_subject_recorded": false
+    },
+    "channel_feedback_policy": {
+      "default_channel": "email",
+      "email_status_accepted_does_not_claim_delivery": true,
+      "link_mode_explicitly_says_no_email_is_sent": true
+    }
+  },
+  "validation": {
+    "targeted_unit_tests": {
+      "client_creation": {
+        "status": "passed",
+        "passed": 11
+      },
+      "storage_sdk_contract": {
+        "status": "passed",
+        "passed": 6
+      },
+      "client_image_policy": {
+        "status": "passed",
+        "passed": 3
+      },
+      "isolated_fixtures_only": true,
+      "invitation_delivery_contract": {
+        "status": "passed",
+        "passed": 7
+      },
+      "bulk_client_authorization": {
+        "status": "passed",
+        "passed": 8
+      }
+    },
+    "full_unit_suite": {
+      "status": "passed",
+      "passed": 72,
+      "failed": 0,
+      "final_invitation_changes_included": true
+    },
+    "api_and_browser_regression": {
+      "status": "passed",
+      "passed": 48,
+      "api": 25,
+      "browser": 23,
+      "evidence": "evidence/client-media-invites-regression-20260924.json",
+      "first_run": "Stopped at an ambiguous test-only close-button locator after new create/retry checks passed. Locator scoped to footer; complete rerun passed."
+    },
+    "typecheck": "passed",
+    "build": {
+      "status": "passed",
+      "known_warning": "file tracing in next.config.ts/lib/storage.ts"
+    },
+    "new_deployment": "pending",
+    "hosted_avatar_banner_after_reload": "pending",
+    "previous_round_results_reused_as_current_qa": false,
+    "lint": {
+      "errors": 0,
+      "existing_warnings": 26,
+      "scope": "changed code and tests; new scope helper/tests also passed"
+    }
+  },
+  "admin_account_changed": false,
+  "password_changed": false,
+  "database_schema_changed": false,
+  "production_promoted": false,
+  "historical_evidence_rewritten": false,
+  "limits": [
+    "Concurrency tests use isolated PGlite rather than multiple hosted PostgreSQL connections.",
+    "Local browser and API regression passed; hosted media rendering and real invite acceptance after this deployment still require confirmation.",
+    "Provider acceptance is distinct from mailbox delivery and invitation acceptance.",
+    "Existing client duplicates and uploaded objects have only been inspected; no repair is claimed.",
+    "No real client name, identifier, recipient, token, credential or commercial amount is included."
+  ]
+}

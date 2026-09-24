@@ -4,6 +4,8 @@ Consolidação de 23/09/2026 da mensagem principal enviada pelo usuário nesta c
 
 Atualização de 24/09/2026: o titular retomou e-mail/cadastro para viabilizar testes e autorizou a chave Brevo **Postito Preview**, com validade de três meses, salva como segredo na Vercel. A configuração está salva apenas no Preview da branch `postito/release-0.2.0`, com redeploy READY. Depois, relatou recebimento do e-mail e rejeição do código, e pediu expiração em cinco minutos. A correção da confirmação passou na regressão local, foi publicada no Preview e a nova tela foi conferida; a confirmação real permanece pendente de novo código do usuário. Detalhes em `docs/EMAIL.md` e nas evidências de ativação/correção de 24/09.
 
+Nova rodada de 24/09/2026: o titular relatou duplicação de cliente após aviso de arquivo e ausência de miniatura/banner. Pediu também verificar o convite por e-mail que não chega e acrescentar seleção geral dos clientes atuais para editor/leitor. A correção de clientes/Storage possui testes focados aprovados; regressão completa, publicação desta rodada, recuperação dos dados reais e homologação dos convites permanecem pendentes. Evidência específica: `evidence/client-media-invites-fix-20260924.json`.
+
 ## Objetivo e método
 
 Evoluir o sistema original de gerenciamento de agência para Postito: demandas, CRM e financeiro, com banco de dados e hospedagem Vercel. Preservar o trabalho existente. Antes da execução, organizar sessões, etapas e tarefas na ordem de dependência; corrigir a base antes de ampliar funções. Verificar elementos ausentes, navegação, cliques, todos os botões, persistência e erros. Para cada criação/correção: testar, corrigir falhas, repetir o cenário afetado e a regressão prevista em AGENTS.md. Registrar cobertura e pendências sem prometer ausência de todo bug possível.
@@ -41,6 +43,8 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 | U27 | Reformular todo o design com cores pastéis, moderno e sem aparência rústica; pesquisar Awwwards, Design Spells desktop e o preview Monologue do Mobbin | Aplicar DESIGN.md versão 3 a navegação, dashboard, clientes, demandas, Kanban, CRM, financeiro, formulários e entrada; DM Sans sem serif, canvas frio, grafite e pastéis; verificar desktop/celular, teclado, estados e permissões; registrar referências efetivamente observadas e limitações de acesso, sem afirmar que a captura do Mobbin foi vista |
 | U28 | Retomar envio de e-mails e cadastro para testes; autorizar chave Brevo Postito Preview por três meses e seu armazenamento seguro na Vercel | Configurar apenas a branch de Preview, preservar ADM/dados e variáveis anteriores; validar entrega, código e recuperação com conta controlada pelo usuário; não confundir configuração/build com envio homologado |
 | U29 | Corrigir a rejeição do código recebido e reduzir sua validade para cinco minutos | Aceitar qualquer código ainda válido da conta e consumir os desafios de confirmação juntos após sucesso; limitar a cinco tentativas agregadas sem reinício por reenvio; aplicar teto de cinco minutos aos desafios legados; preservar ADM e validar localmente e no Preview |
+| U30 | Corrigir cliente duplicado após aviso de imagem e ausência de foto/miniatura/banner | Validar imagens antes de persistir; aceitar JPG/PNG/WEBP/GIF até 20 MB por imagem com regra compartilhada; preservar o ID e o resultado parcial após falhas; criação idempotente por agência/membro sem duplicar previsões; corrigir verificação do objeto no Storage e conferir persistência após recarregar |
+| U31 | Verificar convite por e-mail que não chega e acrescentar “Selecionar todos” para editor/leitor | Auditar criação, envio, feedback e aceite do convite; oferecer seleção geral dos clientes atuais liberados no convite/acesso para editor/leitor; preservar o escopo selecionado, distinto de acesso automático a clientes futuros; testar seleção parcial/todos/nenhum; distinguir aceite do provedor de entrega real |
 
 ## Ordem de execução
 
@@ -52,7 +56,8 @@ Evoluir o sistema original de gerenciamento de agência para Postito: demandas, 
 6. Conferir CRM e financeiro, dados e permissões.
 7. Reformular integralmente UI/UX conforme U27 e DESIGN.md versão 3: direção moderna pastel, substituindo papel e tons terrosos; verificar fluxos e registrar evidências em REDESIGN-2026-09-23.md.
 8. Conforme U28/U29, validar a correção da confirmação com expiração de cinco minutos e homologar cadastro, recuperação de senha e envio real com conta de teste; executar a regressão pertinente e registrar o resultado hospedado.
-9. Conversa futura sobre planos, limites, preços e checkout.
+9. Conforme U30/U31, corrigir criação de clientes, uploads e convites, executar a regressão desta versão e conferir o Preview. Recuperação de imagens e reconciliação de duplicatas reais dependem da verificação dos vínculos, tarefas e financeiro antes de qualquer alteração.
+10. Conversa futura sobre planos, limites, preços e checkout.
 
 A homologação de e-mail foi adiada pelo titular em 23/09/2026 para avançar na operação. Em seguida, ele decidiu remover a troca de senha pelo perfil sem e-mail e retomar cadastro, confirmação, recuperação e envio de e-mails somente após finalizar o restante do sistema. A ativação manual de uma conta indicada é uma ação administrativa individual; não comprova propriedade da caixa postal nem elimina a confirmação dos cadastros públicos. O acesso ADM, suas credenciais e seus dados permanecem preservados. Testes isolados de mensagens continuam sem comprovar entrega real.
 

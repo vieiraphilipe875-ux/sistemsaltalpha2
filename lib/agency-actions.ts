@@ -10,15 +10,15 @@ import {
   clients,
   sessions,
   activityLog,
-  deliverables,
-  boards,
 } from "@/db/schema";
 import { verifySession, switchAgency } from "./auth";
 import { getCurrentMember, canAccessClient } from "./server-workspace";
-import { digest, randomToken, rateLimit } from "./security";
+import { digest, rateLimit } from "./security";
 import { rolePermissionDefaults, permissionKeys } from "./permissions";
 import { AppError } from "./http";
-import { sendMail, assertMailConfigured, escapeHtml } from "./mail";
+import { assertMailConfigured } from "./mail";
+import { createAgencyInvitation } from "./agency-invitations";
+import { agencyClientIdsInput, authorizeAgencyClientIds } from "./agency-client-scope";
 
 export const agencyActionNames = [
   "createAgency",
@@ -41,7 +41,7 @@ const inviteInput = z.object({
     .transform((s) => s.toLowerCase())
     .optional(),
   role: z.enum(["admin", "editor", "viewer"]),
-  clientIds: z.array(z.string().uuid()).max(100).default([]),
+  clientIds: agencyClientIdsInput.default([]),
   clientAccessMode: z.enum(["all", "selected"]).default("selected"),
   permissions: z.array(z.enum(permissionKeys)).optional(),
   delivery: z.enum(["link", "email"]).default("link"),
@@ -276,54 +276,17 @@ export async function agencyAction(raw: unknown) {
       throw new AppError("Informe o e-mail do convite.");
     if (p.delivery === "email") assertMailConfigured();
     await rateLimit(`invite:${agencyId}`, 40, 60);
-    for (const id of p.clientIds)
-      if (!(await canAccessClient(me, id, true)))
-        throw new AppError("Cliente não disponível nesta agência.", 403);
-    const id = randomUUID(),
-      token = randomToken();
+    const clientIds = await authorizeAgencyClientIds(db, me, p.clientIds);
     const permissions =
       p.role === "viewer"
         ? ["clients.view"]
         : (p.permissions ?? rolePermissionDefaults[p.role]);
-    const expiresAt = new Date(Date.now() + 7 * 86400000).toISOString();
-    await db
-      .insert(agencyInvites)
-      .values({
-        id,
-        agencyId,
-        tokenHash: digest(token),
-        email: p.email || null,
-        role: p.role,
-        permissions,
-        clientIds: [...new Set(p.clientIds)],
-        clientAccessMode: p.clientAccessMode,
-        createdBy: me.id,
-        createdAt: now(),
-        expiresAt,
-      });
-    const link = `${process.env.APP_URL || "http://localhost:3000"}/?invite=${encodeURIComponent(token)}`;
-    if (p.delivery === "email") {
-      const [agency] = await db
-        .select()
-        .from(agencies)
-        .where(eq(agencies.id, agencyId))
-        .limit(1);
-      try {
-        await sendMail(
-          p.email!,
-          `Convite para ${agency.name} no Postito`,
-          `<p>${escapeHtml(me.name)} convidou você para trabalhar com ${escapeHtml(agency.name)}.</p><p><a href="${escapeHtml(link)}">Aceitar convite</a></p><p>Entre na sua conta ou crie uma. O convite expira em 7 dias.</p>`,
-          id,
-        );
-      } catch (e) {
-        await db
-          .update(agencyInvites)
-          .set({ revokedAt: now() })
-          .where(eq(agencyInvites.id, id));
-        throw e;
-      }
-    }
-    return { ok: true, link, expiresAt };
+    const [agency] = await db.select({ name: agencies.name }).from(agencies)
+      .where(eq(agencies.id, agencyId)).limit(1);
+    if (!agency) throw new AppError("Agência não disponível.", 404);
+    return createAgencyInvitation(db, {
+      ...p, clientIds, agencyId, agencyName: agency.name, createdBy: me.id, inviterName: me.name, permissions,
+    });
   }
   if (action === "revokeInvite") {
     const { id } = z.object({ id: z.string().uuid() }).parse(raw);
@@ -343,7 +306,7 @@ export async function agencyAction(raw: unknown) {
         id: z.string().uuid(),
         role: z.enum(["manager", "admin", "editor", "viewer"]).optional(),
         status: z.enum(["active", "inactive"]).optional(),
-        clientIds: z.array(z.string().uuid()).optional(),
+        clientIds: agencyClientIdsInput.optional(),
         clientAccessMode: z.enum(["all", "selected"]).optional(),
         permissions: z.array(z.enum(permissionKeys)).optional(),
       })
@@ -375,9 +338,7 @@ export async function agencyAction(raw: unknown) {
       throw new AppError(
         "Transferência de propriedade não disponível nesta ação.",
       );
-    for (const id of p.clientIds ?? [])
-      if (!(await canAccessClient(me, id, true)))
-        throw new AppError("Cliente não disponível nesta agência.", 403);
+    const clientIds = p.clientIds === undefined ? undefined : await authorizeAgencyClientIds(db, me, p.clientIds);
     await db.transaction(async (tx) => {
       const role = p.role ?? target.role;
       await tx
@@ -400,7 +361,7 @@ export async function agencyAction(raw: unknown) {
             eq(agencyMemberships.memberId, p.id),
           ),
         );
-      if (p.clientIds) {
+      if (clientIds) {
         const own = await tx
           .select({ id: clients.id })
           .from(clients)
@@ -415,10 +376,9 @@ export async function agencyAction(raw: unknown) {
               ),
             ),
           );
-        for (const id of p.clientIds)
-          await tx
-            .insert(clientMembers)
-            .values({ clientId: id, memberId: p.id })
+        for (let offset = 0; offset < clientIds.length; offset += 1_000)
+          await tx.insert(clientMembers)
+            .values(clientIds.slice(offset, offset + 1_000).map(clientId => ({ clientId, memberId: p.id })))
             .onConflictDoNothing();
       }
     });

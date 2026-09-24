@@ -2,6 +2,7 @@
 
 import {normalizeDateInputs} from "@/lib/dates";
 import {parseMoney} from "@/lib/finance";
+import { CLIENT_IMAGE_ACCEPT, CLIENT_IMAGE_HINT, clientImageError } from "@/lib/client-media-policy";
 
 import {
   canPlanClient,
@@ -529,6 +530,7 @@ export function PautaApp({
             <ClientBoard
               data={data}
               client={activeClient}
+              onRefresh={reload}
               onBack={() => setActiveClientId(null)}
               onOpen={setActiveDeliverableId}
               postAction={postAction}
@@ -548,6 +550,7 @@ export function PautaApp({
             <ClientBoard
               data={data}
               client={activeClient}
+              onRefresh={reload}
               onBack={() => setActiveClientId(null)}
               onOpen={setActiveDeliverableId}
               onCreate={
@@ -609,6 +612,7 @@ export function PautaApp({
         open={createClientOpen}
         onOpenChange={setCreateClientOpen}
         postAction={postAction}
+        onRefresh={reload}
       />
     </div>
   );
@@ -1165,6 +1169,7 @@ function ClientBoard({
   onOpen,
   onCreate,
   postAction,
+  onRefresh,
 }: {
   data: WorkspaceData;
   client: WorkspaceData["clients"][number];
@@ -1172,6 +1177,7 @@ function ClientBoard({
   onOpen(id: string): void;
   onCreate?: (boardId?:string) => void;
   postAction(payload: object, success?: string): Promise<unknown>;
+  onRefresh(): Promise<void>;
 }) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overStatus, setOverStatus] = useState<Deliverable["status"] | null>(
@@ -1180,6 +1186,8 @@ function ClientBoard({
   const [driveOpen, setDriveOpen] = useState(false);
   const [driveUrl, setDriveUrl] = useState(client.driveUrl);
   const [mediaBusy, setMediaBusy] = useState<"avatar" | "banner" | null>(null);
+  const mediaBusyRef = useRef(false);
+  const [mediaErrors, setMediaErrors] = useState<Partial<Record<"avatar" | "banner", string>>>({});
 
   const boards = data.boards
     .filter((board) => board.clientId === client.id)
@@ -1231,6 +1239,11 @@ function ClientBoard({
     }
   }
   async function changeClientMedia(kind: "avatar" | "banner", file: File) {
+    if (mediaBusyRef.current) return;
+    const validationError = clientImageError(file, kind === "avatar" ? "Foto do cliente" : "Banner do cliente");
+    setMediaErrors((current) => ({ ...current, [kind]: validationError ?? undefined }));
+    if (validationError) return;
+    mediaBusyRef.current = true;
     try {
       setMediaBusy(kind);
       const response = await uploadRequest(
@@ -1247,19 +1260,21 @@ function ClientBoard({
       const result = await readApiResponse(response);
       if (!response.ok)
         throw new Error(result.error || "Falha ao enviar imagem");
-      await postAction(
-        { action: "updateClient", id: client.id, driveUrl },
-        kind === "avatar" ? "Foto atualizada" : "Banner atualizado",
-      );
+      try { await onRefresh(); }
+      catch { toast.info("Imagem salva. Atualize a página para conferir a alteração."); }
+      toast.success(kind === "avatar" ? "Foto atualizada" : "Banner atualizado");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Falha ao enviar imagem",
-      );
+      const message = error instanceof Error ? error.message : "Falha ao enviar imagem";
+      setMediaErrors((current) => ({ ...current, [kind]: message }));
     } finally {
+      mediaBusyRef.current = false;
       setMediaBusy(null);
     }
   }
   async function removeClientMedia(kind: "avatar" | "banner") {
+    if (mediaBusyRef.current) return;
+    mediaBusyRef.current = true;
+    setMediaErrors((current) => ({ ...current, [kind]: undefined }));
     try {
       setMediaBusy(kind);
       const response = await uploadRequest(
@@ -1269,15 +1284,14 @@ function ClientBoard({
       const result = await readApiResponse(response);
       if (!response.ok)
         throw new Error(result.error || "Falha ao remover imagem");
-      await postAction(
-        { action: "updateClient", id: client.id, driveUrl },
-        kind === "avatar" ? "Foto removida" : "Banner removido",
-      );
+      try { await onRefresh(); }
+      catch { toast.info("Imagem removida. Atualize a página para conferir a alteração."); }
+      toast.success(kind === "avatar" ? "Foto removida" : "Banner removido");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Falha ao remover imagem",
-      );
+      const message = error instanceof Error ? error.message : "Falha ao remover imagem";
+      setMediaErrors((current) => ({ ...current, [kind]: message }));
     } finally {
+      mediaBusyRef.current = false;
       setMediaBusy(null);
     }
   }
@@ -1425,8 +1439,8 @@ function ClientBoard({
           );
         })}
       </div>
-      <Dialog open={driveOpen} onOpenChange={setDriveOpen}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto rounded-2xl sm:max-w-2xl">
+      <Dialog open={driveOpen} onOpenChange={(nextOpen) => { if (!mediaBusyRef.current) setDriveOpen(nextOpen); }}>
+        <DialogContent showCloseButton={!mediaBusy} className="max-h-[92vh] overflow-y-auto rounded-2xl sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Personalizar {client.name}</DialogTitle>
             <DialogDescription>
@@ -1469,13 +1483,17 @@ function ClientBoard({
                 )}
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <label className="flex cursor-pointer items-center justify-center gap-1 rounded-xl border px-2 py-2 text-xs font-bold">
+                <label className="relative flex cursor-pointer items-center justify-center gap-1 rounded-xl border px-2 py-2 text-xs font-bold focus-within:ring-2 focus-within:ring-ring">
                   <Upload className="size-3.5" />
                   {client.avatarUrl ? "Trocar" : "Adicionar"}
                   <input
                     type="file"
-                    accept="image/*"
-                    className="hidden"
+                    accept={CLIENT_IMAGE_ACCEPT}
+                    aria-label="Foto do cliente"
+                    aria-describedby={`edit-client-avatar-hint${mediaErrors.avatar ? " edit-client-avatar-error" : ""}`}
+                    aria-invalid={Boolean(mediaErrors.avatar)}
+                    disabled={Boolean(mediaBusy)}
+                    className="sr-only"
                     onChange={(event) => {
                       const file = event.currentTarget.files?.[0];
                       if (file) void changeClientMedia("avatar", file);
@@ -1496,6 +1514,8 @@ function ClientBoard({
                   </Button>
                 )}
               </div>
+              <p id="edit-client-avatar-hint" className="mt-2 text-xs text-slate-500">{CLIENT_IMAGE_HINT}</p>
+              {mediaErrors.avatar && <p id="edit-client-avatar-error" role="alert" className="mt-2 text-sm text-rose-700">{mediaErrors.avatar}</p>}
             </div>
             <div>
               <p className="mb-2 text-sm font-semibold">Banner do cliente</p>
@@ -1518,13 +1538,17 @@ function ClientBoard({
                 )}
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <label className="flex cursor-pointer items-center justify-center gap-1 rounded-xl border px-2 py-2 text-xs font-bold">
+                <label className="relative flex cursor-pointer items-center justify-center gap-1 rounded-xl border px-2 py-2 text-xs font-bold focus-within:ring-2 focus-within:ring-ring">
                   <Upload className="size-3.5" />
                   {client.bannerUrl ? "Trocar" : "Adicionar"}
                   <input
                     type="file"
-                    accept="image/*"
-                    className="hidden"
+                    accept={CLIENT_IMAGE_ACCEPT}
+                    aria-label="Banner do cliente"
+                    aria-describedby={`edit-client-banner-hint${mediaErrors.banner ? " edit-client-banner-error" : ""}`}
+                    aria-invalid={Boolean(mediaErrors.banner)}
+                    disabled={Boolean(mediaBusy)}
+                    className="sr-only"
                     onChange={(event) => {
                       const file = event.currentTarget.files?.[0];
                       if (file) void changeClientMedia("banner", file);
@@ -1545,14 +1569,17 @@ function ClientBoard({
                   </Button>
                 )}
               </div>
+              <p id="edit-client-banner-hint" className="mt-2 text-xs text-slate-500">{CLIENT_IMAGE_HINT}</p>
+              {mediaErrors.banner && <p id="edit-client-banner-error" role="alert" className="mt-2 text-sm text-rose-700">{mediaErrors.banner}</p>}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDriveOpen(false)}>
+            <Button variant="ghost" disabled={Boolean(mediaBusy)} onClick={() => setDriveOpen(false)}>
               Fechar
             </Button>
             <Button
               className="rounded-xl bg-primary"
+              disabled={Boolean(mediaBusy)}
               onClick={async () => {
                 try {
                   await postAction(
@@ -2844,11 +2871,19 @@ function DraftFileField({
   onFile,
   onRemove,
   accept,
+  label,
+  describedBy,
+  invalid = false,
+  disabled = false,
 }: {
   file?: File;
   onFile(file: File): void;
   onRemove?(): void;
   accept?: string;
+  label?: string;
+  describedBy?: string;
+  invalid?: boolean;
+  disabled?: boolean;
 }) {
   const [preview,setPreview]=useState<{file:File;url:string}|null>(null);
   const previewUrl=preview?.file===file ? preview?.url || "" : "";
@@ -2863,22 +2898,26 @@ function DraftFileField({
   },[file]);
   const chooseFile = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = event.currentTarget.files?.[0];
-    if (selected) onFile(selected);
+    if (selected && !disabled) onFile(selected);
     event.currentTarget.value = "";
   };
   if (!file)
     return (
-      <label className="grid aspect-square cursor-pointer place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-3 text-center transition hover:border-primary hover:bg-muted">
+      <label className="relative grid aspect-square cursor-pointer place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-3 text-center transition hover:border-primary hover:bg-muted focus-within:ring-2 focus-within:ring-ring">
         <input
           type="file"
           accept={accept}
-          className="hidden"
+          className="sr-only"
+          aria-label={label}
+          aria-describedby={describedBy}
+          aria-invalid={invalid}
+          disabled={disabled}
           onChange={chooseFile}
         />
         <span>
           <ImagePlus className="mx-auto size-7 text-primary" />
           <span className="mt-2 block text-xs font-bold text-slate-600">
-            Clique ou arraste um arquivo
+            Selecionar arquivo
           </span>
           <span className="mt-1 block text-xs text-slate-400">
             A prévia aparece na hora
@@ -2890,6 +2929,8 @@ function DraftFileField({
     <div>
       <button
         type="button"
+        aria-label={label ? `Ampliar ${label.toLowerCase()}` : undefined}
+        disabled={disabled}
         onClick={() => setViewerOpen(true)}
         className="group relative aspect-square w-full cursor-zoom-in overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
       >
@@ -2916,19 +2957,25 @@ function DraftFileField({
         </span>
       </button>
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-primary hover:text-primary">
+        <label className="relative flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-primary hover:text-primary focus-within:ring-2 focus-within:ring-ring">
           <Upload className="size-3.5" />
           Trocar
           <input
             type="file"
             accept={accept}
-            className="hidden"
+            className="sr-only"
+            aria-label={label}
+            aria-describedby={describedBy}
+            aria-invalid={invalid}
+            disabled={disabled}
             onChange={chooseFile}
           />
         </label>
         {onRemove && (
           <button
             type="button"
+            aria-label={label ? `Remover ${label.toLowerCase()}` : undefined}
+            disabled={disabled}
             onClick={onRemove}
             className="flex items-center justify-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50"
           >
@@ -3485,12 +3532,15 @@ function CreateClientDialog({
   canEditFinance,
   onOpenChange,
   postAction,
+  onRefresh,
 }: {
   open: boolean;
   canEditFinance: boolean;
   onOpenChange(open: boolean): void;
   postAction(payload: object, success?: string): Promise<unknown>;
+  onRefresh(): Promise<void>;
 }) {
+  type MediaKind = "avatar" | "banner";
   const [name, setName] = useState("");
   const [handle, setHandle] = useState("");
   const [driveUrl, setDriveUrl] = useState("");
@@ -3500,195 +3550,248 @@ function CreateClientDialog({
   const [avatar, setAvatar] = useState<File | null>(null);
   const [banner, setBanner] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
-  async function upload(
-    clientId: string,
-    kind: "avatar" | "banner",
-    file: File,
-  ) {
+  const savingRef = useRef(false);
+  const [creationStarted, setCreationStarted] = useState(false);
+  const requestRef = useRef<{ requestId: string; payload: object; uncertain: boolean } | null>(null);
+  const [createdClientId, setCreatedClientId] = useState<string | null>(null);
+  const createdClientIdRef = useRef<string | null>(null);
+  const [savedImages, setSavedImages] = useState<Record<MediaKind, boolean>>({ avatar: false, banner: false });
+  const [imageErrors, setImageErrors] = useState<Partial<Record<MediaKind, string>>>({});
+  const [formError, setFormError] = useState<string | null>(null);
+
+  function resetDraft() {
+    setName("");
+    setHandle("");
+    setDriveUrl("");
+    setPeriod("");
+    setRevenue("");
+    setDueDay("5");
+    setAvatar(null);
+    setBanner(null);
+    setCreationStarted(false);
+    requestRef.current = null;
+    setCreatedClientId(null);
+    createdClientIdRef.current = null;
+    setSavedImages({ avatar: false, banner: false });
+    setImageErrors({});
+    setFormError(null);
+  }
+
+  function chooseImage(kind: MediaKind, file: File | null) {
+    if (savingRef.current || savedImages[kind]) return;
+    if (kind === "avatar") setAvatar(file);
+    else setBanner(file);
+    const error = file ? clientImageError(file, kind === "avatar" ? "Foto do cliente" : "Banner do cliente") : null;
+    setImageErrors((current) => ({ ...current, [kind]: error ?? undefined }));
+  }
+
+  async function finishWithoutPendingImages() {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      try { await onRefresh(); }
+      catch { toast.info("O cliente já está salvo. Atualize a página para conferir os dados recentes."); }
+      toast.info("Cliente mantido. As imagens pendentes podem ser adicionadas em Personalizar.");
+      resetDraft();
+      onOpenChange(false);
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  }
+
+  function changeOpen(nextOpen: boolean) {
+    if (savingRef.current) return;
+    if (!nextOpen && createdClientIdRef.current) {
+      void finishWithoutPendingImages();
+      return;
+    }
+    // An uncertain creation keeps the same operation when this dialog is reopened.
+    if (!nextOpen && !requestRef.current) resetDraft();
+    onOpenChange(nextOpen);
+  }
+
+  async function upload(clientId: string, kind: MediaKind, file: File) {
     const response = await uploadRequest(
       `/api/clients/${clientId}/media?kind=${kind}`,
       {
         method: "PUT",
-        headers: {
-          "Content-Type": file.type,
-          "X-File-Name": encodeURIComponent(file.name),
-        },
+        headers: { "Content-Type": file.type, "X-File-Name": encodeURIComponent(file.name) },
         body: file,
       },
     );
     const result = await readApiResponse(response);
     if (!response.ok) throw new Error(result.error || "Falha ao enviar imagem");
   }
+
   async function submit() {
+    if (savingRef.current) return;
+    const validationErrors: Partial<Record<MediaKind, string>> = {};
+    if (avatar && !savedImages.avatar) {
+      const error = clientImageError(avatar, "Foto do cliente");
+      if (error) validationErrors.avatar = error;
+    }
+    if (banner && !savedImages.banner) {
+      const error = clientImageError(banner, "Banner do cliente");
+      if (error) validationErrors.banner = error;
+    }
+    setImageErrors(validationErrors);
+    if (Object.keys(validationErrors).length) {
+      setFormError(createdClientIdRef.current
+        ? "O cliente já está criado. Corrija ou remova as imagens pendentes para continuar."
+        : requestRef.current ? "A confirmação do cadastro está pendente. Corrija ou remova as imagens indicadas para continuar com a mesma tentativa."
+        : "Corrija ou remova as imagens indicadas antes de criar o cliente. Nenhum cadastro foi enviado.");
+      return;
+    }
+    savingRef.current = true;
+    setSaving(true);
+    setFormError(null);
     try {
-      setSaving(true);
-      const result = await postAction(
-        {
-          action: "createClient",
-          name,
-          handle,
-          driveUrl,
-          period,
-          ...(canEditFinance ? { revenue: revenue.trim() ? parseMoney(revenue) : 0, dueDay: Number(dueDay) } : {}),
-        },
-        "Cliente criado",
-      );
-      const clientId = (result as { clientId?: string }).clientId;
-      if (clientId)
-        await Promise.all([
-          avatar ? upload(clientId, "avatar", avatar) : Promise.resolve(),
-          banner ? upload(clientId, "banner", banner) : Promise.resolve(),
-        ]);
-      if (avatar || banner)
-        await postAction({ action: "updateClient", id: clientId, driveUrl });
+      let clientId = createdClientIdRef.current;
+      if (!clientId) {
+        if (!requestRef.current) {
+          const requestId = crypto.randomUUID();
+          requestRef.current = {
+            requestId,
+            uncertain: false,
+            payload: {
+              action: "createClient", requestId, name, handle, driveUrl, period,
+              ...(canEditFinance ? { revenue: revenue.trim() ? parseMoney(revenue) : 0, dueDay: Number(dueDay) } : {}),
+            },
+          };
+        }
+        setCreationStarted(true);
+        const result = await postAction(requestRef.current.payload);
+        clientId = (result as { clientId?: string }).clientId ?? null;
+        if (!clientId) throw new Error("Não foi possível confirmar a resposta do cadastro.");
+        createdClientIdRef.current = clientId;
+        setCreatedClientId(clientId);
+      }
+      const pending: { kind: MediaKind; file: File }[] = [];
+      if (avatar && !savedImages.avatar) pending.push({ kind: "avatar", file: avatar });
+      if (banner && !savedImages.banner) pending.push({ kind: "banner", file: banner });
+      const outcomes = await Promise.allSettled(pending.map(({ kind, file }) => upload(clientId, kind, file)));
+      const nextSaved = { ...savedImages };
+      const uploadErrors: Partial<Record<MediaKind, string>> = {};
+      outcomes.forEach((outcome, index) => {
+        const kind = pending[index].kind;
+        if (outcome.status === "fulfilled") nextSaved[kind] = true;
+        else uploadErrors[kind] = outcome.reason instanceof Error ? outcome.reason.message : "Não foi possível enviar esta imagem.";
+      });
+      setSavedImages(nextSaved);
+      setImageErrors(uploadErrors);
+      let refreshed = true;
+      try { await onRefresh(); }
+      catch { refreshed = false; }
+      if (Object.keys(uploadErrors).length) {
+        setFormError("Cliente criado. Algumas imagens não foram salvas. Tente enviar novamente ou conclua sem as imagens pendentes. O cadastro e as imagens já salvas serão mantidos.");
+        return;
+      }
+      if (!refreshed) {
+        setFormError("O cadastro foi salvo. Não foi possível atualizar a tela. Clique em Atualizar cliente para conferir o resultado.");
+        return;
+      }
+      toast.success("Cliente criado");
+      resetDraft();
       onOpenChange(false);
-      setName("");
-      setHandle("");
-      setDriveUrl("");
-      setPeriod("");
-      setRevenue("");
-      setDueDay("5");
-      setAvatar(null);
-      setBanner(null);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Falha ao criar cliente",
-      );
+      const status = (error as { status?: number })?.status;
+      if (!createdClientIdRef.current && !requestRef.current?.uncertain && status && status >= 400 && status < 500) {
+        requestRef.current = null;
+        setCreationStarted(false);
+        setFormError(error instanceof Error ? error.message : "Não foi possível criar o cliente.");
+      } else if (!createdClientIdRef.current) {
+        if (requestRef.current) requestRef.current.uncertain = true;
+        setFormError("Não foi possível confirmar o cadastro. Clique em Confirmar cadastro para verificar a mesma tentativa, sem criar outro cliente.");
+      } else {
+        setFormError(error instanceof Error ? error.message : "Cliente criado. Não foi possível concluir o envio das imagens.");
+      }
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
+
+  const hasPendingImages = Boolean((avatar && !savedImages.avatar) || (banner && !savedImages.banner));
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[94vh] overflow-y-auto rounded-2xl sm:max-w-2xl">
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogContent showCloseButton={!saving} className="max-h-[94vh] overflow-y-auto rounded-2xl sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Novo cliente</DialogTitle>
+          <DialogTitle>{createdClientId ? "Concluir cliente" : "Novo cliente"}</DialogTitle>
           <DialogDescription>
-            {canEditFinance ? "Cadastre a identidade, a primeira pauta e a previsão financeira mensal." : "Cadastre a identidade e a primeira pauta do cliente."}
+            {createdClientId
+              ? hasPendingImages ? "O cliente já foi cadastrado. Finalize as imagens para concluir." : "O cadastro já foi salvo. Atualize a tela para conferir."
+              : canEditFinance ? "Cadastre a identidade, a primeira pauta e a previsão financeira mensal." : "Cadastre a identidade e a primeira pauta do cliente."}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-sm font-semibold">
-              Nome do cliente
-            </label>
-            <Input aria-label="Nome do cliente"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Nome do cliente"
-              className="rounded-xl"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold">
-              Instagram
-            </label>
-            <Input aria-label="Instagram"
-              value={handle}
-              onChange={(event) => setHandle(event.target.value)}
-              placeholder="@cliente"
-              className="rounded-xl"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold">
-              Período da primeira pauta
-            </label>
-            <Input aria-label="Período da primeira pauta"
-              value={period}
-              onChange={(event) => setPeriod(event.target.value)}
-              placeholder="Ex.: SET • 2026"
-              className="rounded-xl"
-            />
-          </div>
-{canEditFinance && <>
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold">
-              Mensalidade (R$)
-            </label>
-            <Input aria-label="Mensalidade (R$)"
-              type="number"
-              min="0"
-              step="0.01"
-              value={revenue}
-              onChange={(event) => setRevenue(event.target.value)}
-              placeholder="0,00"
-              className="rounded-xl"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold">
-              Dia do vencimento
-            </label>
-            <Input aria-label="Dia do vencimento"
-              type="number"
-              min="1"
-              max="31"
-              value={dueDay}
-              onChange={(event) => setDueDay(event.target.value)}
-              className="rounded-xl"
-            />
-          </div>
-</>}
-          <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-sm font-semibold">
-              Pasta de fotos / Drive
-            </label>
-            <div className="relative">
-              <FolderOpen className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                type="url"
-                value={driveUrl}
-                onChange={(event) => setDriveUrl(event.target.value)}
-                placeholder="https://drive.google.com/drive/folders/..."
-                className="rounded-xl pl-9"
-              />
+        <form className="grid gap-4" aria-busy={saving} onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+          {formError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{formError}</p>}
+          <fieldset disabled={saving || creationStarted} className="grid min-w-0 gap-4 sm:grid-cols-2 disabled:opacity-70">
+            <legend className="sr-only">Dados do cliente</legend>
+            <div className="sm:col-span-2">
+              <label htmlFor="new-client-name" className="mb-1.5 block text-sm font-semibold">Nome do cliente</label>
+              <Input id="new-client-name" required value={name} onChange={(event) => setName(event.target.value)} placeholder="Nome do cliente" className="rounded-xl" />
             </div>
+            <div>
+              <label htmlFor="new-client-handle" className="mb-1.5 block text-sm font-semibold">Instagram</label>
+              <Input id="new-client-handle" value={handle} onChange={(event) => setHandle(event.target.value)} placeholder="@cliente" className="rounded-xl" />
+            </div>
+            <div>
+              <label htmlFor="new-client-period" className="mb-1.5 block text-sm font-semibold">Período da primeira pauta</label>
+              <Input id="new-client-period" value={period} onChange={(event) => setPeriod(event.target.value)} placeholder="Ex.: SET • 2026" className="rounded-xl" />
+            </div>
+            {canEditFinance && <>
+              <div>
+                <label htmlFor="new-client-revenue" className="mb-1.5 block text-sm font-semibold">Mensalidade (R$)</label>
+                <Input id="new-client-revenue" type="number" min="0" step="0.01" value={revenue} onChange={(event) => setRevenue(event.target.value)} placeholder="0,00" className="rounded-xl" />
+              </div>
+              <div>
+                <label htmlFor="new-client-due-day" className="mb-1.5 block text-sm font-semibold">Dia do vencimento</label>
+                <Input id="new-client-due-day" required type="number" min="1" max="31" value={dueDay} onChange={(event) => setDueDay(event.target.value)} className="rounded-xl" />
+              </div>
+            </>}
+            <div className="sm:col-span-2">
+              <label htmlFor="new-client-drive" className="mb-1.5 block text-sm font-semibold">Pasta de fotos / Drive</label>
+              <div className="relative">
+                <FolderOpen className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Input id="new-client-drive" type="url" value={driveUrl} onChange={(event) => setDriveUrl(event.target.value)} placeholder="https://drive.google.com/drive/folders/..." className="rounded-xl pl-9" />
+              </div>
+            </div>
+          </fieldset>
+          {creationStarted && <p className="text-xs text-slate-500">Os dados do cadastro foram mantidos para concluir esta tentativa. As imagens podem ser alteradas depois em Personalizar.</p>}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(["avatar", "banner"] as const).map((kind) => {
+              const label = kind === "avatar" ? "Foto do cliente" : "Banner do cliente";
+              return <div key={kind}>
+                <p className="mb-2 text-sm font-semibold">{label}</p>
+                <DraftFileField
+                  file={(kind === "avatar" ? avatar : banner) ?? undefined}
+                  onFile={(file) => chooseImage(kind, file)}
+                  onRemove={() => chooseImage(kind, null)}
+                  accept={CLIENT_IMAGE_ACCEPT}
+                  label={label}
+                  describedBy={`new-client-${kind}-hint${imageErrors[kind] ? ` new-client-${kind}-error` : ""}`}
+                  invalid={Boolean(imageErrors[kind])}
+                  disabled={saving || savedImages[kind]}
+                />
+                <p id={`new-client-${kind}-hint`} className="mt-2 text-xs text-slate-500">
+                  {kind === "avatar" ? "Preferencialmente quadrada. " : "Recomendado: 1920 × 640. "}{CLIENT_IMAGE_HINT}
+                </p>
+                {savedImages[kind] && <p role="status" className="mt-2 text-sm font-semibold text-emerald-700">{kind === "avatar" ? "Foto salva" : "Banner salvo"}</p>}
+                {imageErrors[kind] && <p id={`new-client-${kind}-error`} role="alert" className="mt-2 text-sm text-rose-700">{imageErrors[kind]}</p>}
+              </div>;
+            })}
           </div>
-          <div>
-            <p className="mb-2 text-sm font-semibold">Foto do cliente</p>
-            <DraftFileField
-              file={avatar ?? undefined}
-              onFile={setAvatar}
-              onRemove={() => setAvatar(null)}
-              accept="image/*"
-            />
-            <p className="mt-2 text-center text-xs text-slate-400">
-              Quadrada, até 10 MB
-            </p>
-          </div>
-          <div>
-            <p className="mb-2 text-sm font-semibold">Banner do cliente</p>
-            <DraftFileField
-              file={banner ?? undefined}
-              onFile={setBanner}
-              onRemove={() => setBanner(null)}
-              accept="image/*"
-            />
-            <p className="mt-2 text-center text-xs text-slate-400">
-              Recomendado: 1920 × 640, até 10 MB
-            </p>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button
-            className="rounded-xl bg-primary"
-            disabled={
-              saving ||
-              !name.trim() ||
-              Number(dueDay) < 1 ||
-              Number(dueDay) > 31
-            }
-            onClick={submit}
-          >
-            {saving
-              ? "Criando cliente, imagens e previsões..."
-              : "Criar cliente"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter className="sm:flex-wrap">
+            <Button type="button" variant="ghost" disabled={saving} onClick={() => changeOpen(false)}>
+              {createdClientId ? "Concluir sem imagens pendentes" : creationStarted ? "Continuar depois" : "Cancelar"}
+            </Button>
+            <Button type="submit" className="rounded-xl bg-primary" disabled={saving || !name.trim() || (canEditFinance && (Number(dueDay) < 1 || Number(dueDay) > 31))}>
+              {saving ? "Salvando cliente e imagens..." : createdClientId ? hasPendingImages ? "Tentar enviar novamente" : "Atualizar cliente" : creationStarted ? "Confirmar cadastro" : "Criar cliente"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

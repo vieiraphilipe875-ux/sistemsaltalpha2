@@ -312,5 +312,45 @@ export async function runFlows({base,mailDir,check}){
   await owner.action('deleteDeliverable',{id:hiddenTask});assert(!(await owner.workspace()).deliverables.some(t=>t.id===hiddenTask));
   assert.equal((await owner.workspace()).clients.length,2);
  });
+ await check('Cliente: retries simultâneos criam um cadastro, uma pauta e uma previsão por mês',async()=>{
+  const requestId=crypto.randomUUID();
+  const payload={requestId,name:'Cliente QA idempotência',period:'Pauta única',revenue:12000,dueDay:9};
+  const results=await Promise.all(Array.from({length:3},()=>owner.action('createClient',payload)));
+  assert.equal(new Set(results.map(r=>r.clientId)).size,1);
+  assert.equal(new Set(results.map(r=>r.boardId)).size,1);
+  assert.equal(results.filter(r=>!r.replayed).length,1);
+  const clientId=results[0].clientId;
+  const replay=await owner.action('createClient',{...payload,name:'Não sobrescrever',revenue:99999});
+  assert.equal(replay.clientId,clientId);assert.equal(replay.replayed,true);
+  const ws=await owner.workspace();
+  assert.equal(ws.clients.filter(c=>c.id===clientId).length,1);
+  assert.equal(ws.clients.find(c=>c.id===clientId).name,payload.name);
+  assert.equal(ws.boards.filter(b=>b.clientId===clientId).length,1);
+  const forecasts=ws.transactions.filter(t=>t.clientId===clientId);
+  assert.equal(forecasts.length,12);assert(forecasts.every(t=>t.amount===12000));
+  await owner.action('updateClientStatus',{id:clientId,status:'inactive'});
+  await owner.action('deleteClient',{id:clientId});
+ });
+ await check('Imagem do cliente: limite de 20 MB, vínculo, leitura privada e troca com URL nova',async()=>{
+  for(const purpose of ['avatar','banner']){
+   await owner.req('/api/uploads/init',{purpose,targetId:c1.clientId,fileName:'limite.png',mimeType:'image/png',fileSize:20*1024*1024});
+   const over=await owner.req('/api/uploads/init',{purpose,targetId:c1.clientId,fileName:'grande.png',mimeType:'image/png',fileSize:20*1024*1024+1},400);
+   assert.match(over.error,/20 MB/);
+   await owner.req('/api/uploads/init',{purpose,targetId:c1.clientId,fileName:'documento.pdf',mimeType:'application/pdf',fileSize:20},400);
+   await upload(owner,purpose,c1.clientId);
+  }
+  const first=(await owner.workspace()).clients.find(c=>c.id===c1.clientId);
+  for(const url of [first.avatarUrl,first.bannerUrl]){
+   assert(url);
+   const response=await fetch(base+url,{headers:{Cookie:owner.cookie}});
+   assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/png');
+   assert.deepEqual(Buffer.from(await response.arrayBuffer()),png);
+   assert.equal((await fetch(base+url,{headers:{Cookie:outside.cookie}})).status,403);
+   assert.equal((await fetch(base+url)).status,403);
+  }
+  await upload(owner,'avatar',c1.clientId);
+  assert.notEqual((await owner.workspace()).clients.find(c=>c.id===c1.clientId).avatarUrl,first.avatarUrl);
+  for(const kind of ['avatar','banner'])await owner.req(`/api/clients/${c1.clientId}/media?kind=${kind}`,null,200,'DELETE');
+ });
  return {owner,editor,reader,outside,agency,c1,task,password,emailFor};
 }

@@ -19,7 +19,16 @@ export const bucket={
   const path=localPath(key);await mkdir(dirname(path),{recursive:true});await writeFile(path,data);await writeFile(path+".meta",JSON.stringify({type}));
  },
  async info(key:string){
-  if(remoteStorage()) {const {data,error}=await privateStore().info(key);if(error||!data)throw new AppError("Upload ainda não encontrado.");return {size:Number(data.metadata?.size),type:String(data.metadata?.mimetype || "")};}
+  if(remoteStorage()) {
+   const {data,error}=await privateStore().info(key);
+   if(error||!data)throw new AppError("Upload ainda não encontrado.");
+   // Storage's info endpoint returns authoritative object properties at the
+   // root. `metadata` contains custom, uploader-controlled values.
+   const size=data.size,type=data.contentType;
+   if(typeof size!=="number"||!Number.isSafeInteger(size)||size<0||typeof type!=="string"||!type.trim()||type.length>255||/[\u0000-\u001f\u007f]/.test(type))
+    throw new AppError("Não foi possível verificar o arquivo enviado. Tente novamente.",502);
+   return {size,type};
+  }
   const path=localPath(key);const [s,meta]=await Promise.all([stat(path),readFile(path+".meta","utf8")]);return {size:s.size,type:JSON.parse(meta).type as string};
  },
  async delete(keys:string|string[]){

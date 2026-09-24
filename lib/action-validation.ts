@@ -13,7 +13,7 @@ const txStatus=z.enum(["predicted","open","partial","paid","overdue","cancelled"
 const url=z.string().max(2048).refine(v=>{try{return ["http:","https:"].includes(new URL(v).protocol);}catch{return false;}},"Link inválido");
 const stringDefault=text.default("");
 const schemas={
- createClient:z.object({name:title,handle:stringDefault,driveUrl:z.union([z.literal(""),url]).default(""),period:stringDefault,revenue:money.default(0),dueDay:z.number().int().min(1).max(31).default(5)}),
+ createClient:z.object({requestId:id.optional(),name:title,handle:stringDefault,driveUrl:z.union([z.literal(""),url]).default(""),period:stringDefault,revenue:money.default(0),dueDay:z.number().int().min(1).max(31).default(5)}),
  updateClient:z.object({id,driveUrl:z.union([z.literal(""),url])}),
  updateClientStatus:z.object({id,status:z.enum(["active","inactive"])}),deleteClient:z.object({id}),
  createBoard:z.object({clientId:id,period:title}),

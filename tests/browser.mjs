@@ -2,6 +2,8 @@ import {chromium,expect} from '@playwright/test';
 import {runFinancialDocumentsBrowser,runAssigneeEligibilityBrowser} from './financial-documents-browser.mjs';
 import assert from 'node:assert/strict';
 import {runRedesignControlsBrowser,runRedesignMobileBrowser} from './redesign-browser.mjs';
+import {runClientMediaBrowser} from './client-media-browser.mjs';
+import {runInviteSelectionBrowser} from './invite-selection-browser.mjs';
 import {writeFile} from 'node:fs/promises';
 export async function runBrowser({base,state,check}){
  const browser=await chromium.launch({headless:true});
@@ -105,6 +107,7 @@ export async function runBrowser({base,state,check}){
   });
   await check('Navegador: convite por link e edição de acesso',async()=>{
    await page.getByRole('button',{name:'Convidar pessoa',exact:true}).click();
+   await page.getByRole('button',{name:'Gerar link',exact:true}).click();
    await page.getByLabel('Permissão',{exact:true}).selectOption('viewer');
    await page.getByLabel('Escopo de clientes',{exact:true}).selectOption('selected');
    await page.getByRole('checkbox',{name:'Vanessa Lopes',exact:true}).check();
@@ -193,6 +196,8 @@ export async function runBrowser({base,state,check}){
    await form.locator('input[name=password]').fill('Outra-Senha-2026!');await form.getByLabel('Confirmar senha',{exact:true}).fill('Outra-Senha-2026!');await form.getByRole('button',{name:'Salvar nova senha'}).click();
    await expect(form.getByRole('status')).toContainText('Senha alterada');await newcomer.close();
   });
+  await runClientMediaBrowser({browser,state,check,base});
+  await runInviteSelectionBrowser({browser,state,check,base});
   await check('Navegador: sem erros de execução no fluxo percorrido',async()=>{assert.deepEqual(errors,[]);});
  }catch(e){await snapshot('failure').catch(()=>{});await writeFile('evidence/browser-errors.json',JSON.stringify(errors));await writeFile('evidence/browser-failure.txt',(await page.locator('body').innerText({timeout:5000}).catch(()=>'' )).slice(0,18000));throw e;}
  finally{await browser.close();}

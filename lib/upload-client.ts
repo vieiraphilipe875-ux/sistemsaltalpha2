@@ -1,4 +1,10 @@
+import { clientImageError } from "./client-media-policy";
+
 export async function uploadFile(purpose:"asset"|"attachment"|"avatar"|"banner"|"transaction"|"competency",targetId:string,file:File,slidePosition?:number){
+ if(purpose==="avatar"||purpose==="banner"){
+  const error=clientImageError(file,purpose==="avatar"?"Foto do cliente":"Banner do cliente");
+  if(error)throw new Error(error);
+ }
  const init=await fetch("/api/uploads/init",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({purpose,targetId,fileName:file.name,mimeType:file.type||"application/octet-stream",fileSize:file.size,slidePosition})});
  const ticket=await init.json();if(!init.ok)throw new Error(ticket.error||"Não foi possível iniciar o envio.");
  const upload=await fetch(ticket.url,{method:"PUT",headers:{"Content-Type":file.type||"application/octet-stream",...(ticket.remote?{"x-upsert":"false"}:{})},body:file});
