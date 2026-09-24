@@ -56,8 +56,12 @@ export async function POST(request:Request,{params}:{params:Promise<{action:stri
   }
   if(action==="resend" || action==="forgot") {
     const {email}=z.object({email:emailSchema}).parse(raw);
-    await rateLimit(`${action}:${email}`,4,15);assertMailConfigured();
+    await rateLimit(`${action}:${email}`,4,15);
     const [user]=await db.select().from(members).where(eq(members.email,email)).limit(1);
+    if(action==="forgot" && (!user || user.status==="pending")) {
+      return Response.json({ok:true,nextStep:"signup",message:"Conclua seu cadastro para acessar o Postito. Se já começou, confirme seu e-mail."});
+    }
+    assertMailConfigured();
     if(user && (action==="resend"?user.status==="pending":user.status==="active")) await challenge(user,action==="resend"?"verify":"reset");
     return Response.json({ok:true,message:action==="resend"
       ? "Se houver um cadastro aguardando confirmação neste e-mail, enviaremos um código. Se ainda não começou, crie sua conta."

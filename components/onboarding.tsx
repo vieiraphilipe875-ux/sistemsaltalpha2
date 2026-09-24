@@ -12,6 +12,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
+import { useHydrated } from "@/lib/use-hydrated";
 
 export function Onboarding({
   name,
@@ -22,6 +23,7 @@ export function Onboarding({
   invite?: string;
   agencies: { id: string; name: string }[];
 }) {
+  const hydrated = useHydrated();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
 
@@ -44,7 +46,7 @@ export function Onboarding({
   }
 
   return (
-    <div className="onboarding" aria-busy={busy}>
+    <div className="onboarding" aria-busy={!hydrated || busy}>
       <header className="onboarding-brand">
         <Image
           src="/postito-logo.png"
@@ -79,7 +81,7 @@ export function Onboarding({
           <p>Seu trabalho, conectado à equipe.</p>
           <button
             className="primary-action"
-            disabled={busy}
+            disabled={!hydrated || busy}
             onClick={() => act({ action: "acceptInvite", token: invite })}
           >
             {busy ? (
@@ -101,6 +103,7 @@ export function Onboarding({
         <>
           <form
             className="onboarding-create"
+            method="post"
             onSubmit={(e) => {
               e.preventDefault();
               const fields = new FormData(e.currentTarget);
@@ -117,11 +120,11 @@ export function Onboarding({
                 required
                 minLength={2}
                 maxLength={100}
-                disabled={busy}
+                disabled={!hydrated || busy}
                 placeholder="Como sua agência se chama?"
               />
             </label>
-            <button className="primary-action" disabled={busy}>
+            <button className="primary-action" disabled={!hydrated || busy}>
               {busy ? "Criando agência..." : "Criar agência"}
               {busy ? (
                 <LoaderCircle
@@ -144,7 +147,7 @@ export function Onboarding({
                 {agencies.map((a) => (
                   <button
                     key={a.id}
-                    disabled={busy}
+                    disabled={!hydrated || busy}
                     onClick={() =>
                       act({ action: "switchAgency", agencyId: a.id })
                     }

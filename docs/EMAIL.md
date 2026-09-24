@@ -2,6 +2,14 @@
 
 Atualizado em 24/09/2026.
 
+## Recuperação e cadastro incompleto em 24/09/2026
+
+O caso relatado foi identificado por consulta somente de metadados: endereço cadastrado com status `pending`, sem confirmação do e-mail, sem desafio de recuperação e com uma tentativa registrada. Os logs Brevo consultados não mostravam recuperação. A aplicação antiga só enviava para `active`, mas devolvia uma mensagem condicional que não oferecia saída para a pendência. Não houve falha de entrega identificada nesse caso, porque nenhum envio foi iniciado.
+
+O titular determinou que o usuário volte ao cadastro nesse estado. A recuperação agora retorna `nextStep=signup` para endereço inexistente ou cadastro pendente; a interface conserva o e-mail, abre o cadastro e orienta concluir a confirmação. Não envia recuperação, não ativa a conta, não troca senha e não duplica o cadastro existente. Cadastro repetido continua encaminhando à confirmação, com a opção Solicitar código. Contas ativas mantêm o link de 30 minutos; inativas não recebem link. O direcionamento condicional solicitado distingue esses estados de conta ativa, embora inexistente e pendente recebam exatamente a mesma resposta.
+
+Nenhum e-mail real ou alteração manual de conta foi necessário para identificar o problema. A validação local passou em 86 testes unitários e 64 cenários de API/navegador, além de TypeScript, lint e build. Evidência em `evidence/password-recovery-20260924.json`, separando testes locais de navegação hospedada e de entrega real.
+
 ## Confirmação após reenvio: correção publicada no Preview
 
 O usuário relatou recebimento do e-mail e recusa do código. A auditoria reproduziu o defeito: a confirmação consultava somente o desafio mais recente e podia recusar um código anterior ainda válido. Uma consulta somente leitura encontrou dois desafios criados com **3,488 segundos** de diferença, ambos válidos na inspeção, conta pendente e duas tentativas no mais recente. Nenhum código ou hash foi lido; não se afirma qual deles foi digitado pelo usuário.
@@ -57,7 +65,7 @@ A integração faz `POST https://api.brevo.com/v3/smtp/email`, com a chave no ca
 - Um cadastro novo só retorna `emailStatus=accepted` após o aceite do transporte.
 - Repetir cadastro existente retorna `emailStatus=not_requested` e informa que esse pedido não gerou código. Isso não altera senha, profissão ou nome armazenados.
 - A confirmação usa texto neutro, botão Solicitar código e atalho para criar uma conta, sem afirmar que um envio ocorreu apenas porque a tela abriu.
-- A solicitação de código e a recuperação preservam mensagens condicionais para não confirmar publicamente a existência de uma conta.
+- A solicitação de código mantém mensagem condicional. Na recuperação, a decisão posterior descrita acima direciona inexistente/pendente ao cadastro; não afirmar resposta indistinguível de conta ativa.
 - Falha ao enviar remove o desafio recém-criado; a conta continua pendente. Não ativar pessoas diretamente no banco para contornar a confirmação.
 - Política da correção validada localmente: códigos válidos por cinco minutos; reenvio não invalida antecipadamente outro código ainda válido nem reinicia as cinco tentativas agregadas. Após confirmar, os desafios de confirmação são consumidos juntos.
 

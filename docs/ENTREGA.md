@@ -1,5 +1,14 @@
 # Postito — entrega e verificação
 
+
+## Recuperação direciona cadastro incompleto ao cadastro em 24/09/2026
+
+O diagnóstico do endereço informado encontrou um cadastro `pending`, sem confirmação e sem desafio de recuperação, embora a tentativa estivesse registrada. O comportamento anterior não enviava nessa condição e retornava uma mensagem genérica. Por decisão explícita posterior do titular, o formulário agora volta ao cadastro com o e-mail preenchido tanto para cadastro pendente quanto para endereço inexistente, sem envio de recuperação. Conta ativa continua no fluxo de link por e-mail. A conclusão de cadastro pendente continua pelo código de cinco minutos; repetir cadastro não sobrescreve nome, profissão ou senha nem duplica a conta.
+
+A regressão inicial revelou também submissão nativa antes da hidratação na criação da primeira agência, observada como GET com o campo `agency` na URL. Os formulários de autenticação e onboarding agora ficam desabilitados até React assumir as ações e usam método POST como fallback. Os testes verificam controles no HTML sem JavaScript e requisição real após carregamento, sem espera arbitrária.
+
+**Validação local concluída: 86 testes unitários e 64 cenários de API/navegador aprovados (26 API e 38 navegador).** TypeScript e lint dos arquivos alterados passaram sem erros ou avisos. Build aprovado (compilação 3,3 s, TypeScript 8,3 s), com o aviso de file tracing já existente. Evidências em `evidence/password-recovery-20260924.json` e `evidence/password-recovery-regression-20260924.json`. Não houve ativação manual de conta, mudança no ADM, alteração de schema/variáveis nem envio real de recuperação durante o diagnóstico. O estado dos testes anteriores abaixo não substitui esta rodada.
+
 ## Navegação pelo caminho e recorte de imagens em 24/09/2026: publicado no Preview
 
 O caminho do topo passa a oferecer retorno à lista de clientes por clique e teclado; a página atual é identificada e não executa navegação para si mesma. Dentro da demanda, os níveis anteriores levam à lista ou ao cliente real da demanda, mesmo quando ela foi aberta pela busca sobre outra pasta. A proteção de rascunho é compartilhada com o fechamento e preserva o texto se o descarte for cancelado. A trilha fica disponível também no celular, respeitando os dados já autorizados.

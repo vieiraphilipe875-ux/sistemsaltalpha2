@@ -297,9 +297,38 @@ export async function runFlows({base,mailDir,check}){
   await outside.auth('login',{password:next},401);
   await outside.auth('login',{password});
  });
- await check('Senha: link único, senha antiga recusada e sessões encerradas',async()=>{
+ let recoveryRequestResponse;
+ await check('Senha: e-mail inexistente ou cadastro pendente volta ao cadastro sem receber recuperação',async()=>{
+  const unknown=new Actor('recovery-unknown@example.invalid','Sem cadastro');
+  const beforeUnknown=(await readdir(mailDir)).length;
+  recoveryRequestResponse=await unknown.auth('forgot');
+  assert.equal(recoveryRequestResponse.ok,true);
+  assert.deepEqual(Object.keys(recoveryRequestResponse).sort(),['message','nextStep','ok']);
+  assert.equal(recoveryRequestResponse.nextStep,'signup');
+  assert.equal(typeof recoveryRequestResponse.message,'string');
+  assert.equal((await readdir(mailDir)).length,beforeUnknown,'E-mail sem cadastro não deve receber mensagem de recuperação');
+
+  const pending=new Actor('recovery-pending@example.invalid','Cadastro pendente de recuperação');
+  await pending.auth('signup',{name:pending.name,password,profession:'designer'});
+  const beforePending=(await readdir(mailDir)).length;
+  assert.equal(beforePending,beforeUnknown+1,'O cadastro novo deve gerar apenas a confirmação');
+  const pendingResponse=await pending.auth('forgot');
+  assert.deepEqual(pendingResponse,recoveryRequestResponse,'A resposta não deve revelar se o e-mail está cadastrado');
+  assert.equal((await readdir(mailDir)).length,beforePending,'Cadastro pendente não deve receber link de recuperação');
+  await pending.auth('login',{password},401);
+ });
+ await check('Senha: e-mail cadastrado normalizado recebe um link único; senha antiga e sessões são revogadas',async()=>{
   const previousCookie=reader.cookie;
-  await reader.auth('forgot');const html=await emailFor(reader,'Redefina');const link=html.match(/href="([^"]+)"/)[1].replaceAll('&amp;','&');const url=new URL(link);const fields={id:url.searchParams.get('id'),token:url.searchParams.get('token'),password:'Nova-Senha-QA-2026!'};
+  const before=new Set(await readdir(mailDir));
+  const response=await reader.auth('forgot',{email:`  ${reader.email.toUpperCase()}  `});
+  assert.equal(response.ok,true);
+  assert.equal(response.nextStep,undefined,'Conta confirmada deve permanecer na recuperação');
+  const sentFiles=(await readdir(mailDir)).filter(file=>!before.has(file));
+  assert.equal(sentFiles.length,1,'Uma solicitação deve gerar exatamente uma mensagem');
+  const sent=JSON.parse(await readFile(mailDir+'/'+sentFiles[0],'utf8'));
+  assert.equal(sent.to,reader.email,'O destinatário deve ser o e-mail cadastrado, normalizado');
+  assert.equal(sent.subject,'Redefina sua senha no Postito');
+  const html=sent.html;const link=html.match(/href="([^"]+)"/)[1].replaceAll('&amp;','&');const url=new URL(link);const fields={id:url.searchParams.get('id'),token:url.searchParams.get('token'),password:'Nova-Senha-QA-2026!'};
   await reader.auth('reset',fields);await reader.auth('reset',fields,400);
   reader.cookie=previousCookie;await reader.workspace(401);
   await reader.auth('login',{password},401);await reader.auth('login',{password:fields.password});

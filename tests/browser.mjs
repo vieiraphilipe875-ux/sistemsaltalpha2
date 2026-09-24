@@ -7,11 +7,12 @@ import {runInviteSelectionBrowser} from './invite-selection-browser.mjs';
 import {runTeamWorkloadBrowser} from './team-workload-browser.mjs';
 import {runBreadcrumbBrowser} from './breadcrumb-browser.mjs';
 import {runClientImageCropBrowser} from './client-image-crop-browser.mjs';
+import {runPasswordRecoveryBrowser} from './password-recovery-browser.mjs';
 import {writeFile} from 'node:fs/promises';
 export async function runBrowser({base,state,check}){
  const browser=await chromium.launch({headless:true});
  const context=await browser.newContext({viewport:{width:1440,height:1000},locale:'pt-BR',timezoneId:'America/Sao_Paulo'});
- const page=await context.newPage();const errors=[];let expectedConflict=false;
+ const page=await context.newPage();const errors=[];let expectedConflict=false;let diagnosticPage=page;
  page.on('pageerror',e=>errors.push(e.message));
  page.on('console',m=>{if(m.type()==='error'&&!(expectedConflict&&/409/.test(m.text())))errors.push(m.text());});
  async function snapshot(name){await page.screenshot({path:'evidence/'+name+'.png',fullPage:true,animations:'disabled',caret:'initial'});}
@@ -173,6 +174,7 @@ export async function runBrowser({base,state,check}){
   await runRedesignMobileBrowser({page,state,check,base});
   await check('Navegador: cadastro, código, onboarding e recuperação por e-mail',async()=>{
    const newcomer=await browser.newContext({viewport:{width:390,height:844}}),form=await newcomer.newPage();
+   diagnosticPage=form;
    form.on('pageerror',e=>errors.push(e.message));
    await form.goto(base);await form.screenshot({path:'evidence/login-mobile.png',fullPage:true,animations:'disabled',caret:'initial'});assert.equal(await form.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);await form.getByRole('button',{name:'Começar agora'}).click();
    await form.getByLabel('Seu nome').fill('Elisa Prado');await form.getByLabel('E-mail',{exact:true}).fill('elisa@example.invalid');
@@ -188,25 +190,36 @@ export async function runBrowser({base,state,check}){
    },fixtureCode);
    await expect(form.getByLabel('Código de confirmação')).toHaveValue(fixtureCode);
    await form.getByRole('button',{name:'Confirmar e continuar'}).click();await form.getByLabel('Nome da agência').fill('Ateliê Prado');
-   const agencyResponse=form.waitForResponse(r=>r.url()===base+'/api/actions'&&r.request().method()==='POST');
+   await expect(form.getByLabel('Nome da agência')).toHaveValue('Ateliê Prado');
+   const agencyResponse=form.waitForResponse(r=>r.url()===base+'/api/actions'&&r.request().method()==='POST'&&r.request().postDataJSON()?.action==='createAgency');
    await form.getByRole('button',{name:'Criar agência',exact:true}).click();
    const createdAgency=await agencyResponse;
    assert.equal(createdAgency.request().postDataJSON().name,'Ateliê Prado');
    assert.equal(createdAgency.status(),200,'Criar a primeira agência deve aceitar o nome preenchido');
    await form.getByRole('textbox',{name:'Buscar clientes ou demandas'}).waitFor({timeout:60000});
+   assert.equal(new URL(form.url()).searchParams.has('agency'),false,'Criar agência deve usar o formulário hidratado, sem submissão GET nativa');
    const out=await newcomer.request.post(base+'/api/auth/logout',{data:{},headers:{Origin:base}});assert.equal(out.status(),200);await form.goto(base);
    await form.getByRole('button',{name:'Esqueci minha senha'}).click();await form.getByLabel('E-mail',{exact:true}).fill('elisa@example.invalid');await form.getByRole('button',{name:'Enviar link'}).click();
    await expect(form.getByRole('status')).toContainText('link para recuperar o acesso');
    const reset=await state.emailFor({email:'elisa@example.invalid'},'Redefina');const link=reset.match(/href="([^"]+)"/)[1].replaceAll('&amp;','&');await form.goto(link);
    await form.locator('input[name=password]').fill('Outra-Senha-2026!');await form.getByLabel('Confirmar senha',{exact:true}).fill('Outra-Senha-2026!');await form.getByRole('button',{name:'Salvar nova senha'}).click();
-   await expect(form.getByRole('status')).toContainText('Senha alterada');await newcomer.close();
+   await expect(form.getByRole('status')).toContainText('Senha alterada');
+   await form.getByLabel('E-mail',{exact:true}).fill('elisa@example.invalid');await form.locator('input[name=password]').fill(state.password);
+   const oldLogin=form.waitForResponse(r=>r.url()===base+'/api/auth/login');
+   await form.getByRole('button',{name:'Entrar',exact:true}).click();assert.equal((await oldLogin).status(),401);
+   await expect(form.getByRole('alert')).toBeVisible();await form.locator('input[name=password]').fill('Outra-Senha-2026!');
+   const newLogin=form.waitForResponse(r=>r.url()===base+'/api/auth/login');
+   await form.getByRole('button',{name:'Entrar',exact:true}).click();assert.equal((await newLogin).status(),200);
+   await form.getByRole('textbox',{name:'Buscar clientes ou demandas'}).waitFor({timeout:60000});
+   await newcomer.close();diagnosticPage=page;
   });
+  await runPasswordRecoveryBrowser({browser,state,check,base});
   await runClientMediaBrowser({browser,state,check,base});
   await runInviteSelectionBrowser({browser,state,check,base});
   await runTeamWorkloadBrowser({browser,state,check,base});
   await runBreadcrumbBrowser({browser,state,check,base});
   await runClientImageCropBrowser({browser,state,check,base});
   await check('Navegador: sem erros de execução no fluxo percorrido',async()=>{assert.deepEqual(errors,[]);});
- }catch(e){await snapshot('failure').catch(()=>{});await writeFile('evidence/browser-errors.json',JSON.stringify(errors));await writeFile('evidence/browser-failure.txt',(await page.locator('body').innerText({timeout:5000}).catch(()=>'' )).slice(0,18000));throw e;}
+ }catch(e){await diagnosticPage.screenshot({path:'evidence/failure.png',fullPage:true,animations:'disabled',caret:'initial'}).catch(()=>{});await writeFile('evidence/browser-errors.json',JSON.stringify(errors));await writeFile('evidence/browser-failure.txt',(await diagnosticPage.locator('body').innerText({timeout:5000}).catch(()=>'' )).slice(0,18000));throw e;}
  finally{await browser.close();}
 }
