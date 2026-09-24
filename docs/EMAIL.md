@@ -2,13 +2,21 @@
 
 Atualizado em 24/09/2026.
 
+## Confirmação após reenvio: correção validada localmente
+
+O usuário relatou recebimento do e-mail e recusa do código. A auditoria reproduziu o defeito: a confirmação consultava somente o desafio mais recente e podia recusar um código anterior ainda válido. Uma consulta somente leitura encontrou dois desafios criados com **3,488 segundos** de diferença, ambos válidos na inspeção, conta pendente e duas tentativas no mais recente. Nenhum código ou hash foi lido; não se afirma qual deles foi digitado pelo usuário.
+
+Por solicitação do titular, a validade passa a ser **cinco minutos**, inclusive como teto para desafios legados contados desde sua criação. A correção aceita qualquer código ainda válido da conta, consumir os desafios de confirmação juntos após sucesso e manter **cinco tentativas agregadas**, sem zerar o limite por reenvio. A recuperação de senha mantém sua política própria de 30 minutos.
+
+Validação local concluída: **37 testes unitários aprovados, incluindo 18 novos, e 38 cenários E2E aprovados (23 de API e 15 de navegador)**. Cadastro, código, onboarding e recuperação passaram, incluindo colagem de código com espaços e texto de validade de cinco minutos. TypeScript e lint dos arquivos de código/teste alterados passaram. O build passou com o aviso já conhecido de file tracing em `next.config.ts`/`lib/storage.ts`. A primeira execução E2E parou por ausência de Chromium; após instalação pela distribuição oficial, a suíte completa encerrou com exit 0. Evidência da regressão: `evidence/email-confirmation-regression-20260924.json`. A concorrência foi testada somente em PGlite isolado, não entre várias conexões PostgreSQL hospedadas. **Nova publicação e confirmação real após a correção ainda estão pendentes.** Não houve alteração manual do banco hospedado nem do ADM nesta investigação. Evidência desta rodada: `evidence/email-confirmation-fix-20260924.json`; a evidência anterior da ativação foi preservada.
+
 ## Estado da ativação em 24/09/2026
 
 O titular retomou a configuração de e-mail para testar cadastros. A chave Brevo **Postito Preview** foi criada com validade até **24/12/2026**. Seu valor foi transferido pela interface para a Vercel, sem leitura pelo modelo nem registro em logs ou no repositório.
 
 A Vercel confirmou `BREVO_API_KEY` como Secret, `MAIL_PROVIDER=brevo` e `BREVO_FROM_EMAIL` como Config, com remetente já verificado. As três variáveis estão restritas ao Preview da branch `postito/release-0.2.0`; as variáveis anteriores foram preservadas. O redeploy `dpl_FaPmSUxSQog7UNHgRp5zsYkFVJro`, do commit `3d5bdcf8e51aca996124bfd1841281e390beb503`, concluiu em **READY**. Não houve alteração de código, acesso ADM ou dados nesta configuração.
 
-**Entrega real ainda não testada.** Com o redeploy concluído, validar com uma conta controlada pelo usuário, separada do ADM. A configuração salva e o build não comprovam aceite ou entrega de mensagem. Evidência: `evidence/brevo-preview-20260924.json`. Renovar a chave antes de seu vencimento para evitar interrupção do envio.
+Ao concluir essa configuração, a entrega ainda não havia sido testada. Posteriormente, o usuário relatou o recebimento, mas a confirmação falhou conforme a seção acima. A configuração salva e o build não comprovam o fluxo completo. Evidência histórica da ativação: `evidence/brevo-preview-20260924.json`. Renovar a chave antes de seu vencimento para evitar interrupção do envio.
 
 ## Decisão para o teste sem domínio
 
@@ -49,6 +57,7 @@ A integração faz `POST https://api.brevo.com/v3/smtp/email`, com a chave no ca
 - A confirmação usa texto neutro, botão Solicitar código e atalho para criar uma conta, sem afirmar que um envio ocorreu apenas porque a tela abriu.
 - A solicitação de código e a recuperação preservam mensagens condicionais para não confirmar publicamente a existência de uma conta.
 - Falha ao enviar remove o desafio recém-criado; a conta continua pendente. Não ativar pessoas diretamente no banco para contornar a confirmação.
+- Política da correção validada localmente: códigos válidos por cinco minutos; reenvio não invalida antecipadamente outro código ainda válido nem reinicia as cinco tentativas agregadas. Após confirmar, os desafios de confirmação são consumidos juntos.
 
 ## Validação real ainda necessária
 
@@ -56,4 +65,4 @@ O adaptador possui testes com respostas simuladas da API. Os cenários locais us
 
 Para completar a homologação: usar o cadastro normal com uma conta de teste controlada pelo usuário. Se ela já estiver pendente, usar **Confirmar meu e-mail → Solicitar código**; repetir o cadastro não gera novo envio. Conferir o aceite e o evento de entrega no provedor e confirmar o recebimento com o usuário. Então validar código, recuperação, senha anterior recusada, sessões revogadas e convite em contexto de teste. Senhas e códigos reais devem ser informados pelo usuário na interface segura. Não usar a conta ADM para esses testes.
 
-As credenciais anteriores do Resend permanecem preservadas; sua recusa conhecida de destinatário não foi contornada. Nenhum e-mail transacional do Postito foi enviado nesta configuração, nem houve compra, contratação paga ou promoção para produção.
+As credenciais anteriores do Resend permanecem preservadas; sua recusa conhecida de destinatário não foi contornada. Não houve envio transacional durante a configuração inicial; o recebimento posterior foi relatado pelo usuário. Não houve compra, contratação paga ou promoção para produção.

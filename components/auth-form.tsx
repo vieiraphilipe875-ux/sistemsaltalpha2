@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { ArrowRight, Eye, EyeOff, ArrowLeft, LoaderCircle } from "lucide-react";
 import { professionLabels } from "@/lib/permissions";
+import { VERIFICATION_CODE_TTL_MINUTES } from "@/lib/auth-policy";
 export function AuthForm({
   initialView = "login",
   invite = "",
@@ -96,7 +97,7 @@ export function AuthForm({
     ],
     verify: [
       "Confirme seu e-mail.",
-      "Use o código de 6 dígitos recebido por e-mail. Ele vale por 15 minutos. Ainda não recebeu? Solicite um código abaixo.",
+      `Use o código de 6 dígitos recebido por e-mail. Ele vale por ${VERIFICATION_CODE_TTL_MINUTES} minutos após o envio. Ainda não recebeu? Solicite um código abaixo.`,
     ],
     forgot: [
       "Vamos recuperar seu acesso.",
@@ -232,6 +233,13 @@ export function AuthForm({
             required
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+            onPaste={(e) => {
+              const pasted = e.clipboardData.getData("text").replace(/\s/g, "");
+              if (/^\d{6}$/.test(pasted)) {
+                e.preventDefault();
+                setCode(pasted);
+              }
+            }}
           />
         </label>
       )}

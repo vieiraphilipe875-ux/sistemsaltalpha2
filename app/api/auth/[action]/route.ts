@@ -1,5 +1,5 @@
 import { randomInt, randomUUID } from "node:crypto";
-import { and, eq, desc, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/db";
 import { members, authChallenges, sessions } from "@/db/schema";
@@ -8,6 +8,8 @@ import { digest, hashPassword, verifyPassword, randomToken, rateLimit } from "@/
 import { assertMailConfigured, sendMail, escapeHtml } from "@/lib/mail";
 import { AppError, assertSameOrigin, errorResponse } from "@/lib/http";
 import { professionLabels } from "@/lib/permissions";
+import { VERIFICATION_CODE_TTL_MINUTES } from "@/lib/auth-policy";
+import { createVerificationChallenge, verifyEmailCode } from "@/lib/email-verification";
 export const runtime="nodejs";
 const emailSchema=z.string().trim().email().max(254).transform(v=>v.toLowerCase());
 const passwordSchema=z.string().min(10).max(128);
@@ -16,10 +18,15 @@ const now=()=>new Date().toISOString();
 async function challenge(user:typeof members.$inferSelect,kind:"verify"|"reset") {
   assertMailConfigured();
   const id=randomUUID(), token=kind==="verify"?String(randomInt(0,1000000)).padStart(6,"0"):randomToken();
-  await getDb().insert(authChallenges).values({id,memberId:user.id,kind,tokenHash:digest(`${id}:${token}`),expiresAt:new Date(Date.now()+(kind==="verify"?15:30)*60000).toISOString(),createdAt:now()});
+  if(kind==="verify") {
+    const created=await createVerificationChallenge(getDb(),{id,memberId:user.id,tokenHash:digest(`${id}:${token}`)});
+    if(!created)return;
+  } else {
+    await getDb().insert(authChallenges).values({id,memberId:user.id,kind,tokenHash:digest(`${id}:${token}`),expiresAt:new Date(Date.now()+30*60000).toISOString(),createdAt:now()});
+  }
   const link=`${process.env.APP_URL || "http://localhost:3000"}/reset-password?id=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`;
   try {
-    await sendMail(user.email,kind==="verify"?"Confirme sua conta no Postito":"Redefina sua senha no Postito",kind==="verify"?`<p>Olá, ${escapeHtml(user.name)}.</p><p>Use este código para confirmar seu e-mail:</p><p style="font-size:32px;letter-spacing:8px;font-weight:bold">${token}</p><p>Válido por 15 minutos. Se você não solicitou, ignore este e-mail.</p>`:`<p>Recebemos um pedido para redefinir sua senha.</p><p><a href="${escapeHtml(link)}">Escolher uma nova senha</a></p><p>O link é válido por 30 minutos e funciona uma única vez.</p>`,id);
+    await sendMail(user.email,kind==="verify"?"Confirme sua conta no Postito":"Redefina sua senha no Postito",kind==="verify"?`<p>Olá, ${escapeHtml(user.name)}.</p><p>Use este código para confirmar seu e-mail:</p><p style="font-size:32px;letter-spacing:8px;font-weight:bold">${token}</p><p>Válido por ${VERIFICATION_CODE_TTL_MINUTES} minutos. Se você não solicitou, ignore este e-mail.</p>`:`<p>Recebemos um pedido para redefinir sua senha.</p><p><a href="${escapeHtml(link)}">Escolher uma nova senha</a></p><p>O link é válido por 30 minutos e funciona uma única vez.</p>`,id);
   } catch(e) {await getDb().delete(authChallenges).where(eq(authChallenges.id,id));throw e;}
   return id;
 }
@@ -59,19 +66,9 @@ export async function POST(request:Request,{params}:{params:Promise<{action:stri
   if(action==="verify") {
     const p=z.object({email:emailSchema,code:z.string().regex(/^\d{6}$/)}).parse(raw);
     await rateLimit(`verify:${p.email}`,10,15);
-    const [user]=await db.select().from(members).where(eq(members.email,p.email)).limit(1);
-    if(!user || user.status!=="pending") throw new AppError("Código inválido ou expirado.");
-    const verified=await db.transaction(async tx=>{
-      const [c]=await tx.select().from(authChallenges).where(and(eq(authChallenges.memberId,user.id),eq(authChallenges.kind,"verify"),isNull(authChallenges.consumedAt))).orderBy(desc(authChallenges.createdAt)).limit(1).for("update");
-      if(!c || c.expiresAt<now() || c.attempts>=5)return false;
-      await tx.update(authChallenges).set({attempts:c.attempts+1}).where(eq(authChallenges.id,c.id));
-      if(c.tokenHash!==digest(`${c.id}:${p.code}`))return false;
-      await tx.update(authChallenges).set({consumedAt:now()}).where(eq(authChallenges.id,c.id));
-      await tx.update(members).set({status:"active",emailVerifiedAt:now()}).where(eq(members.id,user.id));
-      return true;
-    });
-    if(!verified)throw new AppError("Código inválido ou expirado. Solicite um novo código se necessário.");
-    await createSession(user.id);return Response.json({ok:true});
+    const userId=await verifyEmailCode(db,p.email,p.code);
+    if(!userId)throw new AppError("Código inválido ou expirado. Solicite um novo código. Se atingiu o limite de tentativas, aguarde alguns minutos antes de tentar novamente.");
+    await createSession(userId);return Response.json({ok:true});
   }
   if(action==="login") {
     const p=z.object({email:emailSchema,password:z.string().min(1).max(128)}).parse(raw);

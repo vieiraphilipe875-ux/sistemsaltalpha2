@@ -56,6 +56,32 @@ export async function runFlows({base,mailDir,check}){
   assert.equal((await pending.workspace()).currentMember.name,'Paula Teste');
  });
  let agency,otherAgency,c1,c2,otherClient,task,hiddenTask;
+ await check('Confirmação: reenvio não invalida código ainda válido; sucesso consome todos',async()=>{
+  const reordered=new Actor('reordered@example.invalid','Teste Ordem de Entrega');
+  await reordered.auth('signup',{name:reordered.name,password,profession:'designer'});
+  const firstHtml=await emailFor(reordered,'Confirme');
+  const firstCode=firstHtml.match(/>(\d{6})<\/p>/)?.[1];assert(firstCode);
+  await reordered.auth('resend');
+  const secondHtml=await emailFor(reordered,'Confirme');
+  const secondCode=secondHtml.match(/>(\d{6})<\/p>/)?.[1];assert(secondCode);
+  await reordered.auth('verify',{code:firstCode});
+  await reordered.auth('verify',{code:secondCode},400);
+  await reordered.auth('login',{password});
+  assert.match(firstHtml,/Válido por 5 minutos/);
+  assert.match(secondHtml,/Válido por 5 minutos/);
+ });
+ await check('Confirmação: reenvio não reinicia o limite de cinco tentativas',async()=>{
+  const limited=new Actor('limited-code@example.invalid','Teste Limite de Código');
+  await limited.auth('signup',{name:limited.name,password,profession:'designer'});
+  const html=await emailFor(limited,'Confirme');
+  const code=html.match(/>(\d{6})<\/p>/)?.[1];assert(code);
+  const wrongCode=String((Number(code)+1)%1000000).padStart(6,'0');
+  for(let attempt=0;attempt<5;attempt++) await limited.auth('verify',{code:wrongCode},400);
+  await limited.auth('resend');
+  const resent=(await emailFor(limited,'Confirme')).match(/>(\d{6})<\/p>/)?.[1];assert(resent);
+  await limited.auth('verify',{code:resent},400);
+  await limited.auth('login',{password},401);
+ });
  await check('Agências independentes e autorização de criação',async()=>{
   agency=(await owner.action('createAgency',{name:'Estúdio Horizonte'})).agencyId;
   otherAgency=(await outside.action('createAgency',{name:'Agência Norte'})).agencyId;

@@ -2,7 +2,7 @@
 
 ## Componentes
 
-Next.js 16 e React 19 na aplicação; Drizzle para acesso a PostgreSQL; PGlite somente para desenvolvimento e testes; `postgres` para a conexão de produção. Supabase hospeda PostgreSQL e arquivos privados. Os adaptadores de e-mail atendem confirmação, recuperação e convites; a configuração Brevo foi retomada e salva no Preview em 24/09/2026, com redeploy READY e entrega real ainda não homologada. A autenticação desta versão é própria, implementada no servidor; ela **não usa Supabase Auth**.
+Next.js 16 e React 19 na aplicação; Drizzle para acesso a PostgreSQL; PGlite somente para desenvolvimento e testes; `postgres` para a conexão de produção. Supabase hospeda PostgreSQL e arquivos privados. Os adaptadores de e-mail atendem confirmação, recuperação e convites; a configuração Brevo foi salva no Preview em 24/09/2026 e o usuário relatou recebimento. A confirmação apresentou falha após reenvio; sua correção ainda depende de nova publicação e validação real; a regressão local foi aprovada. A autenticação desta versão é própria, implementada no servidor; ela **não usa Supabase Auth**.
 
 O banco fica no schema `postito`, fora da API pública de dados. A migração ativa RLS nas tabelas e revoga acesso público, `anon` e `authenticated`. Na Vercel, a conexão usa `postito_runtime`, um papel exclusivo do backend com leitura e escrita nas tabelas da aplicação. Ele não é proprietário, não pode criar tabelas/papéis e não possui `BYPASSRLS` nem acesso aos dados de `auth`/`storage`.
 
@@ -29,7 +29,7 @@ Trocar agência altera a agência ativa da sessão. Desativar uma associação i
 
 - Senha nova protegida por scrypt com salt individual. Hashes PBKDF2/SHA-256 legados são aceitos na importação e atualizados no login.
 - Conta pendente não autentica com senha antes da confirmação do e-mail.
-- Código aleatório de seis dígitos: validade de 15 minutos, cinco tentativas por desafio e limites adicionais por conta.
+- Política de confirmação solicitada em 24/09, com correção validada localmente: código aleatório de seis dígitos, validade de cinco minutos desde a criação, inclusive para desafios legados. Qualquer código ainda válido da conta pode confirmar; no sucesso, consumir os desafios de confirmação juntos. Limitar a cinco tentativas agregadas, sem reiniciar esse limite por reenvio, além dos limites adicionais por conta.
 - Recuperação usa token aleatório de 256 bits, expiração de 30 minutos e consumo único.
 - Redefinição de senha encerra todas as sessões da conta.
 - A troca de senha pelo perfil sem e-mail foi removida por decisão do titular em 23/09/2026. Não manter interface ou operação de servidor para esse fluxo. O titular retomou cadastro, confirmação, recuperação de senha e envio de e-mails; os fluxos existentes devem ser homologados com conta de teste controlada, sem afirmar entrega antes da evidência real.
@@ -42,6 +42,8 @@ Trocar agência altera a agência ativa da sessão. Desativar uma associação i
 Convites expiram em sete dias, aceitam uma pessoa e podem ser revogados. Um convite com e-mail exige a conta correspondente. A permissão fica no registro do convite, não em parâmetros editáveis do link. A aceitação verifica se quem convidou continua autorizado.
 
 O provedor é selecionado por `MAIL_PROVIDER`; a configuração Brevo exige `BREVO_API_KEY`, `BREVO_FROM_EMAIL` e `APP_URL`. A chave **Postito Preview**, criada em 24/09/2026 e válida até 24/12/2026, foi salva como Secret somente no Preview da branch `postito/release-0.2.0`, preservando variáveis anteriores, código e dados. Seu valor não integra o repositório. A implantação e a entrega são verificações distintas; estado atual em `docs/EMAIL.md` e `evidence/brevo-preview-20260924.json`.
+
+A falha de confirmação reproduzida selecionava apenas o desafio mais recente. A investigação do caso real leu somente metadados de dois desafios válidos, separados por 3,488 segundos, sem códigos ou hashes e sem gravações no banco hospedado. Recebimento informado pelo usuário e confirmação concluída são evidências distintas; acompanhar a correção em `evidence/email-confirmation-fix-20260924.json`.
 
 ## Arquivos
 

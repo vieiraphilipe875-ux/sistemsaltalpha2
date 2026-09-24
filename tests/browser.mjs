@@ -171,7 +171,14 @@ export async function runBrowser({base,state,check}){
    await form.getByLabel('Sua profissão').selectOption('copywriter');
    await form.locator('input[name=password]').fill(state.password);await form.getByLabel('Confirmar senha',{exact:true}).fill(state.password);
    await form.getByRole('button',{name:'Criar minha conta',exact:true}).click();await form.getByLabel('Código de confirmação').waitFor();
-   const html=await state.emailFor({email:'elisa@example.invalid'},'Confirme');await form.getByLabel('Código de confirmação').fill(html.match(/>(\d{6})<\/p>/)[1]);
+   await expect(form.locator('.auth-intro')).toContainText('5 minutos após o envio');
+   const html=await state.emailFor({email:'elisa@example.invalid'},'Confirme');
+   const fixtureCode=html.match(/>(\d{6})<\/p>/)[1];
+   await form.getByLabel('Código de confirmação').evaluate((input,code)=>{
+    const clipboardData=new DataTransfer();clipboardData.setData('text',code.split('').join(' '));
+    input.dispatchEvent(new ClipboardEvent('paste',{bubbles:true,cancelable:true,clipboardData}));
+   },fixtureCode);
+   await expect(form.getByLabel('Código de confirmação')).toHaveValue(fixtureCode);
    await form.getByRole('button',{name:'Confirmar e continuar'}).click();await form.getByLabel('Nome da agência').fill('Ateliê Prado');
    const agencyResponse=form.waitForResponse(r=>r.url()===base+'/api/actions'&&r.request().method()==='POST');
    await form.getByRole('button',{name:'Criar agência',exact:true}).click();

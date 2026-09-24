@@ -1,10 +1,18 @@
 # Postito — entrega e verificação
 
+## Correção da confirmação de e-mail em 24/09/2026
+
+O usuário confirmou recebimento do e-mail, mas relatou recusa do código e solicitou validade de **cinco minutos**. A auditoria reproduziu a seleção indevida somente do desafio mais recente. No caso real, leitura de metadados encontrou dois desafios ainda válidos, separados por 3,488 segundos, conta pendente e duas tentativas no mais recente. Nenhum código ou hash foi lido e nenhum registro hospedado ou acesso ADM foi alterado manualmente.
+
+A correção validada localmente aceita qualquer código ainda válido, aplica o teto de cinco minutos também aos desafios legados, consome os desafios de confirmação juntos após sucesso e mantém limite agregado de cinco tentativas que o reenvio não reinicia. **Nova publicação e confirmação real da correção permanecem pendentes.** O recebimento relatado não comprova o cadastro concluído. Evidência: `evidence/email-confirmation-fix-20260924.json`; os registros históricos foram preservados.
+
+Validação local concluída: **37 testes unitários aprovados, incluindo 18 novos, e 38 cenários E2E aprovados (23 de API e 15 de navegador)**. Cadastro, código, onboarding e recuperação passaram, incluindo colagem de código com espaços e texto de validade de cinco minutos. TypeScript e lint dos arquivos de código/teste alterados passaram. O build passou com o aviso já conhecido de file tracing em `next.config.ts`/`lib/storage.ts`. A primeira execução E2E parou por ausência de Chromium; após instalação pela distribuição oficial, a suíte completa encerrou com exit 0. Evidência da regressão: `evidence/email-confirmation-regression-20260924.json`. A concorrência foi testada somente em PGlite isolado, não entre várias conexões PostgreSQL hospedadas.
+
 ## Retomada do e-mail em 24/09/2026
 
 O titular retomou o envio de e-mails para testar cadastros. A chave Brevo **Postito Preview**, criada em 24/09 e válida até **24/12/2026**, foi transferida pela interface para a Vercel sem leitura pelo modelo nem exposição de seu valor. Foram confirmados `BREVO_API_KEY` como Secret, `MAIL_PROVIDER=brevo` e `BREVO_FROM_EMAIL` como Config, com remetente já verificado e escopo exclusivo ao Preview da branch `postito/release-0.2.0`.
 
-O redeploy `dpl_FaPmSUxSQog7UNHgRp5zsYkFVJro`, do commit `3d5bdcf8e51aca996124bfd1841281e390beb503`, concluiu em **READY**. Variáveis anteriores, código, ADM e dados foram preservados. **Não houve teste de entrega real nesta configuração**; a próxima etapa depende de conta de teste controlada pelo usuário, separada do ADM. Configuração e build não comprovam entrega. Consulte `evidence/brevo-preview-20260924.json` e `docs/EMAIL.md`.
+O redeploy `dpl_FaPmSUxSQog7UNHgRp5zsYkFVJro`, do commit `3d5bdcf8e51aca996124bfd1841281e390beb503`, concluiu em **READY**. Variáveis anteriores, código, ADM e dados foram preservados. Não houve teste de entrega durante essa configuração inicial; o recebimento relatado posteriormente e a correção da confirmação estão registrados na seção acima. Configuração e build não comprovam entrega. Consulte `evidence/brevo-preview-20260924.json` e `docs/EMAIL.md`.
 
 Esta retomada substitui a postergação de e-mail registrada em 23/09. A remoção da troca de senha pelo perfil sem e-mail permanece vigente; produção, planos e checkout não foram antecipados.
 

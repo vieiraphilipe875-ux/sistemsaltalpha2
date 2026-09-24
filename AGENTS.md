@@ -18,5 +18,6 @@ Leia `docs/REQUISITOS.md`, `docs/DESIGN.md`, `docs/ARQUITETURA.md` e `docs/ENTRE
 - Preserve o RAR original. A migração lê uma cópia e só escreve em destino novo.
 - Planos, valores e checkout exigem decisão de produto posterior; não transforme previsões financeiras em cobranças reais.
 - Decisão do titular de 23/09/2026: remover a troca de senha pelo perfil sem e-mail. E-mail e cadastro foram retomados pelo titular; em 24/09 a configuração Brevo foi salva no Preview e seu redeploy concluiu em READY. Homologar entrega, confirmação e recuperação com conta de teste controlada, sem confundir configuração/build com entrega. Preservar o acesso ADM já provisionado, suas credenciais e seus dados; não reintroduzir troca de senha pelo perfil.
+- Decisão de 24/09/2026: códigos de confirmação expiram em cinco minutos. Aceitar qualquer código ainda válido da conta, inclusive após reenvio, e consumir os desafios de confirmação juntos após sucesso. O limite agregado de cinco tentativas não pode ser zerado pelo reenvio; aplicar o teto de cinco minutos também aos desafios legados. Entrega relatada pelo usuário não comprova confirmação concluída; registrar QA e validação hospedada separadamente.
 
 - A pauta deve detectar revisão desatualizada antes de gravar e preservar o rascunho em conflito. Mudanças de contato/status no CRM não podem reescrever dados financeiros omitidos.
