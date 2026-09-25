@@ -1,0 +1,80 @@
+{
+  "date": "2026-09-24T20:22:06.468215+00:00",
+  "method": "Six browser cases: pixel comparison against unmasked lettering (ignores antialiasing differences), document overflow, runtime errors, back-to-top; plus static visual check without JavaScript.",
+  "summary": [
+    {
+      "name": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "missingInkPixels": 0,
+      "overflow": false,
+      "runtimeErrors": [],
+      "backToTop": "passed"
+    },
+    {
+      "name": "wide",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "missingInkPixels": 0,
+      "overflow": false,
+      "runtimeErrors": [],
+      "backToTop": "passed"
+    },
+    {
+      "name": "tablet",
+      "viewport": {
+        "width": 820,
+        "height": 900
+      },
+      "missingInkPixels": 0,
+      "overflow": false,
+      "runtimeErrors": [],
+      "backToTop": "passed"
+    },
+    {
+      "name": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "missingInkPixels": 0,
+      "overflow": false,
+      "runtimeErrors": [],
+      "backToTop": "passed"
+    },
+    {
+      "name": "small",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "missingInkPixels": 0,
+      "overflow": false,
+      "runtimeErrors": [],
+      "backToTop": "passed"
+    },
+    {
+      "name": "reduced",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "missingInkPixels": 0,
+      "overflow": false,
+      "runtimeErrors": [],
+      "backToTop": "passed"
+    },
+    {
+      "name": "no-js",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "verification": "Screenshot inspected; entire lettering visible. Unmasked pixel comparison not run because style injection did not finish with JavaScript disabled."
+    }
+  ]
+}

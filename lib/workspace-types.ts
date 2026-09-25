@@ -1,8 +1,12 @@
+export type CardPriority = "low" | "normal" | "high" | "urgent";
+export type CardLabel = {id:string;name:string;color:string};
 export type Member = {
   id: string;
   email: string;
   name: string;
-  role: "manager" | "admin" | "social" | "designer" | "copywriter" | "video_editor" | "collaborator" | "client";
+  role: "manager" | "admin" | "editor" | "viewer";
+  profession: string;
+  permissions: import("./permissions").PermissionKey[];
   agencyOwnerId: string | null;
   clientAccessMode: "all" | "selected";
   status: "pending" | "active" | "inactive";
@@ -10,6 +14,7 @@ export type Member = {
 };
 
 export type Client = {
+  columnId: string | null;
   id: string;
   name: string;
   handle: string;
@@ -23,8 +28,9 @@ export type Client = {
   contactName: string;
   phone: string;
   email: string;
-  revenue: number;
-  dueDay: number;
+  // Financial fields are absent for members without finance.access.
+  revenue?: number;
+  dueDay?: number;
   notes: string;
   createdAt: string;
 };
@@ -86,13 +92,22 @@ export type Annotation = {
 };
 
 export type Deliverable = {
+  priority?: CardPriority;
+  labels?: CardLabel[];
+  coverMode?: "auto" | "none" | "image" | "full";
+  coverFileId?: string | null;
+  coverFileKind?: "attachment" | "asset" | null;
+  columnId: string | null;
   id: string;
   boardId: string;
   title: string;
   kind: "carousel" | "reels" | "stories" | "static";
   slideCount: number;
+  hasStoriesVersion: boolean;
   status: "briefing" | "production" | "review" | "changes" | "approved";
   assigneeId: string | null;
+  assignedById?: string | null;
+  assignedAt?: string | null;
   dueAt: string;
   notes: string;
   sourceUrl: string;
@@ -114,6 +129,12 @@ export type DeliverableReference = {
 };
 
 export type WorkspaceData = {
+  notifications?: { id:string; deliverableId:string; kind:"assignment"|"urgent"|"stage"|"deadline"; message:string; createdAt:string; readAt:string|null }[];
+  kanbanBoards: import("./kanban").KanbanBoardConfig[];
+  agency: {id:string;name:string;role:string};
+  agencies: {id:string;name:string;role:string}[];
+  invites: {id:string;email:string|null;role:string;clientIds:string[];expiresAt:string;usedAt:string|null;revokedAt:string|null}[];
+  activity: {id:string;agencyId:string;memberId:string;action:string;entityId:string|null;createdAt:string}[];
   currentMember: Member;
   members: Member[];
   clients: Client[];
@@ -132,12 +153,16 @@ export type WorkspaceData = {
 };
 
 export type CrmLead = {
+  priority?: CardPriority;
+  labels?: CardLabel[];
+  columnId: string | null;
   id: string; agencyOwnerId: string; company: string; contactName: string; email: string; phone: string; source: string;
   status: "new" | "research" | "contacting" | "connected" | "qualifying" | "sql" | "nurture" | "disqualified";
   score: number; potentialValue: number; nextAction: string; nextActionAt: string | null; notes: string; ownerId: string | null; createdAt: string; updatedAt: string;
 };
 
 export type CrmDeal = {
+  columnId: string | null;
   id: string; agencyOwnerId: string; leadId: string | null; company: string; contactName: string; value: number;
   stage: "discovery" | "solution" | "proposal" | "negotiation" | "decision" | "contract" | "won" | "lost";
   probability: number; nextAction: string; nextActionAt: string | null; closeDate: string | null; ownerId: string | null; notes: string; lossReason: string | null; createdAt: string; updatedAt: string;

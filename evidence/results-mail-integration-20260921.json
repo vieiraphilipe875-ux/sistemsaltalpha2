@@ -1,0 +1,66 @@
+{
+  "date": "2026-09-21T06:54:31.258Z",
+  "mode": "local PostgreSQL (PGlite), caixa de e-mail local",
+  "results": [
+    {
+      "name": "Saúde do banco sem exposição de dados ou cache",
+      "status": "passed"
+    },
+    {
+      "name": "Cadastro, confirmação obrigatória, código de uso único",
+      "status": "passed"
+    },
+    {
+      "name": "Agências independentes e autorização de criação",
+      "status": "passed"
+    },
+    {
+      "name": "Convite restrito ao e-mail, agência e uso único",
+      "status": "passed"
+    },
+    {
+      "name": "Atribuição: apenas a demanda recebida e sua pasta aparecem",
+      "status": "passed"
+    },
+    {
+      "name": "Acesso explícito à pasta, pesquisa de equipe e reassociação",
+      "status": "passed"
+    },
+    {
+      "name": "Pastas, pauta, referências e validação de dados",
+      "status": "passed"
+    },
+    {
+      "name": "Arquivos privados: envio, versão, leitura, revisão e exclusão",
+      "status": "passed"
+    },
+    {
+      "name": "Financeiro: previsão, parcial, quitação, reabertura e arquivo",
+      "status": "passed"
+    },
+    {
+      "name": "Equipe financeira: competência idempotente, notas e ajustes",
+      "status": "passed"
+    },
+    {
+      "name": "CRM: lead, conversão idempotente, negócio e atividades",
+      "status": "passed"
+    },
+    {
+      "name": "Múltiplas agências na mesma conta, troca e desativação local",
+      "status": "passed"
+    },
+    {
+      "name": "Permissões vazias não concedem acesso; origem externa bloqueada",
+      "status": "passed"
+    },
+    {
+      "name": "Senha: link único, senha antiga recusada e sessões encerradas",
+      "status": "passed"
+    },
+    {
+      "name": "Exclusões verificadas e dados persistidos após recarregar",
+      "status": "passed"
+    }
+  ]
+}

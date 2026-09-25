@@ -1,77 +1,34 @@
-import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { env } from "cloudflare:workers";
+import { and, eq, gt } from "drizzle-orm";
+import { getDb } from "@/db";
+import { members, sessions, agencyMemberships } from "@/db/schema";
+import { digest, randomToken } from "./security";
+export {hashPassword, verifyPassword} from "./security";
 
-const SECRET = new TextEncoder().encode(env.JWT_SECRET || "default_dev_secret_key_123456789");
-
-export async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const iterations = 210_000;
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, 256);
-  const toBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
-  return `pbkdf2$${iterations}$${toBase64(salt)}$${toBase64(new Uint8Array(bits))}`;
+export async function createSession(userId:string) {
+  const token=randomToken(), now=new Date().toISOString();
+  const expiresAt=new Date(Date.now()+7*86400000).toISOString();
+  const [membership]=await getDb().select().from(agencyMemberships).where(and(eq(agencyMemberships.memberId,userId),eq(agencyMemberships.status,"active"))).limit(1);
+  await getDb().insert(sessions).values({tokenHash:digest(token),memberId:userId,agencyId:membership?.agencyId || null,createdAt:now,expiresAt});
+  (await cookies()).set("postito_session",token,{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",expires:new Date(expiresAt)});
 }
-
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  if (!hash.startsWith("pbkdf2$")) {
-    const legacy = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password));
-    const legacyHash = Array.from(new Uint8Array(legacy)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
-    return legacyHash === hash;
-  }
-
-  const [, iterationsText, saltText, expectedText] = hash.split("$");
-  const iterations = Number(iterationsText);
-  if (!iterations || !saltText || !expectedText) return false;
-  try {
-    const fromBase64 = (value: string) => Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
-    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-    const actual = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: fromBase64(saltText), iterations }, key, 256));
-    const expected = fromBase64(expectedText);
-    if (actual.length !== expected.length) return false;
-    let difference = 0;
-    for (let index = 0; index < actual.length; index += 1) difference |= actual[index] ^ expected[index];
-    return difference === 0;
-  } catch {
-    return false;
-  }
-}
-
-export async function createSession(userId: string) {
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 dias
-  const session = await new SignJWT({ userId })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("7d")
-    .sign(SECRET);
-
-  const cookieStore = await cookies();
-  cookieStore.set("session", session, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    expires: expiresAt,
-    sameSite: "lax",
-    path: "/",
-  });
-}
-
 export async function verifySession() {
-  const cookieStore = await cookies();
-  const cookie = cookieStore.get("session")?.value;
-  if (!cookie) return null;
-
-  try {
-    const { payload } = await jwtVerify(cookie, SECRET, {
-      algorithms: ["HS256"],
-    });
-    return payload as { userId: string };
-  } catch (error) {
-    return null;
-  }
+  const token=(await cookies()).get("postito_session")?.value;
+  if (!token) return null;
+  const [row]=await getDb().select({session:sessions,user:members}).from(sessions).innerJoin(members,eq(sessions.memberId,members.id)).where(and(eq(sessions.tokenHash,digest(token)),gt(sessions.expiresAt,new Date().toISOString()))).limit(1);
+  if (!row || row.user.status!=="active" || !row.user.emailVerifiedAt) return null;
+  return {userId:row.user.id,agencyId:row.session.agencyId,tokenHash:row.session.tokenHash,user:row.user};
 }
-
 export async function deleteSession() {
-  const cookieStore = await cookies();
-  cookieStore.delete("session");
+  const jar=await cookies(),token=jar.get("postito_session")?.value;
+  if(token) await getDb().delete(sessions).where(eq(sessions.tokenHash,digest(token)));
+  jar.delete("postito_session");
+}
+export async function switchAgency(agencyId:string) {
+  const session=await verifySession();
+  if(!session) return false;
+  const [membership]=await getDb().select().from(agencyMemberships).where(and(eq(agencyMemberships.agencyId,agencyId),eq(agencyMemberships.memberId,session.userId),eq(agencyMemberships.status,"active"))).limit(1);
+  if(!membership) return false;
+  await getDb().update(sessions).set({agencyId}).where(eq(sessions.tokenHash,session.tokenHash));
+  return true;
 }

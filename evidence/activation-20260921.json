@@ -1,0 +1,42 @@
+{
+  "date": "2026-09-21T03:18:00.320Z",
+  "commit": "9147481ec791fd4cdf9c58a7ad78f5317bb87bb8",
+  "preview_url": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app",
+  "deployment": "https://vercel.com/vieiraphilipe875-7609s-projects/postito/4P6HjKq2Juc5KFmBRPUDpgyD5RzL",
+  "production_promoted": false,
+  "database_health": {
+    "method": "GET",
+    "path": "/api/health",
+    "http_status": 200,
+    "source": "Vercel runtime log",
+    "database_runtime_connections": 1,
+    "database_connection_source": "Supabase pg_stat_activity",
+    "role": "postito_runtime",
+    "tls_certificate_verified": true,
+    "read_permission_verified": true,
+    "account_rows_read": false,
+    "browser_json_body_inspected": false
+  },
+  "corrected_deployment_errors": [
+    "ERR_REQUIRE_ESM",
+    "SELF_SIGNED_CERT_IN_CHAIN"
+  ],
+  "validation": {
+    "unit_tests_passed": 7,
+    "api_scenarios_passed": 15,
+    "previous_api_browser_scenarios_passed": 23,
+    "typecheck": "passed",
+    "build": "passed",
+    "changed_health_tls_files_lint": "passed",
+    "import_dry_run": "passed with synthetic source unchanged"
+  },
+  "pending": [
+    "Verified Resend sender domain",
+    "Sending API key and sender email configuration",
+    "Real signup and email confirmation",
+    "Real password recovery",
+    "Authenticated remote writes and multi-agency regression",
+    "Private remote file uploads",
+    "Production configuration and promotion"
+  ]
+}

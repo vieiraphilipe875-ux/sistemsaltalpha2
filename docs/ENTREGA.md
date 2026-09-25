@@ -1,0 +1,280 @@
+# Postito — entrega e verificação
+
+## Fluxo visual, dashboards e convites por link em 24/09/2026
+
+Kanbans de demandas e CRM oferecem controles junto às listas: título editável, cor, arraste, reordenação por menu, criação de cartão dentro da lista e remoção com destino explícito ou Sem lista. Capas usam imagens já autorizadas da demanda (automática, topo, inteira ou sem capa); prioridades e etiquetas editáveis aparecem em demandas e leads. A demanda abre em diálogo central com fundo escuro. As transições respeitam movimento reduzido.
+
+Cada lista de demandas pode definir responsável, duração em horas e próxima etapa. Mover para ela ou usar Concluir etapa aplica a atribuição e o prazo configurados na mesma transação, rejeitando etapas antigas ou responsáveis sem acesso. Execução não concede acesso integral à pasta nem poder de aprovação. Notificações internas persistentes avisam o responsável e continuam filtradas pelo acesso atual; não são e-mails nem push do sistema operacional. Prazo próximo fica amarelo, vencido fica vermelho e a conclusão usa o texto Aprovada. A configuração de pessoas e próximas etapas é opcional e precisa ser feita nas listas reais pelo gestor.
+
+Todos têm dashboard. Executores veem suas demandas, prazos e clientes atendidos; gestão recebe resumos de pagamentos e CRM quando possui essas permissões. Planejamento mantém a carga da equipe. Clicar no colaborador abre agenda por dia local, com horário, cliente, lista, prioridade e quem atribuiu; registros antigos sem autoria mostram Não registrado. Profissão organiza a equipe e não concede acesso.
+
+Convites voltaram ao link copiável, inclusive quando uma interface antiga pede envio por e-mail. O e-mail opcional apenas restringe o destinatário. Confirmação de cadastro e recuperação permanecem por e-mail. Ajuda contextual funciona por mouse, teclado e toque; a data do CRM explica a próxima ação e sua atividade. A revisão visual corrigiu a máscara dos títulos animados, a largura mínima de um painel do CRM no celular e o fechamento da ajuda pelo segundo toque.
+
+**93 testes unitários e 109 cenários de API/navegador aprovados**, com contas, agências, banco, arquivos e caixa de e-mail locais isolados. TypeScript e build passaram (compilação 3,8 s, TypeScript 10,6 s), com o aviso conhecido de file tracing. Lint: zero erros e 35 avisos de variáveis/importações sem uso. A regressão cobre isolamento de agência e tarefa, revogação, convite e aceite por link, duas pessoas recebendo/passando a mesma demanda, aprovação restrita, notificações, capas, listas, agenda, conflito e formulários em 390/320 px. Os títulos animados foram comparados com e sem máscara de 320 a 1440 px. Capturas selecionadas foram inspecionadas; isso não comprova todos os estados nem Safari/Firefox.
+
+As migrações aditivas Drizzle 0004–0006 foram aplicadas no banco hospedado pela migração `20260924221708_postito_task_covers_labels_and_workflow`, com precondição do histórico e registro dos três hashes/timestamps no ledger. Colunas, defaults, RLS, policy exclusiva do backend e ausência de grants para PUBLIC/anon/authenticated foram conferidos. O advisor não apresentou novo achado; permanece o INFO do histórico privado de migrações, intencionalmente sem policy de acesso. Nenhuma conta, credencial, atribuição ou prazo real foi reconfigurado.
+
+Evidências: `evidence/workflow-regression-20260924.json`, `workflow-agenda-desktop.png`, `workflow-board-desktop.png`, `workflow-dashboard-mobile.png`, `ui-polish-crm-help-mobile.png` e `ui-polish-hero-1440.png`. Publicação direcionada ao Preview existente. A operação autenticada hospedada e a entrega real de e-mail não integram esta verificação.
+
+## Rodapé sem recorte da marca em 24/09/2026
+
+Corrigida a máscara que cortava a borda direita do último “o” de Postito. Uma folga de 0,1 em preserva o desenho inteiro da letra e a animação. Conferência visual e de pixels em 1920, 1440, 820, 390 e 320 px, mais movimento reduzido, sem corte, transbordamento ou erro de execução; Voltar ao início passou nos seis casos. Fallback sem JavaScript inspecionado visualmente. Detalhes e limites do diagnóstico em `docs/REDESIGN-2026-09-24.md`; capturas e medições em `evidence/footer-clipping-*`. Publicação direcionada ao Preview existente.
+
+## Continuidade do scroll da landing em 24/09/2026: QA aprovado
+
+Corrigidos os saltos entre Nosso propósito e os três capítulos horizontais. Lenis e GSAP agora avançam no mesmo frame; os trechos fixados acompanham diretamente a rolagem suavizada, e carregar uma imagem não reinicia o cálculo da animação. Mudanças reais de tamanho são recalculadas após a rolagem parar. Toque, movimento reduzido, leitura sem JavaScript e desmontagem ao entrar no sistema permanecem cobertos.
+
+**95 cenários de API/navegador aprovados (38 API e 57 navegador)**, incluindo medição quadro a quadro ao descer/subir com rolagem normal e rápida. Erro máximo entre posição esperada e observada: 0,126 px, com altura da página constante. TypeScript, lint dos três arquivos de código/teste (zero erros/avisos) e build passaram; compilação 3,5 s e TypeScript 8,8 s, com o aviso preexistente de file tracing. Evidências: `evidence/motion-scroll-continuity-20260924.json` e `evidence/motion-scroll-regression-20260924.json`. Detalhes em `docs/REDESIGN-2026-09-24.md`. Publicação direcionada ao Preview existente; validação local em Chromium não substitui homologação em Safari/Firefox.
+
+## Kanbans personalizáveis em 24/09/2026: publicado no Preview
+
+Demandas dentro do cliente e quadros de leads, oportunidades e clientes do CRM agora oferecem Personalizar listas: adicionar, renomear, colorir, ordenar e remover inclusive todas as listas padrão. As configurações persistem por cliente ou agência. Remoções realocam os cartões para o destino escolhido ou Sem lista, preservando conteúdos, histórico, aprovações e resultados comerciais. Permissões continuam verificadas no servidor; conflitos conservam o rascunho e impedem sobrescrita silenciosa.
+
+**93 testes unitários e 94 cenários de API/navegador passaram (38 API e 56 navegador).** Lint: zero erros e 31 avisos preexistentes. A cobertura nova inclui dois testes de migração sobre dados anteriores, nove cenários de API e sete de navegador, com teclado e telas de 390/320 px. As cinco capturas foram inspecionadas. TypeScript e build aprovados (compilação 3,3 s, TypeScript 8,7 s), com o aviso preexistente de file tracing. Migração remota aplicada e conferida; publicação direcionada ao Preview existente. A operação autenticada hospedada não integra esta verificação.
+
+A primeira tentativa parou por campos obrigatórios omitidos na fixture de API; a segunda, por falta da seleção de responsável na nova fixture de interface. Ambos os testes foram corrigidos e a terceira regressão completa passou. Não foi necessário alterar o produto por essas falhas de teste. Detalhes em `docs/KANBAN-2026-09-24.md`; execução em `evidence/kanban-regression-20260924.json`.
+
+Validação com contas/agências, banco, arquivos e e-mails locais isolados. Não comprova entrega real do convite nem uso autenticado hospedado. O relato de convite ausente continua separado desta função; não houve novo envio real na regressão.
+
+Publicação confirmada: commit `a145aae5d043118f47cae1e74bddc8c231286467`, árvore `78dfa3b40e3d2b65d8777f981780a7f7e1533316`, status Vercel–Postito success, deployment `29Tos4n7xnzvzGmeFX4PGeb7DTVg`.
+
+## Landing v5 e ajustes pendentes: publicada no Preview
+
+Reformulação da landing com abertura centralizada, colagem de telas em expansão, leitura progressiva e três capítulos horizontais ligados ao scroll. Movimento restrito à LP, com leitura vertical/toque nativo no celular e fallback estático. Inclui omissão das mensalidades/vencimentos sem finance.access, abas financeiras responsivas, foco integral na busca de colaboradores e orientação de localização do convite.
+
+91 testes unitários e 78 cenários de API/navegador passaram (29 API e 49 navegador), além de TypeScript e build. Lint dos arquivos revisados: zero erros e cinco avisos preexistentes. Detalhes e limitações em docs/REDESIGN-2026-09-24.md; evidências motion-v5-*. Publicação apenas no Preview existente; produção, banco e credenciais preservados.
+
+Publicação do commit 235e0aa8b46a3b2258897c00df48e1d1773b911f concluída com status Vercel–Postito success (GGbGaQqTkSVzidjwuLxkRiuaMW7g). No alias estável, foram conferidos design motion-5, GSAP ativo, dois pins, scroll suave e escala da imagem de 0,69 até alinhamento/escala final. Captura hospedada: evidence/motion-v5-hosted.jpg. A revisão final acrescenta nomes acessíveis completos aos títulos segmentados, sem mudança visual.
+
+## Landing e reformulação visual v4 em 24/09/2026: publicada no Preview
+
+A raiz pública agora apresenta o Postito antes do login, com Entrar e Criar conta no canto superior direito. Propósito, funcionalidades, quatro capturas reais com dados fictícios, sequência de trabalho, diferenciais e FAQ compõem a landing. `/login` e `/cadastro` têm rotas próprias; sessões válidas e convites continuam chegando ao fluxo autorizado.
+
+A direção v4 aplica navegação grafite, áreas claras e cores pastéis ao dashboard, clientes, demandas, CRM, financeiro, equipe, diálogos e entrada. Made With GSAP e referências públicas de sua galeria, incluindo LxL Creative e Studio Namma, orientam tipografia, composição e movimento. GSAP anima a apresentação e Lenis suaviza a roda do mouse; toque e movimento reduzido usam scroll nativo, preservando áreas internas e modais.
+
+Passaram **91 testes unitários e 72 cenários de API/navegador (28 API e 44 navegador)**, TypeScript, lint dos arquivos novos/alterados verificados e build. A regressão inclui os fluxos de conta, convites, permissões, clientes/imagens, produção, CRM e financeiro. As capturas foram geradas com fixtures locais, sem dados de clientes reais. Detalhes em `docs/REDESIGN-2026-09-24.md` e `evidence/redesign-v4-20260924.json`. Publicação no Preview confirmada em **READY**, commit `a4ce4bcdd6f9ecb38973c0ae84649408c8beb584`, deployment `dpl_G8g7cu1EjYchPf6ohEGPqKTeZ14E`, duração de 51 s. O [alias estável](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/) abriu a nova landing; captura principal, troca para Financeiro, login, retorno e cadastro foram conferidos sem submeter contas ou e-mails reais. Não há promoção a produção.
+
+## Convites automáticos com botão de acesso em 24/09/2026: publicado no Preview
+
+Todo convite novo com e-mail agora envia automaticamente a mensagem para o endereço preenchido. A regra é aplicada pelo servidor inclusive para interfaces antigas que enviam canal link ou omitem o canal. O e-mail continua restringindo o aceite à conta correspondente; permissões, clientes selecionados, validade de sete dias, uso único e revogação permanecem. O formulário dispensa escolher o canal: com destinatário mostra Enviar convite; sem destinatário, Gerar link de convite.
+
+A mensagem inclui o botão **Acessar quadro**, que conserva o convite pelo login/cadastro e leva ao cliente autorizado após o aceite. A validação do botão percorreu e-mail renderizado, clique, login, aceite e cliente, verificando que a conta leitora recebe somente o cliente selecionado e nenhum dado de CRM/financeiro. Outra conta é recusada e repetir o aceite também. Configuração ausente não cria convite; recusa, timeout ou resposta incompleta do provedor revogam o registro e não anunciam envio.
+
+**QA local: 91 testes unitários e 67 cenários E2E aprovados (28 API e 39 navegador).** TypeScript, lint dos arquivos de código/teste alterados (zero erros/avisos), verificação de diff e build passaram. Build: compilação 3,3 s, TypeScript 8,4 s; permanece o aviso conhecido de file tracing. A primeira execução E2E retornou 404 na leitura de uma imagem local, sem reprodução nas duas execuções seguintes e sem alteração desse fluxo. A segunda parou numa asserção do novo teste que procurava a navegação desktop em viewport estreito; a asserção passou a verificar o título do cliente. A terceira suíte completa passou. Isso não atribui causa definitiva ao 404 inicial.
+
+Evidências: `evidence/invite-auto-email-20260924.json`, `evidence/invite-auto-email-regression-20260924.json` e capturas `invite-auto-email-button.png`, `invite-auto-email-confirmed.png`, `invite-auto-email-form.png`. Mensagens e contas são fixtures locais; não houve envio de convite real, reenvio em massa, alteração do banco hospedado, schema, variáveis ou acesso ADM. Entrega na caixa postal e aceite hospedado são verificações separadas.
+
+
+Publicação confirmada: commit `908552f0078709e314f1ca34f32ca791988e1352`, árvore `c5629ec9ba7c76710674de62d63f5eac8d593f9e`, deployment `dpl_GxMKtoARrb7ygJG2zTu1CisV8qj3` em **READY**, build de 40 s. [Implantação](https://postito-64y42r9gl-vieiraphilipe875-7609s-projects.vercel.app) e [alias estável](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/). O alias abriu a tela de login; o fluxo autenticado de convite foi validado localmente, sem disparo real nessa conferência.
+
+## Confirmação automática no cadastro em 24/09/2026: publicado no Preview
+
+Criar minha conta agora envia automaticamente o código também ao retomar um cadastro pendente; o primeiro cadastro já possuía o envio. O botão da confirmação foi renomeado para Reenviar código, com instrução correspondente e validade preservada em cinco minutos. O cadastro existente conserva nome, profissão e senha; não há duplicação de conta nem ativação antes da confirmação. Conta confirmada/inativa não recebe outro código de cadastro. A resposta de encaminhamento depende do aceite do transporte.
+
+O envio pela repetição pendente compartilha o limite de reenvio manual. Testes verificam que alternar os botões não contorna esse limite nem reinicia as cinco tentativas de confirmação. A primeira execução da regressão encontrou ambiguidade no seletor de alerta do teste, que também encontrava o anunciador de navegação do Next.js; o seletor passou a ficar restrito ao formulário. TypeScript deve rodar após os tipos do servidor de teste terminarem de ser gerados, evitando leitura concorrente de artefatos intermediários.
+
+**Validação local: 86 testes unitários e 65 cenários de API/navegador aprovados (27 API e 38 navegador).** TypeScript, lint dos arquivos alterados (zero erros/avisos) e build passaram. O build manteve somente o aviso conhecido de file tracing. Evidências desta rodada: `evidence/signup-auto-code-20260924.json` e `evidence/signup-auto-code-regression-20260924.json`. Não há mudança em schema, configuração de envio, conta ADM ou dados de usuários. Entrega real por Brevo permanece uma verificação separada da caixa local de testes.
+
+
+Publicação confirmada: commit `e1a007958f51032448ff0e45c9cc5e4d3a11347b`, árvore `d44bb865cf4f79ea244f5fe03c4e59e0b7b50f7e`, deployment `dpl_C3m4vXKqsXuhkfmhC34YDoAQRt8w` em **READY**, build de 54 segundos. [Implantação](https://postito-j72noculc-vieiraphilipe875-7609s-projects.vercel.app) e [alias estável](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/). No alias, a tela de confirmação exibiu Reenviar código e validade de cinco minutos. Não houve submissão de cadastro ou envio real nesta conferência; envio e confirmação completos foram verificados em fixtures locais.
+
+## Recuperação direciona cadastro incompleto ao cadastro em 24/09/2026: publicado no Preview
+
+O diagnóstico do endereço informado encontrou um cadastro `pending`, sem confirmação e sem desafio de recuperação, embora a tentativa estivesse registrada. O comportamento anterior não enviava nessa condição e retornava uma mensagem genérica. Por decisão explícita posterior do titular, o formulário agora volta ao cadastro com o e-mail preenchido tanto para cadastro pendente quanto para endereço inexistente, sem envio de recuperação. Conta ativa continua no fluxo de link por e-mail. A conclusão de cadastro pendente continua pelo código de cinco minutos; repetir cadastro não sobrescreve nome, profissão ou senha nem duplica a conta.
+
+A regressão inicial revelou também submissão nativa antes da hidratação na criação da primeira agência, observada como GET com o campo `agency` na URL. Os formulários de autenticação e onboarding agora ficam desabilitados até React assumir as ações e usam método POST como fallback. Os testes verificam controles no HTML sem JavaScript e requisição real após carregamento, sem espera arbitrária.
+
+**Validação local concluída: 86 testes unitários e 64 cenários de API/navegador aprovados (26 API e 38 navegador).** TypeScript e lint dos arquivos alterados passaram sem erros ou avisos. Build aprovado (compilação 3,3 s, TypeScript 8,3 s), com o aviso de file tracing já existente. Evidências em `evidence/password-recovery-20260924.json` e `evidence/password-recovery-regression-20260924.json`. Não houve ativação manual de conta, mudança no ADM, alteração de schema/variáveis nem envio real de recuperação durante o diagnóstico. O estado dos testes anteriores abaixo não substitui esta rodada.
+
+Publicação confirmada: commit `bab6360877beed2616a764055cb2983c19879c2b`, árvore `bcfdf9097cc904d52fc46224dfc2e6fa5b1c6756`, deployment `dpl_D1yjkDVUtJxsJvaVcpUYih9Rdn2Y` em **READY**, build de 64 segundos após a fila da conta. [Implantação](https://postito-69leslzfw-vieiraphilipe875-7609s-projects.vercel.app) e [alias estável](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/). No alias publicado, uma solicitação para endereço de diagnóstico inexistente abriu o cadastro e mostrou a orientação de conclusão. Não foi submetido cadastro nem enviado e-mail real. A retenção do endereço e a confirmação/recuperação completa foram verificadas nos testes locais.
+
+## Navegação pelo caminho e recorte de imagens em 24/09/2026: publicado no Preview
+
+O caminho do topo passa a oferecer retorno à lista de clientes por clique e teclado; a página atual é identificada e não executa navegação para si mesma. Dentro da demanda, os níveis anteriores levam à lista ou ao cliente real da demanda, mesmo quando ela foi aberta pela busca sobre outra pasta. A proteção de rascunho é compartilhada com o fechamento e preserva o texto se o descarte for cancelado. A trilha fica disponível também no celular, respeitando os dados já autorizados.
+
+A solicitação seguinte acrescenta dimensões recomendadas e editor local de recorte: foto de 512 × 512 px e banner de 1920 × 480 px, com escala proporcional, arraste, zoom e controles por teclado. O banner usa 4:1 na prévia, na pasta e no cartão para não refazer o enquadramento na exibição. A escolha é aplicada antes de iniciar o upload; cancelar preserva a imagem anterior. O resultado será uma imagem PNG estática, informado no editor. Permanecem os limites e regras de idempotência da criação de clientes.
+
+**QA integrado: 86 testes unitários e 61 cenários de API/navegador aprovados (25 API e 36 navegador), incluindo seis testes de geometria e oito novos cenários de navegador.** TypeScript aprovado; lint sem erros e com 18 avisos preexistentes. A rodada inicial só de navegação passou em 56 cenários; duas tentativas integradas pararam em suposições incorretas de fixtures no teste de acesso restrito. O cenário passou a criar sua própria demanda privada e restaurar os dados. A revisão visual também corrigiu a coluna do modal que cortava a trilha no celular, com asserção de limites. Os 33 cenários focados passaram, seguidos pela regressão completa de 61.
+
+Foram verificados clique/teclado, rascunho e cancelamento, acesso por atribuição, fotos inválidas, upload parcial sem duplicação, zoom, arraste por mouse e toque em 390/320 px, dimensões e pixels do PNG salvo após recarregar. Capturas usam somente fixtures; não houve edição de clientes reais. Evidências: `evidence/navigation-crop-20260924.json`, `evidence/navigation-crop-regression-20260924.json`, `breadcrumb-desktop.png`, `breadcrumb-mobile.png`, `client-image-crop-desktop.png` e `client-image-crop-mobile.png`. Build final aprovado (compilação 3,4 s e TypeScript 8,7 s), com o aviso conhecido de file tracing em `next.config.ts`/`lib/storage.ts`. Publicação confirmada no Preview: commit `3a404e73a51eac6883ce4c2f9c3ead2806322d95`, árvore `773ab3df6f9b2fd3011232a8635a4b3e8155fc5c`, deployment `dpl_7mu6ziF3Lr2kBZuBReE21qGuexpM` em **READY**, build de 34 s após espera na fila da conta. [Implantação](https://postito-qjf6t81ff-vieiraphilipe875-7609s-projects.vercel.app) e [alias estável](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/). O alias abriu a tela de login no navegador após READY. Conferência funcional autenticada hospedada não realizada.
+
+## Distribuição de demandas no dashboard em 24/09/2026: publicado no Preview
+
+O titular solicitou em áudio uma tabela no dashboard com colaboradores, filtro por profissão e quantidade de demandas atribuídas, para orientar quem distribui o trabalho. Pediu também criação pela área principal, com seleção do responsável, cliente e pauta; o cliente deve ser pesquisável e oferecer lista rolável antes de digitar, e a demanda salva deve aparecer no Kanban correspondente. A transcrição integral não faz parte do repositório.
+
+Critérios desta rodada: a tabela exige `demands.create`, não uma profissão específica. Inclui apenas responsáveis ativos/elegíveis e conta somente demandas autorizadas na agência atual, com esse alcance explícito. Um carrossel conta como uma demanda, independentemente das fatias; aprovadas ficam fora de Em aberto, Com prazo hoje e Atrasadas. “Com prazo hoje” usa o dia civil local e “Atrasadas” o vencimento anterior ao instante atual; uma demanda vencida hoje pode contar nas duas. Os valores zero devem ficar explícitos. O exemplo de seis demandas diante de uma referência de doze não instala quota ou bloqueio, nem exige mudança no schema.
+
+A criação central reutiliza o diálogo e a autorização existentes, mantendo cliente/pauta compatíveis e responsável elegível. O sucesso só é anunciado após persistência e a atualização da área de trabalho reflete a atribuição no Kanban e na tabela. A verificação cobriu acesso parcial, troca de agência, papéis, profissão, carrosséis, aprovadas, prazos locais, busca/rolagem/teclado, seleção de pauta e persistência após recarregar, em desktop e celular. No cenário de cliente sem pauta, somente a resposta de leitura foi simulada; a criação de pasta e demanda persistiu no banco local real do teste e preservou o briefing.
+
+**QA local concluído: 80 testes unitários e 53 cenários E2E aprovados, sendo 25 de API e 28 de navegador.** A suíte inclui oito testes do helper de carga, com elegibilidade/zero, escopo, reatribuição, aprovação e datas locais em São Paulo e na transição de horário de verão de Nova York. A primeira E2E parou em transbordamento móvel do dashboard, antes dos cinco novos cenários da tabela; o ajuste de largura/rolagem foi aplicado e a segunda execução completa passou. TypeScript aprovado; lint dos arquivos de código alterados com zero erros e 18 avisos preexistentes. Build aprovado, com compilação em 3,1 s e etapa TypeScript em 8,2 s; permaneceu o aviso conhecido de file tracing no encadeamento `next.config.ts` → `lib/storage.ts` → rota de documentos financeiros.
+
+Publicação confirmada no Preview: commit `2afd07ba1a1494246aa96ff194650d54215bd562`, árvore `cab1cea2b7b19faaa6f4eb8376e73f8103998809`, deployment `dpl_5PuDdWxcfJCGDNuyG29MUuHwuM5v` em **READY** (50 segundos). A [implantação](https://postito-fw9muketd-vieiraphilipe875-7609s-projects.vercel.app) e o [alias estável](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/) exibem a versão; o alias abriu a tela de login no navegador. A verificação funcional autenticada hospedada permanece pendente, separada da regressão local. Produção, schema, variáveis de ambiente, acesso ADM e confirmação em cinco minutos foram preservados. Evidências: `evidence/team-workload-20260924.json`, `evidence/team-workload-regression-20260924.json` e três capturas com fixtures (`team-workload-authorized.png`, `team-workload-created-kanban.png`, `team-workload-mobile.png`). Os 72 testes unitários e 48 cenários abaixo pertencem à correção anterior. Separadamente, a recuperação real autorizada foi executada e conferida no banco; isso não comprova renderização autenticada das imagens no ambiente hospedado.
+
+## Clientes, imagens e convites em 24/09/2026: publicado no Preview
+
+O titular relatou que a criação de cliente exibiu aviso sobre imagens, mas persistiu o cadastro. A repetição criou outro cliente; miniatura e banner não apareceram. A inspeção do código confirmou que a validação/envio acontecia após criar e que o ID já persistido não era preservado para retentar. Também foi identificado o uso incorreto dos metadados de `Storage.info()`: o SDK retorna `size` e `contentType` na raiz, enquanto a implementação tentava ler campos diferentes em `metadata`.
+
+A inspeção remota somente de leitura encontrou dois cadastros de mesmo nome separados por **14,534 segundos**, ambos sem imagens vinculadas, cada um com uma pasta, nenhuma tarefa e doze previsões. O mais recente possuía duas transferências PNG válidas de aproximadamente 7–9 MB no Storage, sem conclusão do vínculo. Nomes, IDs, destinatários e valores comerciais reais não integram este registro. **Recuperação real concluída após autorização explícita posterior do titular.** A revisão automática havia rejeitado a primeira execução por faltar consentimento para alterações reais, incluindo efeitos financeiros. Esse bloqueio foi resolvido pelo consentimento posterior; nenhuma tentativa indireta o contornou. Com as precondições revalidadas, a transação vinculou as duas imagens ao original, preservou seus convites, inativou a duplicata e arquivou suas doze previsões intactas, sem apagar dados ou objetos. Recuperação e rollback haviam passado em fixtures sintéticas; o rollback remoto não foi executado.
+
+A consulta pós-commit confirmou: original ativo, avatar/banner vinculados, dois tickets concluídos, doze previsões não arquivadas e nenhum arquivamento no original, dois convites, uma pasta e nenhuma tarefa; duplicata inativa, zero previsões não arquivadas, doze arquivadas, nenhum convite, uma pasta e nenhuma tarefa. Dois objetos continuam vinculados no Storage e um registro de auditoria reversível foi gravado. A duplicata sai da lista padrão de ativos e permanece no histórico de inativos. A renderização autenticada das imagens no navegador é uma verificação separada, ainda pendente.
+
+Correções de clientes/Storage implementadas e testadas: validar as imagens antes de persistir; compartilhar a política de JPG/PNG/WEBP/GIF até 20 MB por imagem entre interface e API; preservar o ID criado e permitir retentar upload; usar `requestId` escopada por agência/membro com unicidade no banco para que retries não repitam pasta, vínculo, previsões ou atividade; verificar os campos autoritativos do objeto. Outros anexos mantêm o limite de 50 MB. Replay não deduplica por nome, não sobrescreve dados nem restaura acesso revogado.
+
+O titular também relatou convite por e-mail que não chega e pediu **Selecionar todos** para editor/leitor. O modo padrão de gerar link podia ser confundido com envio. A leitura dos registros encontrou dois convites não revogados: para o primeiro não foi observado evento de envio; para o segundo o painel Brevo registrou envio e entrega às 06:40 BRT. Isso não confirma posicionamento na caixa principal nem aceite do convite, e não fundamenta afirmar falha SMTP. Nenhum novo e-mail foi enviado durante essa inspeção. A interface inicia em e-mail, distingue aceite do provedor de entrega e informa que gerar link não envia mensagem. A seleção geral marca/desmarca os clientes atuais no convite/acesso, com estado parcial, preservando o escopo selecionado. O teto de 100 IDs foi removido; a autorização em lotes mantém o isolamento da agência, com testes para 150 e 1.001 clientes. Não equivale ao acesso automático a todos os clientes presentes e futuros. O fluxo passou na regressão local; aceite pelo provedor não comprova chegada à caixa postal.
+
+Validação desta rodada: **72 testes unitários e 48 cenários E2E aprovados (25 de API e 23 de navegador)**, com fixtures isoladas. A regressão inclui validação antes de criar, clique repetido, resposta perdida após commit, upload parcial/retry, previsões únicas, personalização e remoção de imagens, leitura privada, seleção geral de leitor/editor, envio local, modo link e escopo futuro. A primeira rodada parou em um seletor de teste ambíguo para Fechar; o seletor foi delimitado ao rodapé e a suíte completa repetida com sucesso. TypeScript e build passaram; lint teve zero erros e 26 avisos preexistentes nos arquivos alterados. O build preserva o aviso conhecido de file tracing. A concorrência foi exercitada somente em PGlite. O Preview foi publicado e conferido; renderização autenticada hospedada das imagens e entrega/aceite real após a alteração ainda precisam de confirmação. Evidências: `evidence/client-media-invites-fix-20260924.json` e `evidence/client-media-invites-regression-20260924.json`; capturas de navegador usam exclusivamente dados fictícios.
+
+Publicação confirmada: commit `20b625a4099bfa40b8cc0252d006aa9a79597e18`, árvore `cbc122efa1fccb981fbe087c57a1d7214b565921`, deployment `dpl_CqGcLGUU5gBJSn4GZTeSXpLUfkfx` em **READY** (43 segundos). A [implantação](https://postito-4z261p23f-vieiraphilipe875-7609s-projects.vercel.app) e o [alias de Preview](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/) apontam para a correção; o alias abriu a tela de login no navegador. A navegação direta à resposta JSON de saúde foi bloqueada pelo cliente do navegador, portanto não é evidência de saúde hospedada nem de falha do serviço. Produção, schema, variáveis de ambiente, credenciais ADM e a regra de confirmação em cinco minutos foram preservados.
+
+## Correção da confirmação de e-mail em 24/09/2026
+
+O usuário confirmou recebimento do e-mail, mas relatou recusa do código e solicitou validade de **cinco minutos**. A auditoria reproduziu a seleção indevida somente do desafio mais recente. No caso real, leitura de metadados encontrou dois desafios ainda válidos, separados por 3,488 segundos, conta pendente e duas tentativas no mais recente. Nenhum código ou hash foi lido e nenhum registro hospedado ou acesso ADM foi alterado manualmente.
+
+A correção validada localmente e publicada no Preview aceita qualquer código ainda válido, aplica o teto de cinco minutos também aos desafios legados, consome os desafios de confirmação juntos após sucesso e mantém limite agregado de cinco tentativas que o reenvio não reinicia. **A confirmação real da correção permanece pendente de novo código do usuário.** O recebimento relatado não comprova o cadastro concluído. Evidência: `evidence/email-confirmation-fix-20260924.json`; os registros históricos foram preservados.
+
+Publicação confirmada no Preview: commit `ad64eade9adfca7d31e1b0d62d9e3d6d71b0ea09`, árvore `3d9bb57545318d65bfeca84aedc7f6286a7ff0b0`, deployment `dpl_8gyzLivZBn7eVUsGh51coVYqLMDJ` em **READY** (33 segundos). A [URL da implantação](https://postito-doa9kxpev-vieiraphilipe875-7609s-projects.vercel.app) está publicada; o [alias estável](https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/) foi aberto no navegador e a tela **Confirmar meu e-mail** mostrou “Ele vale por 5 minutos após o envio”. A confirmação real continua pendente de um novo código recebido pelo usuário. Não houve ativação manual de conta nem alteração de senha, ADM, schema ou variáveis de ambiente nesta correção.
+
+Validação local concluída: **37 testes unitários aprovados, incluindo 18 novos, e 38 cenários E2E aprovados (23 de API e 15 de navegador)**. Cadastro, código, onboarding e recuperação passaram, incluindo colagem de código com espaços e texto de validade de cinco minutos. TypeScript e lint dos arquivos de código/teste alterados passaram. O build passou com o aviso já conhecido de file tracing em `next.config.ts`/`lib/storage.ts`. A primeira execução E2E parou por ausência de Chromium; após instalação pela distribuição oficial, a suíte completa encerrou com exit 0. Evidência da regressão: `evidence/email-confirmation-regression-20260924.json`. A concorrência foi testada somente em PGlite isolado, não entre várias conexões PostgreSQL hospedadas.
+
+## Retomada do e-mail em 24/09/2026
+
+O titular retomou o envio de e-mails para testar cadastros. A chave Brevo **Postito Preview**, criada em 24/09 e válida até **24/12/2026**, foi transferida pela interface para a Vercel sem leitura pelo modelo nem exposição de seu valor. Foram confirmados `BREVO_API_KEY` como Secret, `MAIL_PROVIDER=brevo` e `BREVO_FROM_EMAIL` como Config, com remetente já verificado e escopo exclusivo ao Preview da branch `postito/release-0.2.0`.
+
+O redeploy `dpl_FaPmSUxSQog7UNHgRp5zsYkFVJro`, do commit `3d5bdcf8e51aca996124bfd1841281e390beb503`, concluiu em **READY**. Variáveis anteriores, código, ADM e dados foram preservados. Não houve teste de entrega durante essa configuração inicial; o recebimento relatado posteriormente e a correção da confirmação estão registrados na seção acima. Configuração e build não comprovam entrega. Consulte `evidence/brevo-preview-20260924.json` e `docs/EMAIL.md`.
+
+Esta retomada substitui a postergação de e-mail registrada em 23/09. A remoção da troca de senha pelo perfil sem e-mail permanece vigente; produção, planos e checkout não foram antecipados.
+
+## Reformulação visual de 23/09/2026
+
+A direção vigente é moderna e pastel: branco frio, grafite, lilás, azul, menta e rosa, com DM Sans. Entrada, onboarding, navegação, dashboard, clientes, Kanban, CRM, financeiro, equipe e diálogos foram reformulados. Foram acrescentadas busca por `Ctrl+K`/`Cmd+K`, navegação de resultados por teclado e ações rápidas de criação respeitando as permissões.
+
+Validação desta versão: **36 cenários de API/navegador e 19 testes unitários aprovados**, TypeScript e build aprovados, lint com zero erros e 39 avisos. A revisão incluiu desktop, celular, movimento reduzido e dashboard com texto ampliado. O transbordamento financeiro encontrado no celular foi corrigido e a regressão foi repetida. Referências, limites, decisões e evidências estão em `docs/REDESIGN-2026-09-23.md` e `evidence/results.json`.
+
+Entrega na mesma branch de Preview e no PR de acompanhamento. Esta rodada preserva a decisão abaixo sobre autenticação, o acesso ADM existente e a postergação de e-mail, cadastro e planos.
+
+
+## Histórico de 23/09/2026: autenticação e e-mail
+
+Por solicitação explícita do titular, a opção **Seu perfil → Alterar senha** sem e-mail foi removida, junto com sua operação no servidor. O acesso ADM já provisionado, suas credenciais e seus dados permanecem preservados. Cadastro, confirmação, recuperação de senha e envio de e-mails serão retomados após finalizar o restante do sistema.
+
+A remoção foi validada por **34 cenários de API/navegador e 19 testes unitários aprovados**, com build de produção e TypeScript também aprovados. A chamada à antiga operação retorna HTTP 400 sem alterar a senha ou encerrar a sessão; no navegador, o perfil não oferece o controle removido e continua salvando nome e profissão.
+
+A rodada de 35 cenários abaixo é um registro histórico da versão que ainda incluía a troca de senha pelo perfil e foi substituída, para o estado atual, pela regressão descrita acima.
+
+## Histórico de 23/09/2026: acesso administrativo
+
+O titular adiou a configuração de envio de e-mails para avançar na operação. Foi provisionada uma conta indicada por ele, ativada individualmente e vinculada como proprietária a uma agência nova e vazia. A consulta posterior confirmou a credencial gravada e a associação ativa. Nenhuma credencial foi incluída no código, nenhum cadastro público deixou de exigir confirmação e nenhuma conta preexistente foi alterada. Essa ativação manual não comprova propriedade da caixa postal. O primeiro acesso hospedado ainda precisa ser conferido pelo titular.
+
+A atualização anterior acrescentou **Seu perfil → Alterar senha**, sem e-mail, com senha atual obrigatória, confirmação da nova senha, revogação de sessões e novo login. Essa função foi removida pela decisão posterior registrada acima e não integra o estado atual do produto.
+
+Também foram corrigidas duas pendências: o financeiro agora permite abrir cada comprovante/NF anexado; a nova demanda oferece somente responsáveis ativos com as permissões necessárias. Os filtros financeiros de ano e mês receberam nomes acessíveis.
+
+Validação histórica dessa rodada: **35 cenários de API/navegador e 19 testes unitários aprovados**, TypeScript e build aprovados, lint com zero erros e 42 avisos preexistentes. Os testes percorreram senha atual incorreta, nova senha inválida, confirmação divergente, encerramento de sessões, rejeição da senha antiga, novo login, ausência de envio de e-mail, múltiplos documentos e responsáveis inelegíveis. A caixa de e-mail, os arquivos e o banco usados na regressão são locais e isolados. A entrega real de e-mails permanece adiada; a publicação continua em Preview.
+
+## Atualização de 23/09/2026
+
+As instruções principais enviadas pelo usuário foram consolidadas em `docs/REQUISITOS.md`. Esta rodada corrigiu o acesso à criação de pastas, separou edição de CRM e financeiro, protegeu pautas contra sobrescrita por outra edição e acrescentou avisos de rascunho. Também ajustou onboarding, permissões visuais, nomes acessíveis e menu móvel. A memória de design foi revisada.
+
+Validação histórica local: **31 cenários de API/navegador e 19 testes unitários aprovados**, TypeScript e build aprovados; lint sem erros, com 42 avisos de manutenção. O alcance, as reproduções e as limitações estão em `docs/AUDITORIA-2026-09-23.md`. Entrega real de e-mails e homologação autenticada hospedada continuam pendentes. Esta contagem e as das seções seguintes registram versões anteriores.
+
+
+Atualizado em 21 de setembro de 2026 · versão 0.2.0
+
+## Resultado
+
+O sistema original foi transformado em uma aplicação Next.js com PostgreSQL, autenticação, agências independentes e a identidade Postito. Foram preservados os fluxos de clientes, pastas, pautas por fatias, revisão visual, CRM e financeiro, com correções de acesso, dados e interface.
+
+A versão foi executada e testada localmente e publicada como Preview na Vercel. O código está na branch `postito/release-0.2.0`, com [PR de acompanhamento](https://github.com/vieiraphilipe875-ux/sistemsaltalpha2/pull/1). Após a confirmação do usuário, o projeto Supabase Postito foi criado em São Paulo, com as três migrações aplicadas, 25 tabelas protegidas e um bucket privado. Os testes de vínculos e limites financeiros passaram no banco remoto. A homologação completa com e-mails e arquivos reais ainda está pendente. O código não contém credenciais, contas de demonstração pré-instaladas nem o banco real do usuário.
+
+Em 21/09/2026, os acessos aos painéis Vercel e Supabase foram concluídos. O projeto Vercel foi renomeado para `postito`; Next.js e Node.js 24 foram conferidos. Foram configurados `APP_URL`, `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` e `SUPABASE_STORAGE_BUCKET`, restritos à branch de Preview. A conexão usa um papel de banco exclusivo e limitado. Em seguida foram salvos `RESEND_API_KEY`, com permissão exclusiva de envio, e `RESEND_FROM_EMAIL`, com o remetente de teste do Resend. O usuário ainda não possui domínio próprio; a entrega real precisa ser validada com seu destinatário antes de ser declarada funcional. A versão não foi promovida a produção.
+
+## Etapas executadas
+
+1. Preservação e inspeção do projeto e do banco originais.
+2. Identificação dos problemas de execução, autorização e dados.
+3. Migração da arquitetura para Next.js/PostgreSQL e contas por pessoa.
+4. Implementação de agências, convites, permissões e atribuição em contexto.
+5. Identidade Postito, interface e documentação de design.
+6. Testes integrados, uso no navegador, correções e repetição da regressão.
+7. Ensaio de migração e preparação de configuração para publicação.
+
+## Funções entregues
+
+- Cadastro com nome, e-mail, senha e profissão; confirmação por código; login; recuperação de senha; edição de perfil e saída.
+- Conta que participa de várias agências; criação e troca de espaço; associação independente em cada agência.
+- Convite por link ou e-mail, papel e escopo definidos no servidor, restrição opcional por e-mail, expiração e revogação.
+- Proprietário, administrador, editor e leitor; profissão independente de permissão; desativação apenas na agência selecionada.
+- Pesquisa de colaborador e atribuição diretamente no cartão da demanda dentro da pasta do cliente; edição de responsável também no detalhe da demanda.
+- Equipe da pasta gerenciada separadamente da responsabilidade por demanda.
+- Leitura restrita: quem recebeu apenas uma tarefa não passa a ver todas as tarefas do cliente.
+- Pastas mensais e visão de todas as pastas, Kanban, arrastar, edição de título/prazo/orientações e pauta por fatias.
+- Upload privado, anexos, versões de arquivo final e apontamentos de revisão.
+- CRM com leads, oportunidades, atividades, conversão sem duplicação e dados dos clientes.
+- Financeiro com previsões, lançamentos, duplicação, arquivamento, documentos e competências da equipe; valores em centavos e projeção mensal de doze meses.
+- Busca de clientes/demandas, atualização automática periódica, mensagens de erro e uso no celular.
+- Logo Postito, fontes locais, paleta própria, foco visível e respeito a movimento reduzido.
+
+## Problemas encontrados e corrigidos
+
+| Área | Problema da origem ou encontrado na regressão | Correção |
+| --- | --- | --- |
+| Isolamento | Clientes sem vínculo explícito à agência | Agência obrigatória e verificação dos IDs no servidor |
+| Autorização | Administrador com acesso irrestrito a dados de outras agências | Administração limitada à associação ativa |
+| Consultas | Condições de acesso podiam substituir condições anteriores | Predicados combinados e verificações específicas por recurso |
+| Contas | Dados internos de autenticação podiam entrar no retorno de membros | DTO de conta sem hashes/tokens |
+| Sessão | Segredo JWT padrão e validação insuficiente de conta inativa | Sessão opaca, hash no banco e estado revalidado |
+| Convite | Conta em outra agência podia ser recusada ou ter dados alterados | Conta global e novas associações independentes |
+| Permissões | Lista vazia podia herdar poderes padrão | Vazio significa nenhum acesso |
+| Cadastro | Faltavam confirmação e recuperação completas | Fluxos de código e token com consumo único |
+| E-mail de teste | Recusa do Resend por destinatário não autorizado aparecia apenas como falha genérica | Mensagem específica sobre a restrição, diagnóstico sem conteúdo privado e teste do formato real do erro do SDK |
+| Provedor de e-mail | O remetente de teste do Resend não atendia outros destinatários sem domínio | Adaptador Brevo preparado, com validação de aceite, timeout e diagnóstico privado; ativação real depende da conta e do remetente |
+| Confirmação | A abertura da tela podia sugerir envio mesmo em cadastro repetido | Estado de envio explícito, texto neutro e atalhos para solicitar código ou criar conta |
+| Interface | Componentes/ícones ausentes e propriedades incompatíveis | Correção de referências e compilação verificada |
+| Vercel | Functions falhavam antes de executar por `ERR_REQUIRE_ESM`, apesar do build READY | Remoção do formato global forçado, utilitários TypeScript compatíveis e nova verificação das APIs hospedadas |
+| Banco hospedado | Validação TLS falhava por falta da CA do provedor | Inclusão da CA pública oficial, restrita aos hosts Supabase, com verificação de certificado e hostname preservada |
+| Perfil | Controle sem edição funcional | Formulário com persistência de nome/profissão |
+| Pastas | Filtro em pasta mensal vazia escondia demandas existentes | Abertura em todas as pastas e filtro explícito |
+| Demanda | Criação podia manter a pasta de outro contexto | Contexto reinicializado e pasta escolhida respeitada |
+| Atribuição | Responsável não podia ser trocado no cartão | Seletor com pesquisa, estado ocupado e confirmação persistida |
+| Upload | Arquivos grandes passavam pelo servidor de aplicação | Autorização e envio direto para Storage em produção |
+| Limite de upload | O limite inicial de arquivo final excedia o plano gratuito escolhido | Limite de 50 MB aplicado antes da autorização e verificado na API |
+| Arquivos | Leitura e escrita não verificavam todos os vínculos | Acesso autenticado por agência e demanda |
+| Avatar/banner | Troca de arquivo podia manter a imagem anterior na tela | URL de recurso versionada após atualização |
+| CRM | Repetir conversão podia duplicar oportunidade | Transação, bloqueio de registro e unicidade |
+| Financeiro | Pagamento parcial/reabertura podia deixar valores inconsistentes | Validações, limites em banco e normalização do estado |
+| Competências | Repetir geração podia falhar ou duplicar | Geração idempotente por profissional/mês |
+| Recorrência | Seleção mensal era apenas uma marcação | Geração explícita de projeções para doze meses |
+| Valores | Entrada brasileira podia falhar com vírgula e separador de milhar | Conversão validada para centavos |
+| Datas | Vencimento podia aparecer no dia anterior; horário local perdia o fuso | Tratamento de data civil e conversão de horário no navegador |
+| Gráficos | Proporção visual do funil usava largura ilustrativa | Proporção calculada com os registros reais |
+| Formulários | Alguns eventos não exibiam falhas e campos careciam de rótulos | Tratamento de erro e associação de rótulos |
+| Celular | Controles da pasta podiam ultrapassar a largura da tela | Quebra responsiva e orientação adequada ao toque |
+
+## Evidência e alcance
+
+A regressão inclui 23 cenários completos de API e navegador, com múltiplas contas/agências e dados isolados. A suíte unitária cobre hash novo/legado, permissões vazias, dinheiro, recorrência em meses curtos e datas brasileiras. `evidence/results.json` registra o resultado final dos cenários; as capturas mostram o sistema em uso com dados fictícios.
+
+Na ativação de 21/09, após adicionar a checagem de saúde do banco, foram repetidos 15 cenários de API (incluindo a nova checagem), seis testes unitários e o build de produção. Todos passaram. O novo teste unitário também verifica retorno 503 sem exposição de erro interno quando falta a conexão em produção. Essa rodada está em `evidence/results-integration-20260921.json`; a evidência anterior de navegador foi preservada. O resultado remoto mais recente fica no PR de acompanhamento.
+
+A correção TLS acrescenta um sétimo teste unitário: valida a identidade e a validade da CA pública oficial, a verificação obrigatória do certificado e o escopo dos hosts aceitos.
+
+A correção da mensagem de e-mail de teste acrescenta três testes, totalizando dez: reconhecimento da recusa real do Resend mesmo sem `statusCode`, manutenção da resposta genérica para outros erros e preservação de destinatário, remetente e idempotência no envio aceito. Os dez testes unitários e os quinze cenários locais de API passaram. A nova evidência de integração está em `evidence/results-mail-integration-20260921.json`. A evidência histórica dos 23 cenários foi preservada; a suíte autônoma de navegador não foi repetida nesta rodada. A verificação hospedada usa o navegador autorizado e continua dependente da confirmação da conta pelo usuário.
+
+A preparação da Brevo elevou a suíte para 19 testes unitários aprovados. Ela cobre o contrato de envio com respostas simuladas, falhas HTTP, resposta sem aceite, indisponibilidade de rede, privacidade dos logs e configuração por provedor. Os 16 cenários locais de API passaram; o novo cenário confirma que repetir cadastro não anuncia envio nem troca a senha, e que solicitar outro código permite concluir a confirmação. O cenário foi ajustado para criar a agência de teste antes de consultar a área de trabalho, que exige agência ativa. TypeScript, lint dos arquivos alterados (zero erros; um aviso preexistente de variável não usada) e build de produção passaram. Consulte `evidence/results-brevo-integration-20260921.json` e `evidence/brevo-adapter-20260921.json`. A entrega real pela Brevo segue pendente de conexão da conta e verificação do remetente.
+
+Também foram executados TypeScript, lint e build de produção. O lint não reportou erros; restam avisos de manutenção, sobretudo imports não usados e recomendações de otimização de imagens. O build emite um aviso de rastreamento do adaptador local de arquivos; a lista de arquivos rastreados foi inspecionada e não incluía o diretório de dados locais. A publicação deve conferir o tamanho final das Functions.
+
+Isso é uma auditoria com escopo e evidências, não uma garantia de inexistência de qualquer bug possível. Não foram realizados teste de carga, auditoria independente de segurança, homologação Safari/Firefox ou homologação completa da aplicação em produção. A execução no navegador usou Chromium e dimensões de desktop e celular. As verificações SQL no Supabase estão registradas em `docs/INFRAESTRUTURA.md`.
+
+## O que falta para operação real
+
+1. Finalizar as demais funções do sistema e suas correções, preservando o acesso ADM temporário e a remoção da troca de senha pelo perfil.
+2. Concluir a ativação Brevo retomada em 24/09 e homologar cadastro, confirmação, recuperação de senha e envio de e-mails, conforme `docs/EMAIL.md`; preparar domínio autenticado para o envio definitivo.
+3. Homologar esses fluxos, convites, upload direto grande, persistência e isolamento com os serviços reais.
+4. Configurar o ambiente de produção, sua URL definitiva e credenciais próprias antes da promoção.
+5. Promover somente a versão homologada.
+6. Revisar o plano de migração dos administradores/gerentes legados antes de importar dados reais.
+
+O link de pasta Google Drive foi mantido. Cópia automática de objetos para o Google Drive depende de uma integração própria e não está ativa. Arquivos finais possuem versões; desde 23/09/2026 a pauta rejeita versões desatualizadas e preserva o rascunho. Limpeza de objetos órfãos e paginação para bases grandes estão no roteiro posterior.
+
+Assinaturas, preços, checkout e liberação de módulos por pagamento não foram implementados nesta etapa. A proposta de discussão está em `docs/PROXIMAS-ETAPAS.md`.

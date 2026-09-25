@@ -1,0 +1,7 @@
+.data
+.env*
+evidence
+tests
+docs
+node_modules
+*.zip

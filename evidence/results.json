@@ -1,0 +1,150 @@
+{
+  "date": "2026-09-23T18:32:20.965Z",
+  "mode": "local PostgreSQL (PGlite), caixa de e-mail local",
+  "results": [
+    {
+      "name": "Saúde do banco sem exposição de dados ou cache",
+      "status": "passed"
+    },
+    {
+      "name": "Cadastro, confirmação obrigatória, código de uso único",
+      "status": "passed"
+    },
+    {
+      "name": "Cadastro pendente: repetição não anuncia envio; reenvio permite concluir sem trocar a senha",
+      "status": "passed"
+    },
+    {
+      "name": "Agências independentes e autorização de criação",
+      "status": "passed"
+    },
+    {
+      "name": "Convite restrito ao e-mail, agência e uso único",
+      "status": "passed"
+    },
+    {
+      "name": "Atribuição: apenas a demanda recebida e sua pasta aparecem",
+      "status": "passed"
+    },
+    {
+      "name": "Acesso explícito à pasta, pesquisa de equipe e reassociação",
+      "status": "passed"
+    },
+    {
+      "name": "Pastas, pauta, referências e validação de dados",
+      "status": "passed"
+    },
+    {
+      "name": "Pauta: duas edições da mesma versão não sobrescrevem o trabalho salvo",
+      "status": "passed"
+    },
+    {
+      "name": "Arquivos privados: envio, versão, leitura, revisão e exclusão",
+      "status": "passed"
+    },
+    {
+      "name": "Financeiro: previsão, parcial, quitação, reabertura e arquivo",
+      "status": "passed"
+    },
+    {
+      "name": "Equipe financeira: competência idempotente, notas e ajustes",
+      "status": "passed"
+    },
+    {
+      "name": "CRM: lead, conversão idempotente, negócio e atividades",
+      "status": "passed"
+    },
+    {
+      "name": "Múltiplas agências na mesma conta, troca e desativação local",
+      "status": "passed"
+    },
+    {
+      "name": "Permissões vazias não concedem acesso; origem externa bloqueada",
+      "status": "passed"
+    },
+    {
+      "name": "Editor com pasta liberada cria pastas sem gerenciar clientes",
+      "status": "passed"
+    },
+    {
+      "name": "CRM sem financeiro edita contato e status sem alterar cobranças",
+      "status": "passed"
+    },
+    {
+      "name": "Administrador atua na agência sem conceder administração ou alterar proprietário",
+      "status": "passed"
+    },
+    {
+      "name": "Alteração direta de senha indisponível preserva credenciais e sessão",
+      "status": "passed"
+    },
+    {
+      "name": "Senha: link único, senha antiga recusada e sessões encerradas",
+      "status": "passed"
+    },
+    {
+      "name": "Exclusões verificadas e dados persistidos após recarregar",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: login, logo, navegação e busca de clientes",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: atribuir na pasta, filtrar pelo nome e persistir",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: editar demanda, alternar abas e salvar pauta",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: rascunho preservado ao fechar e em conflito de edição",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: nova demanda na pasta escolhida, envio de anexo e arrastar",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: CRM, financeiro, equipe e perfil respondem",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: convite por link e edição de acesso",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: editor cria pasta e edita CRM sem campos financeiros",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: todos os comprovantes e notas fiscais podem ser abertos",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: nova demanda oferece somente responsáveis ativos e com acesso",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: busca por atalho, teclado e limpeza; ações rápidas de criação",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: layout móvel, menu, foco e movimento reduzido",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: CRM, financeiro e equipe no celular; leitura ampliada",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: cadastro, código, onboarding e recuperação por e-mail",
+      "status": "passed"
+    },
+    {
+      "name": "Navegador: sem erros de execução no fluxo percorrido",
+      "status": "passed"
+    }
+  ]
+}

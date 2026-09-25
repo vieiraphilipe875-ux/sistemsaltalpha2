@@ -1,0 +1,23 @@
+{
+  "date": "2026-09-20T23:44:54.765403+00:00",
+  "version": "0.2.0",
+  "integration_and_browser": {
+    "passed": 23,
+    "failed": 0
+  },
+  "unit": {
+    "passed": 5,
+    "failed": 0
+  },
+  "production_build": "passed",
+  "typescript": "passed",
+  "lint": {
+    "scope": "changed files",
+    "errors": 0,
+    "warnings": 1
+  },
+  "deployment": "not deployed",
+  "limitations": "See docs/ENTREGA.md and docs/DEPLOY.md",
+  "remote_database": "created, migrated and SQL checks passed; see evidence/supabase.json",
+  "upload_limit_bytes": 52428800
+}

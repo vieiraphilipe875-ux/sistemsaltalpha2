@@ -1,0 +1,22 @@
+{
+  "checkedOn": "2026-09-21",
+  "source": "authenticated Vercel dashboard",
+  "accountAccessConfirmed": true,
+  "teamSlug": "vieiraphilipe875-7609s-projects",
+  "projectId": "prj_9q20IOViIjPpMcuEQkvRTP9z0ePW",
+  "previousProjectName": "sistemsaltalpha2",
+  "projectName": "postito",
+  "projectRenameConfirmed": true,
+  "plan": "Hobby",
+  "framework": "Next.js",
+  "nodeVersion": "24.x",
+  "rootDirectory": "",
+  "environmentVariableCount": 0,
+  "linkedRepository": "vieiraphilipe875-ux/sistemsaltalpha2",
+  "postitoSourceUploaded": false,
+  "newDeploymentCreated": false,
+  "previousDeploymentStatus": "failed",
+  "applicationProductionVerified": false,
+  "supabaseDashboardLoginStatus": "GitHub reported account does not support password sign-in",
+  "serverCredentialsRetrieved": false
+}

@@ -1,0 +1,98 @@
+{
+  "date": "2026-09-24",
+  "scope": "Email confirmation after resend; five-minute validity",
+  "environment": "preview",
+  "branch": "postito/release-0.2.0",
+  "delivery_evidence": {
+    "user_reported_email_received": true,
+    "user_reported_code_rejected": true,
+    "successful_account_confirmation_verified": false
+  },
+  "diagnosis": {
+    "reproduced_behavior": "Verification selected only the newest challenge and could reject an earlier code that was still valid.",
+    "remote_inspection": "Read-only challenge metadata",
+    "challenge_count": 2,
+    "creation_interval_seconds": 3.488,
+    "both_challenges_valid_at_inspection": true,
+    "account_status": "pending",
+    "newest_challenge_attempts": 2,
+    "codes_or_hashes_read": false,
+    "specific_code_entered_by_user_identified": false
+  },
+  "required_policy": {
+    "verification_code_validity_minutes": 5,
+    "legacy_challenge_validity_cap_minutes_from_creation": 5,
+    "accept_any_still_valid_confirmation_code": true,
+    "consume_confirmation_challenges_together_on_success": true,
+    "aggregate_attempt_limit": 5,
+    "resend_resets_attempt_budget": false,
+    "password_recovery_validity_minutes": 30
+  },
+  "validation": {
+    "unit_tests": {
+      "status": "passed",
+      "passed": 37,
+      "new_tests": 18
+    },
+    "api_regression": {
+      "status": "passed",
+      "passed": 23
+    },
+    "api_and_browser_regression": {
+      "status": "passed",
+      "exit_code": 0,
+      "passed": 38,
+      "api_scenarios": 23,
+      "browser_scenarios": 15,
+      "coverage": [
+        "Signup, code confirmation and onboarding",
+        "Password recovery",
+        "Code pasted with spaces",
+        "Five-minute validity text"
+      ],
+      "evidence": "evidence/email-confirmation-regression-20260924.json",
+      "first_run_blocker": "Chromium browser dependency was not installed.",
+      "recovery": "Chromium installed from the official distribution; complete suite rerun passed."
+    },
+    "typecheck": "passed",
+    "targeted_lint": {
+      "status": "passed",
+      "scope": "All changed code and test files",
+      "errors": 0,
+      "warnings": 0
+    },
+    "build": {
+      "status": "passed",
+      "known_warning": "File tracing warning in next.config.ts/lib/storage.ts"
+    },
+    "new_deployment": {
+      "status": "READY",
+      "duration_seconds": 33,
+      "id": "dpl_8gyzLivZBn7eVUsGh51coVYqLMDJ",
+      "url": "https://postito-doa9kxpev-vieiraphilipe875-7609s-projects.vercel.app",
+      "stable_alias": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app/"
+    },
+    "real_confirmation_after_fix": "pending new code received by the user",
+    "hosted_confirmation_screen": {
+      "status": "verified_in_browser",
+      "surface": "Stable Preview alias, Confirmar meu e-mail screen",
+      "observed_text": "Ele vale por 5 minutos após o envio"
+    }
+  },
+  "manual_remote_database_writes": false,
+  "admin_account_changed": false,
+  "historical_evidence_rewritten": false,
+  "production_promoted": false,
+  "limits": [
+    "Delivery is reported by the user; the complete confirmation flow has not yet been verified after the fix.",
+    "No recipient, authentication code, hash, token or credential is recorded here.",
+    "Metadata inspection does not identify which code the user entered.",
+    "Concurrency was tested in isolated PGlite, not across multiple hosted PostgreSQL connections."
+  ],
+  "code_commit": "ad64eade9adfca7d31e1b0d62d9e3d6d71b0ea09",
+  "code_tree": "3d9bb57545318d65bfeca84aedc7f6286a7ff0b0",
+  "manual_account_activation": false,
+  "password_changed": false,
+  "database_schema_changed": false,
+  "environment_variables_changed_this_fix": false
+}

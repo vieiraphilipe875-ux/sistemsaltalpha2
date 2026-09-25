@@ -1,0 +1,69 @@
+{
+  "date": "2026-09-24",
+  "scope": "U39: public landing, Made With GSAP-inspired visual redesign and smooth scrolling",
+  "branch": "postito/release-0.2.0",
+  "base_commit": "908552f0078709e314f1ca34f32ca791988e1352",
+  "changes": [
+    "Public landing for anonymous visitors",
+    "Dedicated login and signup routes preserve existing account and invite flow",
+    "Graphite navigation and pastel surfaces throughout workspace and authentication",
+    "GSAP ScrollTrigger presentation animations and Lenis smooth wheel scrolling",
+    "Native touch and reduced-motion scrolling with lifecycle cleanup",
+    "Four actual UI screenshots generated with isolated fictional fixture data"
+  ],
+  "references": [
+    "https://madewithgsap.com/",
+    "https://madewithgsap.com/showcase",
+    "https://madewithgsap.com/effects/",
+    "https://www.lxlcreative.co.uk/",
+    "https://studionamma.com/"
+  ],
+  "validation": {
+    "unit_passed": 91,
+    "e2e_passed": 72,
+    "api_passed": 28,
+    "browser_passed": 44,
+    "typecheck": "passed",
+    "lint_changed_files": "0 errors, 0 warnings",
+    "build": "passed",
+    "build_compilation_seconds": 3.4,
+    "build_typescript_seconds": 8.8,
+    "build_warning": "Existing file-tracing warning next.config.ts -> lib/storage.ts -> finance documents route",
+    "mobile_widths": [
+      390,
+      320
+    ],
+    "reduced_motion_runtime_change_verified": true,
+    "native_touch_scrolling_verified": true,
+    "public_content_without_javascript_verified": true,
+    "authenticated_root_redirect_verified": true,
+    "invitation_recipient_and_permissions_regression_verified": true,
+    "screenshots_reviewed": true
+  },
+  "deployment": {
+    "status": "READY",
+    "environment": "Preview",
+    "stable_alias": "https://postito-git-postito-release-020-vieiraphilipe875-7609s-projects.vercel.app",
+    "id": "dpl_G8g7cu1EjYchPf6ohEGPqKTeZ14E",
+    "commit": "a4ce4bcdd6f9ecb38973c0ae84649408c8beb584",
+    "tree": "79e368c78267a814d7df4a2487f7fb2b6ff3f35f",
+    "duration_seconds": 51,
+    "url": "https://postito-3z4qxmrb4-vieiraphilipe875-7609s-projects.vercel.app"
+  },
+  "regression_evidence": "evidence/redesign-v4-regression-20260924.json",
+  "real_email_sent_this_turn": false,
+  "remote_data_mutated": false,
+  "schema_or_env_changed": false,
+  "production_promoted": false,
+  "hosted_verification": {
+    "stable_alias_landing_loaded": true,
+    "hero_image_loaded": true,
+    "product_tour_finance_selected_and_image_loaded": true,
+    "smooth_scroll_initialized": true,
+    "login_from_landing_loaded": true,
+    "return_to_landing_verified": true,
+    "signup_from_landing_loaded": true,
+    "real_account_submitted": false,
+    "authenticated_workspace_checked": false
+  }
+}

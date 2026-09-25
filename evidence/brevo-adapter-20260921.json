@@ -1,0 +1,19 @@
+{
+  "date": "2026-09-21",
+  "scope": "Brevo adapter, truthful signup feedback and local regression",
+  "provider": "brevo",
+  "provider_api": "https://api.brevo.com/v3/smtp/email",
+  "unit_tests": {"passed": 19, "failed": 0, "transport": "mocked fetch; no real provider credentials"},
+  "integration_tests": {"passed": 16, "failed": 0, "transport": "local mailbox", "database": "isolated PGlite", "result": "results-brevo-integration-20260921.json"},
+  "test_fixture_correction": "The pending-account scenario now creates its agency before reading workspace, which requires an active agency. Final regression passed.",
+  "typecheck": "passed",
+  "targeted_lint": {"errors": 0, "warnings": 1, "note": "pre-existing unused c2 variable in flows.mjs"},
+  "production_build": "passed with existing storage trace warning",
+  "historical_browser_evidence": "results.json preserved; standalone browser suite not rerun",
+  "live_brevo_account_connected": false,
+  "live_brevo_delivery_verified": false,
+  "vercel_brevo_environment_configured": false,
+  "production_promoted": false,
+  "paid_services_purchased": false,
+  "next_step": "Connect free Brevo account, verify sender, configure branch-specific Preview secrets, deploy and verify actual delivery."
+}
